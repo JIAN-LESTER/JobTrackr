@@ -12,7 +12,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('interviews', function (Blueprint $table) {
-            $table->id();
+            $table->id('interview_id');
+            $table->foreignId('job_application_id')->references('application_id')->on('applications')->cascadeOnDelete();
+
+            $table->string('interview_type')->nullable();
+            // Initial, Technical, HR, Final, Assessment
+
+            $table->dateTime('scheduled_at')->nullable();
+            $table->string('location')->nullable();
+            $table->string('meeting_link')->nullable();
+
+            $table->string('status')->default('scheduled');
+            // scheduled, completed, cancelled, missed
+
+            $table->text('feedback')->nullable();
+            $table->text('notes')->nullable();
+
             $table->timestamps();
         });
     }

@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notes', function (Blueprint $table) {
-            $table->id('note_id');
+        Schema::create('application_contacts', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('job_application_id')->references('application_id')->on('applications')->cascadeOnDelete();
-            $table->foreignId('user_id')->references('id')->on('users')->cascadeOnDelete();
 
-            $table->text('content');
+            $table->string('name');
+            $table->string('position')->nullable();
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('linkedin_url')->nullable();
 
             $table->timestamps();
         });
@@ -27,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('notes');
+        Schema::dropIfExists('application_contacts');
     }
 };

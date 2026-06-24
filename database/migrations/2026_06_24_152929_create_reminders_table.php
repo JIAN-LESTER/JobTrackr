@@ -12,7 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('reminders', function (Blueprint $table) {
-            $table->id();
+            $table->id('reminder_id');
+            $table->foreignId('job_application_id')->references('application_id')->on('applications')->cascadeOnDelete();
+
+            $table->string('title');
+            $table->text('description')->nullable();
+            $table->dateTime('remind_at');
+
+            $table->boolean('is_completed')->default(false);
+
             $table->timestamps();
         });
     }
