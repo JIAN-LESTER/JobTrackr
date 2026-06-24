@@ -6,5 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Company extends Model
 {
-    //
+      protected $fillable = [
+        'name',
+        'industry',
+        'website',
+        'email',
+        'phone',
+        'address',
+    ];
+
+    public function applications()
+    {
+        return $this->hasMany(Application::class);
+    }
 }
