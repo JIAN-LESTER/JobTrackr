@@ -3,6 +3,7 @@
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationContactController;
 use App\Http\Controllers\ApplicationStatusHistoryController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\NoteController;
@@ -10,11 +11,12 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
     Route::resource('applications', ApplicationController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+    Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
     Route::resource('contacts', ApplicationContactController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('status-histories', ApplicationStatusHistoryController::class)
         ->parameters(['status-histories' => 'statusHistory'])
