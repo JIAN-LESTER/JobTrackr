@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('notes', function (Blueprint $table) {
             $table->id('note_id');
             $table->foreignId('job_application_id')->references('application_id')->on('applications')->cascadeOnDelete();
-            $table->foreignId('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreignId('user_id')->references('user_id')->on('users')->cascadeOnDelete();
 
             $table->text('content');
 

@@ -17,10 +17,10 @@ return new class extends Migration
             $table->foreignId('company_id')->references('company_id')->on('companies')->cascadeOnDelete();
 
             $table->string('job_title');
-            $table->string('job_type')->nullable(); 
+            $table->string('job_type')->nullable();
             // Full-time, Part-time, Internship, Contract, Remote
 
-            $table->string('work_setup')->nullable(); 
+            $table->string('work_setup')->nullable();
             // On-site, Hybrid, Remote
 
             $table->string('location')->nullable();
@@ -29,8 +29,7 @@ return new class extends Migration
             $table->decimal('salary_max', 10, 2)->nullable();
             $table->string('currency')->default('PHP');
 
-            $table->string('status')->default('applied');
-            // saved, applied, screening, interview, offer, rejected, withdrawn, hired
+            $table->enum('status', ['saved', 'applied', 'assessment',  'screening', 'final_interview', 'interviewing', 'position_filled_in', 'ghosted', 'closed', 'offer_declined', 'awaiting_client_offer', 'contract_signing', 'awaiting_interview_with_hr', 'offereed_another_position', 'initial_interview', 'offer', 'rejected', 'withdrawn', 'hired'])->default('applied');
 
             $table->date('applied_date')->nullable();
             $table->date('deadline')->nullable();

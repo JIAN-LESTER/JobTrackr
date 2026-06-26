@@ -24,7 +24,7 @@ return new class extends Migration
             $table->integer('file_size')->nullable();
 
             $table->timestamps();
-                    });
+        });
     }
 
     /**
