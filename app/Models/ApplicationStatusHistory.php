@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ApplicationStatusHistory extends Model
 {
-  protected $fillable = [
+    use SoftDeletes;
+
+    protected $fillable = [
         'job_application_id',
         'old_status',
         'new_status',
@@ -15,6 +18,6 @@ class ApplicationStatusHistory extends Model
 
     public function jobApplication()
     {
-        return $this->belongsTo(Application::class);
+        return $this->belongsTo(Application::class, 'job_application_id', 'application_id');
     }
 }
