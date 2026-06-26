@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Application;
+use App\Models\Company;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,6 +16,7 @@ class ApplicationController extends Controller
 
         $applications = Application::query()
             ->with(['company', 'user'])
+            ->where('user_id', $request->user()->getKey())
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('job_title', 'like', "%{$search}%")
@@ -25,9 +27,8 @@ class ApplicationController extends Controller
                         });
                 });
             })
-            ->when($request->filled('user_id'), fn ($query) => $query->where('user_id', $request->input('user_id')))
             ->when($request->filled('company_id'), fn ($query) => $query->where('company_id', $request->input('company_id')))
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
+            ->when($request->filled('status') && $request->input('status') !== 'all', fn ($query) => $query->where('status', $request->input('status')))
             ->when($request->filled('job_type'), fn ($query) => $query->where('job_type', $request->input('job_type')))
             ->when($request->filled('work_setup'), fn ($query) => $query->where('work_setup', $request->input('work_setup')))
             ->when($request->filled('applied_from'), fn ($query) => $query->whereDate('applied_date', '>=', $request->input('applied_from')))
@@ -36,7 +37,7 @@ class ApplicationController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        return Inertia::render('applications/index', [
+        return Inertia::render('Application', [
             'applications' => $applications,
             'filters' => $request->only([
                 'search',
@@ -49,17 +50,49 @@ class ApplicationController extends Controller
                 'applied_to',
                 'per_page',
             ]),
+            'statuses' => $this->statuses(),
         ]);
     }
 
     public function show(Application $application)
     {
+        $this->authorizeApplication($application);
+
         return response()->json($application->load(['company', 'user', 'contacts', 'interviews', 'statusHistories', 'notes', 'reminders']));
     }
 
     public function store(Request $request)
     {
-        $application = Application::create($this->validatedData($request));
+        $data = $request->validate([
+            'company' => ['required', 'string', 'max:255'],
+            'job_title' => ['required', 'string', 'max:255'],
+            'status' => ['required', 'string', 'max:255'],
+            'applied_date' => ['nullable', 'date'],
+        ]);
+
+        $companyName = trim($data['company']);
+
+        if ($companyName === '') {
+            return back()->withErrors([
+                'company' => 'The company field is required.',
+            ])->withInput();
+        }
+
+        $company = Company::firstOrCreate([
+            'name' => $companyName,
+        ]);
+
+        $application = Application::create([
+            'user_id' => $request->user()->getKey(),
+            'company_id' => $company->getKey(),
+            'job_title' => $data['job_title'],
+            'status' => $data['status'],
+            'applied_date' => $data['applied_date'] ?? null,
+        ]);
+
+        if ($request->header('X-Inertia')) {
+            return back();
+        }
 
         return response()->json([
             'message' => 'Application created.',
@@ -69,7 +102,12 @@ class ApplicationController extends Controller
 
     public function update(Request $request, Application $application)
     {
-        $application->update($this->validatedData($request, true));
+        $this->authorizeApplication($application);
+
+        $data = $this->validatedData($request, true);
+        unset($data['user_id']);
+
+        $application->update($data);
 
         return response()->json([
             'message' => 'Application updated.',
@@ -79,6 +117,8 @@ class ApplicationController extends Controller
 
     public function destroy(Application $application)
     {
+        $this->authorizeApplication($application);
+
         $application->delete();
 
         return response()->noContent();
@@ -105,5 +145,35 @@ class ApplicationController extends Controller
             'job_description' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
         ]);
+    }
+
+    private function statuses(): array
+    {
+        return [
+            'saved',
+            'applied',
+            'assessment',
+            'screening',
+            'final_interview',
+            'interviewing',
+            'position_filled_in',
+            'ghosted',
+            'closed',
+            'offer_declined',
+            'awaiting_client_offer',
+            'contract_signing',
+            'awaiting_interview_with_hr',
+            'offereed_another_position',
+            'initial_interview',
+            'offer',
+            'rejected',
+            'withdrawn',
+            'hired',
+        ];
+    }
+
+    private function authorizeApplication(Application $application): void
+    {
+        abort_unless((string) $application->user_id === (string) request()->user()->getKey(), 404);
     }
 }
