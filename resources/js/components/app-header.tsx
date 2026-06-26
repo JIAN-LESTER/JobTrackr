@@ -1,5 +1,14 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
+import {
+    BookOpen,
+    BriefcaseBusiness,
+    Building2,
+    Folder,
+    LayoutGrid,
+    Menu,
+    ScrollText,
+    Search,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -44,6 +53,21 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Application',
+        href: '/applications',
+        icon: BriefcaseBusiness,
+    },
+    {
+        title: 'Company',
+        href: '/companies',
+        icon: Building2,
+    },
+    {
+        title: 'Audit',
+        href: '/logs',
+        icon: ScrollText,
     },
 ];
 

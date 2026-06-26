@@ -60,6 +60,19 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  phpmyadmin:
+    image: phpmyadmin:5.2-apache
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: jobtrackr
+      PMA_PASSWORD: secret
+    depends_on:
+      - mysql
+
 volumes:
   mysql_data:
   vendor:
