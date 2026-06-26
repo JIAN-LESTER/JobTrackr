@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Document extends Model
 {
-     protected $fillable = [
+    protected $fillable = [
         'job_application_id',
         'document_type',
         'file_name',

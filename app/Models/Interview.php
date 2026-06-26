@@ -3,10 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Interview extends Model
 {
-      protected $fillable = [
+    use SoftDeletes;
+
+    protected $primaryKey = 'interview_id';
+
+    protected $fillable = [
         'job_application_id',
         'interview_type',
         'scheduled_at',
@@ -23,6 +28,6 @@ class Interview extends Model
 
     public function jobApplication()
     {
-        return $this->belongsTo(Application::class);
+        return $this->belongsTo(Application::class, 'job_application_id', 'application_id');
     }
 }
