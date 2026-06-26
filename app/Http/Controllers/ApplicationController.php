@@ -54,7 +54,7 @@ class ApplicationController extends Controller
 
     public function show(Application $application)
     {
-        return response()->json($application->load(['company', 'user', 'interviews', 'notes', 'reminders']));
+        return response()->json($application->load(['company', 'user', 'contacts', 'interviews', 'statusHistories', 'notes', 'reminders']));
     }
 
     public function store(Request $request)
