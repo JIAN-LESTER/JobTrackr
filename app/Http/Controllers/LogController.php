@@ -15,6 +15,7 @@ class LogController extends Controller
 
         $logs = Log::query()
             ->with('user')
+            ->where('user_id', $request->user()->getKey())
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('action', 'like', "%{$search}%")
@@ -24,18 +25,16 @@ class LogController extends Controller
                         });
                 });
             })
-            ->when($request->filled('user_id'), fn ($query) => $query->where('user_id', $request->input('user_id')))
             ->when($request->filled('created_from'), fn ($query) => $query->whereDate('created_at', '>=', $request->input('created_from')))
             ->when($request->filled('created_to'), fn ($query) => $query->whereDate('created_at', '<=', $request->input('created_to')))
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
 
-        return Inertia::render('logs/index', [
+        return Inertia::render('Audit', [
             'logs' => $logs,
             'filters' => $request->only([
                 'search',
-                'user_id',
                 'created_from',
                 'created_to',
                 'per_page',
@@ -45,12 +44,16 @@ class LogController extends Controller
 
     public function show(Log $log)
     {
+        $this->authorizeLog($log);
+
         return response()->json($log->load('user'));
     }
 
 
     public function destroy(Log $log)
     {
+        $this->authorizeLog($log);
+
         $log->delete();
 
         return response()->noContent();
@@ -64,5 +67,10 @@ class LogController extends Controller
             'user_id' => [$required, 'integer', 'exists:users,user_id'],
             'action' => [$required, 'string', 'max:255'],
         ]);
+    }
+
+    private function authorizeLog(Log $log): void
+    {
+        abort_unless((string) $log->user_id === (string) request()->user()->getKey(), 404);
     }
 }
