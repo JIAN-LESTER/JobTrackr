@@ -22,4 +22,3 @@ export type Passkey = {
     last_used_at_diff: string | null;
 };
 /* @end-chisel-passkeys */
-

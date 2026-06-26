@@ -10,7 +10,7 @@ import { edit } from '@/routes/security';
 
 type Props = {
     passwordRules: string;
-} ;
+};
 
 export default function Security(props: Props) {
     const passwordInput = useRef<HTMLInputElement>(null);
@@ -117,8 +117,6 @@ export default function Security(props: Props) {
                     )}
                 </Form>
             </div>
-
-
         </>
     );
 }
