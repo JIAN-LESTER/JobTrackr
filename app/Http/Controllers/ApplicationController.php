@@ -88,9 +88,19 @@ class ApplicationController extends Controller
     {
         $data = $request->validate([
             'company' => ['required', 'string', 'max:255'],
+            'company_industry' => ['nullable', 'string', 'max:255'],
+            'company_address' => ['nullable', 'string'],
+            'company_website' => ['nullable', 'url', 'max:255'],
+            'company_url' => ['nullable', 'url', 'max:255'],
             'job_title' => ['required', 'string', 'max:255'],
+            'job_type' => ['nullable', 'string', 'max:255'],
+            'work_setup' => ['nullable', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'salary_min' => ['nullable', 'numeric', 'min:0'],
+            'salary_max' => ['nullable', 'numeric', 'min:0'],
             'status' => ['required', 'string', 'max:255'],
             'applied_date' => ['nullable', 'date'],
+            'job_post_url' => ['nullable', 'url', 'max:255'],
         ]);
 
         $companyName = trim($data['company']);
@@ -104,13 +114,25 @@ class ApplicationController extends Controller
         $company = Company::firstOrCreate([
             'name' => $companyName,
         ]);
+        $company->fill([
+            'industry' => $data['company_industry'] ?? $company->industry,
+            'address' => $data['company_address'] ?? $company->address,
+            'website' => $data['company_website'] ?? $company->website,
+            'url' => $data['company_url'] ?? $company->url,
+        ])->save();
 
         $application = Application::create([
             'user_id' => $request->user()->getKey(),
             'company_id' => $company->getKey(),
             'job_title' => $data['job_title'],
+            'job_type' => $data['job_type'] ?? null,
+            'work_setup' => $data['work_setup'] ?? null,
+            'location' => $data['location'] ?? null,
+            'salary_min' => $data['salary_min'] ?? null,
+            'salary_max' => $data['salary_max'] ?? null,
             'status' => $data['status'],
             'applied_date' => $data['applied_date'] ?? null,
+            'job_post_url' => $data['job_post_url'] ?? null,
         ]);
 
         if ($request->header('X-Inertia')) {

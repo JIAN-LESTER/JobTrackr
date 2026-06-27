@@ -70,9 +70,19 @@ type Props = {
 
 type ApplicationForm = {
     company: string;
+    company_industry: string;
+    company_address: string;
+    company_website: string;
+    company_url: string;
     job_title: string;
+    job_type: string;
+    work_setup: string;
+    location: string;
+    salary_min: string;
+    salary_max: string;
     status: string;
     applied_date: string;
+    job_post_url: string;
 };
 
 const statusLabel = (status: string) =>
@@ -144,9 +154,19 @@ export default function Applications({
     ];
     const form = useForm<ApplicationForm>({
         company: '',
+        company_industry: '',
+        company_address: '',
+        company_website: '',
+        company_url: '',
         job_title: '',
+        job_type: '',
+        work_setup: '',
+        location: '',
+        salary_min: '',
+        salary_max: '',
         status: 'applied',
         applied_date: '',
+        job_post_url: '',
     });
 
     const changeStatus = (status: string) => {
@@ -227,7 +247,7 @@ export default function Applications({
                                     Add
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                                 <DialogHeader>
                                     <DialogTitle>Add application</DialogTitle>
                                     <DialogDescription>
@@ -261,6 +281,111 @@ export default function Applications({
                                         ) : null}
                                     </div>
 
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="company_industry">
+                                                Industry
+                                            </Label>
+                                            <Input
+                                                id="company_industry"
+                                                value={
+                                                    form.data.company_industry
+                                                }
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'company_industry',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            {form.errors.company_industry ? (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors
+                                                            .company_industry
+                                                    }
+                                                </p>
+                                            ) : null}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="company_address">
+                                                Address
+                                            </Label>
+                                            <Input
+                                                id="company_address"
+                                                value={
+                                                    form.data.company_address
+                                                }
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'company_address',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            {form.errors.company_address ? (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors
+                                                            .company_address
+                                                    }
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="company_website">
+                                                Website
+                                            </Label>
+                                            <Input
+                                                id="company_website"
+                                                type="url"
+                                                value={
+                                                    form.data.company_website
+                                                }
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'company_website',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            {form.errors.company_website ? (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        form.errors
+                                                            .company_website
+                                                    }
+                                                </p>
+                                            ) : null}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="company_url">
+                                                Company URL
+                                            </Label>
+                                            <Input
+                                                id="company_url"
+                                                type="url"
+                                                value={form.data.company_url}
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'company_url',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            {form.errors.company_url ? (
+                                                <p className="text-sm text-destructive">
+                                                    {form.errors.company_url}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-2">
                                         <Label htmlFor="job_title">
                                             Job title
@@ -279,6 +404,143 @@ export default function Applications({
                                         {form.errors.job_title ? (
                                             <p className="text-sm text-destructive">
                                                 {form.errors.job_title}
+                                            </p>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="job_type">
+                                                Job type
+                                            </Label>
+                                            <Input
+                                                id="job_type"
+                                                value={form.data.job_type}
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'job_type',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            {form.errors.job_type ? (
+                                                <p className="text-sm text-destructive">
+                                                    {form.errors.job_type}
+                                                </p>
+                                            ) : null}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="work_setup">
+                                                Work setup
+                                            </Label>
+                                            <Input
+                                                id="work_setup"
+                                                value={form.data.work_setup}
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'work_setup',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            {form.errors.work_setup ? (
+                                                <p className="text-sm text-destructive">
+                                                    {form.errors.work_setup}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="location">
+                                            Location
+                                        </Label>
+                                        <Input
+                                            id="location"
+                                            value={form.data.location}
+                                            onChange={(event) =>
+                                                form.setData(
+                                                    'location',
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        {form.errors.location ? (
+                                            <p className="text-sm text-destructive">
+                                                {form.errors.location}
+                                            </p>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="salary_min">
+                                                Salary min
+                                            </Label>
+                                            <Input
+                                                id="salary_min"
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={form.data.salary_min}
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'salary_min',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            {form.errors.salary_min ? (
+                                                <p className="text-sm text-destructive">
+                                                    {form.errors.salary_min}
+                                                </p>
+                                            ) : null}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="salary_max">
+                                                Salary max
+                                            </Label>
+                                            <Input
+                                                id="salary_max"
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={form.data.salary_max}
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'salary_max',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            {form.errors.salary_max ? (
+                                                <p className="text-sm text-destructive">
+                                                    {form.errors.salary_max}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="job_post_url">
+                                            Job post URL
+                                        </Label>
+                                        <Input
+                                            id="job_post_url"
+                                            type="url"
+                                            value={form.data.job_post_url}
+                                            onChange={(event) =>
+                                                form.setData(
+                                                    'job_post_url',
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        {form.errors.job_post_url ? (
+                                            <p className="text-sm text-destructive">
+                                                {form.errors.job_post_url}
                                             </p>
                                         ) : null}
                                     </div>

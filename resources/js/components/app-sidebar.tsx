@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
 import {
+    BookOpen,
     BriefcaseBusiness,
     Building2,
+    FolderGit2,
     ScrollText,
 } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';

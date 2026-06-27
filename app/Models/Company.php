@@ -12,6 +12,7 @@ class Company extends Model
         'name',
         'industry',
         'website',
+        'url',
         'email',
         'phone',
         'address',
