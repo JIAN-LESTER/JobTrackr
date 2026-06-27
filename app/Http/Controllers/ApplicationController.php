@@ -13,10 +13,17 @@ class ApplicationController extends Controller
     {
         $search = $request->input('search');
         $perPage = max(1, min((int) $request->input('per_page', 10), 100));
+        $userId = $request->user()->getKey();
+
+        $statusCounts = Application::query()
+            ->where('user_id', $userId)
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
 
         $applications = Application::query()
             ->with(['company', 'user'])
-            ->where('user_id', $request->user()->getKey())
+            ->where('user_id', $userId)
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('job_title', 'like', "%{$search}%")
@@ -39,6 +46,22 @@ class ApplicationController extends Controller
 
         return Inertia::render('Application', [
             'applications' => $applications,
+            'stats' => [
+                'total' => (int) $statusCounts->sum(),
+                'applied' => (int) ($statusCounts['applied'] ?? 0),
+                'interviewing' => (int) collect([
+                    'initial_interview',
+                    'interviewing',
+                    'final_interview',
+                    'awaiting_interview_with_hr',
+                ])->sum(fn ($status) => $statusCounts[$status] ?? 0),
+                'offers' => (int) collect([
+                    'offer',
+                    'awaiting_client_offer',
+                    'contract_signing',
+                    'hired',
+                ])->sum(fn ($status) => $statusCounts[$status] ?? 0),
+            ],
             'filters' => $request->only([
                 'search',
                 'user_id',

@@ -1,13 +1,9 @@
 import { Link } from '@inertiajs/react';
 import {
-    BookOpen,
     BriefcaseBusiness,
     Building2,
-    FolderGit2,
-    LayoutGrid,
     ScrollText,
 } from 'lucide-react';
-import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -20,15 +16,10 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
+import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
     {
         title: 'Application',
         href: '/applications',
@@ -59,6 +50,7 @@ const footerNavItems: NavItem[] = [
     },
 ];
 
+
 export function AppSidebar() {
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -66,7 +58,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href="/applications" prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
@@ -81,7 +73,6 @@ export function AppSidebar() {
             <SidebarFooter>
                 <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
-            </SidebarFooter>
-        </Sidebar>
+            </SidebarFooter>        </Sidebar>
     );
 }
