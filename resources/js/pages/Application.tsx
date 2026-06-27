@@ -1,8 +1,16 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Plus, Search } from 'lucide-react';
-import {  useState } from 'react';
-import type {FormEvent} from 'react';
+import {
+    BriefcaseBusiness,
+    Handshake,
+    MessagesSquare,
+    Plus,
+    Search,
+    Send,
+} from 'lucide-react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { PreferredView } from '@/components/preferred-view';
+import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -46,8 +54,16 @@ type Filters = {
     per_page?: string;
 };
 
+type ApplicationStats = {
+    total: number;
+    applied: number;
+    interviewing: number;
+    offers: number;
+};
+
 type Props = {
     applications: Paginated<Application>;
+    stats: ApplicationStats;
     filters: Filters;
     statuses: string[];
 };
@@ -80,10 +96,52 @@ const cleanPageLabel = (label: string) =>
         .replace('&laquo; Previous', 'Previous')
         .replace('Next &raquo;', 'Next');
 
-export default function Applications({ applications, filters, statuses }: Props) {
+const filterButtonStatuses = [
+    'applied',
+    'saved',
+    'assessment',
+    'interviewing',
+    'offer',
+];
+
+export default function Applications({
+    applications,
+    stats,
+    filters,
+    statuses,
+}: Props) {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [search, setSearch] = useState(filters.search || '');
     const selectedStatus = filters.status || 'all';
+    const visibleStatuses = filterButtonStatuses.filter((status) =>
+        statuses.includes(status),
+    );
+    const moreStatuses = statuses.filter(
+        (status) => !visibleStatuses.includes(status),
+    );
+    const isMoreStatusSelected = moreStatuses.includes(selectedStatus);
+    const statCards = [
+        {
+            title: 'Total',
+            value: stats.total,
+            icon: BriefcaseBusiness,
+        },
+        {
+            title: 'Applied',
+            value: stats.applied,
+            icon: Send,
+        },
+        {
+            title: 'Interviews',
+            value: stats.interviewing,
+            icon: MessagesSquare,
+        },
+        {
+            title: 'Offers',
+            value: stats.offers,
+            icon: Handshake,
+        },
+    ];
     const form = useForm<ApplicationForm>({
         company: '',
         job_title: '',
@@ -241,7 +299,7 @@ export default function Applications({ applications, filters, statuses }: Props)
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {statuses.map((status) => (
+                                                    {visibleStatuses.map((status) => (
                                                         <SelectItem
                                                             key={status}
                                                             value={status}
@@ -300,6 +358,17 @@ export default function Applications({ applications, filters, statuses }: Props)
                     </div>
                 </div>
 
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {statCards.map((stat) => (
+                        <StatCard
+                            key={stat.title}
+                            title={stat.title}
+                            value={stat.value}
+                            icon={stat.icon}
+                        />
+                    ))}
+                </div>
+
                 <div className="flex flex-wrap gap-2">
                     <Button
                         type="button"
@@ -309,7 +378,7 @@ export default function Applications({ applications, filters, statuses }: Props)
                     >
                         All
                     </Button>
-                    {statuses.map((status) => (
+                    {filterButtonStatuses.map((status) => (
                         <Button
                             key={status}
                             type="button"
@@ -324,6 +393,37 @@ export default function Applications({ applications, filters, statuses }: Props)
                             {statusLabel(status)}
                         </Button>
                     ))}
+                    {moreStatuses.length > 0 ? (
+                        <Select
+                            value={
+                                isMoreStatusSelected
+                                    ? selectedStatus
+                                    : 'more'
+                            }
+                            onValueChange={changeStatus}
+                        >
+                            <SelectTrigger
+                                size="sm"
+                                className={
+                                    isMoreStatusSelected
+                                        ? 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                        : ''
+                                }
+                            >
+                                <SelectValue placeholder="More" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="more" disabled>
+                                    More
+                                </SelectItem>
+                                {moreStatuses.map((status) => (
+                                    <SelectItem key={status} value={status}>
+                                        {statusLabel(status)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    ) : null}
                 </div>
 
                 <PreferredView
