@@ -89,9 +89,6 @@ class ApplicationController extends Controller
         $data = $request->validate([
             'company' => ['required', 'string', 'max:255'],
             'company_industry' => ['nullable', 'string', 'max:255'],
-            'company_address' => ['nullable', 'string'],
-            'company_website' => ['nullable', 'url', 'max:255'],
-            'company_url' => ['nullable', 'url', 'max:255'],
             'job_title' => ['required', 'string', 'max:255'],
             'job_type' => ['nullable', 'string', 'max:255'],
             'work_setup' => ['nullable', 'string', 'max:255'],
@@ -116,9 +113,6 @@ class ApplicationController extends Controller
         ]);
         $company->fill([
             'industry' => $data['company_industry'] ?? $company->industry,
-            'address' => $data['company_address'] ?? $company->address,
-            'website' => $data['company_website'] ?? $company->website,
-            'url' => $data['company_url'] ?? $company->url,
         ])->save();
 
         $application = Application::create([

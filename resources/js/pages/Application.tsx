@@ -71,9 +71,6 @@ type Props = {
 type ApplicationForm = {
     company: string;
     company_industry: string;
-    company_address: string;
-    company_website: string;
-    company_url: string;
     job_title: string;
     job_type: string;
     work_setup: string;
@@ -113,6 +110,35 @@ const filterButtonStatuses = [
     'interviewing',
     'offer',
 ];
+
+const optionalSelectNone = '__none';
+
+const industries = [
+    'Accounting',
+    'Advertising',
+    'Business Process Outsourcing',
+    'Construction',
+    'Education',
+    'Finance',
+    'Healthcare',
+    'Hospitality',
+    'Information Technology',
+    'Manufacturing',
+    'Retail',
+    'Telecommunications',
+    'Transportation',
+];
+
+const jobTypes = [
+    'Full-time',
+    'Part-time',
+    'Contract',
+    'Freelance',
+    'Internship',
+    'Temporary',
+];
+
+const workSetups = ['On-site', 'Hybrid', 'Remote'];
 
 export default function Applications({
     applications,
@@ -155,9 +181,6 @@ export default function Applications({
     const form = useForm<ApplicationForm>({
         company: '',
         company_industry: '',
-        company_address: '',
-        company_website: '',
-        company_url: '',
         job_title: '',
         job_type: '',
         work_setup: '',
@@ -283,104 +306,54 @@ export default function Applications({
 
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label htmlFor="company_industry">
-                                                Industry
-                                            </Label>
-                                            <Input
-                                                id="company_industry"
+                                            <Label>Industry</Label>
+                                            <Select
                                                 value={
-                                                    form.data.company_industry
+                                                    form.data
+                                                        .company_industry ||
+                                                    optionalSelectNone
                                                 }
-                                                onChange={(event) =>
+                                                onValueChange={(value) =>
                                                     form.setData(
                                                         'company_industry',
-                                                        event.target.value,
+                                                        value ===
+                                                            optionalSelectNone
+                                                            ? ''
+                                                            : value,
                                                     )
                                                 }
-                                            />
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select industry" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value={
+                                                            optionalSelectNone
+                                                        }
+                                                    >
+                                                        Not specified
+                                                    </SelectItem>
+                                                    {industries.map(
+                                                        (industry) => (
+                                                            <SelectItem
+                                                                key={industry}
+                                                                value={
+                                                                    industry
+                                                                }
+                                                            >
+                                                                {industry}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
                                             {form.errors.company_industry ? (
                                                 <p className="text-sm text-destructive">
                                                     {
                                                         form.errors
                                                             .company_industry
                                                     }
-                                                </p>
-                                            ) : null}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="company_address">
-                                                Address
-                                            </Label>
-                                            <Input
-                                                id="company_address"
-                                                value={
-                                                    form.data.company_address
-                                                }
-                                                onChange={(event) =>
-                                                    form.setData(
-                                                        'company_address',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            {form.errors.company_address ? (
-                                                <p className="text-sm text-destructive">
-                                                    {
-                                                        form.errors
-                                                            .company_address
-                                                    }
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="company_website">
-                                                Website
-                                            </Label>
-                                            <Input
-                                                id="company_website"
-                                                type="url"
-                                                value={
-                                                    form.data.company_website
-                                                }
-                                                onChange={(event) =>
-                                                    form.setData(
-                                                        'company_website',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            {form.errors.company_website ? (
-                                                <p className="text-sm text-destructive">
-                                                    {
-                                                        form.errors
-                                                            .company_website
-                                                    }
-                                                </p>
-                                            ) : null}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="company_url">
-                                                Company URL
-                                            </Label>
-                                            <Input
-                                                id="company_url"
-                                                type="url"
-                                                value={form.data.company_url}
-                                                onChange={(event) =>
-                                                    form.setData(
-                                                        'company_url',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            {form.errors.company_url ? (
-                                                <p className="text-sm text-destructive">
-                                                    {form.errors.company_url}
                                                 </p>
                                             ) : null}
                                         </div>
@@ -410,19 +383,43 @@ export default function Applications({
 
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="space-y-2">
-                                            <Label htmlFor="job_type">
-                                                Job type
-                                            </Label>
-                                            <Input
-                                                id="job_type"
-                                                value={form.data.job_type}
-                                                onChange={(event) =>
+                                            <Label>Job type</Label>
+                                            <Select
+                                                value={
+                                                    form.data.job_type ||
+                                                    optionalSelectNone
+                                                }
+                                                onValueChange={(value) =>
                                                     form.setData(
                                                         'job_type',
-                                                        event.target.value,
+                                                        value ===
+                                                            optionalSelectNone
+                                                            ? ''
+                                                            : value,
                                                     )
                                                 }
-                                            />
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select job type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value={
+                                                            optionalSelectNone
+                                                        }
+                                                    >
+                                                        Not specified
+                                                    </SelectItem>
+                                                    {jobTypes.map((jobType) => (
+                                                        <SelectItem
+                                                            key={jobType}
+                                                            value={jobType}
+                                                        >
+                                                            {jobType}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             {form.errors.job_type ? (
                                                 <p className="text-sm text-destructive">
                                                     {form.errors.job_type}
@@ -431,19 +428,47 @@ export default function Applications({
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label htmlFor="work_setup">
-                                                Work setup
-                                            </Label>
-                                            <Input
-                                                id="work_setup"
-                                                value={form.data.work_setup}
-                                                onChange={(event) =>
+                                            <Label>Work setup</Label>
+                                            <Select
+                                                value={
+                                                    form.data.work_setup ||
+                                                    optionalSelectNone
+                                                }
+                                                onValueChange={(value) =>
                                                     form.setData(
                                                         'work_setup',
-                                                        event.target.value,
+                                                        value ===
+                                                            optionalSelectNone
+                                                            ? ''
+                                                            : value,
                                                     )
                                                 }
-                                            />
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select work setup" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value={
+                                                            optionalSelectNone
+                                                        }
+                                                    >
+                                                        Not specified
+                                                    </SelectItem>
+                                                    {workSetups.map(
+                                                        (workSetup) => (
+                                                            <SelectItem
+                                                                key={workSetup}
+                                                                value={
+                                                                    workSetup
+                                                                }
+                                                            >
+                                                                {workSetup}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
                                             {form.errors.work_setup ? (
                                                 <p className="text-sm text-destructive">
                                                     {form.errors.work_setup}
