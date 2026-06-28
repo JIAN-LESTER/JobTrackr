@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { BriefcaseBusiness, Building2, ScrollText } from 'lucide-react';
+import { Bell, BriefcaseBusiness, History } from 'lucide-react';
 import { dashboard } from '@/routes';
 
 export default function Dashboard() {
@@ -10,14 +10,14 @@ export default function Dashboard() {
             icon: BriefcaseBusiness,
         },
         {
-            title: 'Company',
-            href: '/companies',
-            icon: Building2,
+            title: 'Reminders',
+            href: '/reminders',
+            icon: Bell,
         },
         {
-            title: 'Audit',
-            href: '/logs',
-            icon: ScrollText,
+            title: 'Timeline',
+            href: '/status-histories',
+            icon: History,
         },
     ];
 

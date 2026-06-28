@@ -1,9 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Bell,
     BriefcaseBusiness,
-    Building2,
+    History,
     Menu,
-    ScrollText,
     Search,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -47,14 +47,14 @@ const mainNavItems: NavItem[] = [
         icon: BriefcaseBusiness,
     },
     {
-        title: 'Company',
-        href: '/companies',
-        icon: Building2,
+        title: 'Reminders',
+        href: '/reminders',
+        icon: Bell,
     },
     {
-        title: 'Audit',
-        href: '/logs',
-        icon: ScrollText,
+        title: 'Timeline',
+        href: '/status-histories',
+        icon: History,
     },
 ];
 
