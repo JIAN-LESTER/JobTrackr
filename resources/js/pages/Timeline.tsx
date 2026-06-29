@@ -43,6 +43,29 @@ const statusLabel = (status: string | null) =>
               .join(' ')
         : 'Started';
 
+const lifecycleEvents = ['added', 'imported', 'updated', 'deleted'];
+
+const isLifecycleEvent = (history: ApplicationStatusHistory) =>
+    !history.old_status && lifecycleEvents.includes(history.new_status);
+
+const TimelineChange = ({ history }: { history: ApplicationStatusHistory }) =>
+    isLifecycleEvent(history) ? (
+        <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{statusLabel(history.new_status)}</Badge>
+            {history.remarks ? (
+                <span className="text-sm text-muted-foreground">
+                    {history.remarks}
+                </span>
+            ) : null}
+        </div>
+    ) : (
+        <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{statusLabel(history.old_status)}</Badge>
+            <span className="text-xs text-muted-foreground">to</span>
+            <Badge variant="secondary">{statusLabel(history.new_status)}</Badge>
+        </div>
+    );
+
 const formatDate = (value: string) =>
     new Intl.DateTimeFormat(undefined, {
         dateStyle: 'medium',
@@ -131,20 +154,8 @@ export default function StatusHistoriesIndex({
                         },
                         {
                             key: 'status',
-                            label: 'Status change',
-                            render: (history) => (
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="outline">
-                                        {statusLabel(history.old_status)}
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground">
-                                        to
-                                    </span>
-                                    <Badge variant="secondary">
-                                        {statusLabel(history.new_status)}
-                                    </Badge>
-                                </div>
-                            ),
+                            label: 'Update',
+                            render: (history) => <TimelineChange history={history} />,
                         },
                         {
                             key: 'created_at',
@@ -162,18 +173,8 @@ export default function StatusHistoriesIndex({
                                     {companyName(history)}
                                 </p>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant="outline">
-                                    {statusLabel(history.old_status)}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                    to
-                                </span>
-                                <Badge variant="secondary">
-                                    {statusLabel(history.new_status)}
-                                </Badge>
-                            </div>
-                            {history.remarks ? (
+                            <TimelineChange history={history} />
+                            {history.remarks && !isLifecycleEvent(history) ? (
                                 <p className="text-sm">{history.remarks}</p>
                             ) : null}
                             <p className="text-xs text-muted-foreground">
@@ -190,16 +191,8 @@ export default function StatusHistoriesIndex({
                                 <p className="mt-1 text-sm text-muted-foreground">
                                     {companyName(history)}
                                 </p>
-                                <div className="mt-2 flex flex-wrap items-center gap-2">
-                                    <Badge variant="outline">
-                                        {statusLabel(history.old_status)}
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground">
-                                        to
-                                    </span>
-                                    <Badge variant="secondary">
-                                        {statusLabel(history.new_status)}
-                                    </Badge>
+                                <div className="mt-2">
+                                    <TimelineChange history={history} />
                                 </div>
                             </div>
                             <p className="text-xs text-muted-foreground sm:text-right">

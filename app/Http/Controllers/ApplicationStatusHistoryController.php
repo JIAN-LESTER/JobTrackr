@@ -29,7 +29,7 @@ class ApplicationStatusHistoryController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        return Inertia::render('status-histories/index', [
+        return Inertia::render('Timeline', [
             'statusHistories' => $statusHistories,
             'filters' => $request->only([
                 'search',

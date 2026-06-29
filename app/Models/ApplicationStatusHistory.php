@@ -18,6 +18,6 @@ class ApplicationStatusHistory extends Model
 
     public function jobApplication()
     {
-        return $this->belongsTo(Application::class, 'job_application_id', 'application_id');
+        return $this->belongsTo(Application::class, 'job_application_id', 'application_id')->withTrashed();
     }
 }
