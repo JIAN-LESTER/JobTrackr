@@ -118,11 +118,13 @@ private function hasExtensionImportData(Request $request): bool
 
 private function importDataFromExtension(Request $request): array
 {
+    $url = $this->cleanJobPostUrl($request->input('url'));
+
     return [
         'extracted' => true,
-        'url' => $this->cleanJobPostUrl($request->input('url')),
-        'company' => $this->cleanText($request->input('company')) ?: 'Imported',
-        'job_title' => $this->cleanText($request->input('job_title')) ?: 'Imported job',
+        'url' => $url,
+        'company' => $this->cleanText($request->input('company')) ?: $this->websiteLabel($url),
+        'job_title' => $this->cleanText($request->input('job_title')) ?: 'Website',
         'location' => $this->cleanText($request->input('location')),
         'job_type' => $this->cleanText($request->input('job_type')),
         'work_setup' => $this->cleanText($request->input('work_setup')),
@@ -183,6 +185,9 @@ private function importDataFromExtension(Request $request): array
         ]);
         $company->fill([
             'industry' => $data['company_industry'] ?? $company->industry,
+            'website' => ($data['from_import'] ?? false) && ! empty($data['job_post_url']) && ! $company->website
+                ? $data['job_post_url']
+                : $company->website,
         ])->save();
 
         $application = Application::create([
@@ -375,8 +380,8 @@ private function importDataFromExtension(Request $request): array
         $data = [
             'extracted' => false,
             'url' => $url,
-            'company' => 'Imported',
-            'job_title' => 'Imported job',
+            'company' => $this->websiteLabel($url),
+            'job_title' => 'Website',
             'location' => null,
             'job_type' => null,
             'work_setup' => null,
@@ -425,6 +430,21 @@ private function importDataFromExtension(Request $request): array
             'salary_max' => $this->cleanSalary(is_array($salary) ? ($salary['maxValue'] ?? $salaryValue) : $salaryValue),
             'job_description' => $this->cleanText($description),
         ]);
+    }
+
+    private function websiteLabel(?string $url): string
+    {
+        if (! $url) {
+            return 'Website';
+        }
+
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if (! is_string($host) || $host === '') {
+            return 'Website';
+        }
+
+        return preg_replace('/^www\./i', '', $host) ?: 'Website';
     }
 
     private function jobPostingFromJsonLd(\DOMXPath $xpath): array

@@ -4,6 +4,7 @@ import {
     BriefcaseBusiness,
     Bookmark,
     Edit,
+    ExternalLink,
     Handshake,
     MessagesSquare,
     Plus,
@@ -109,6 +110,32 @@ const formatDate = (value: string | null) =>
 const companyName = (application: Application) =>
     application.company?.name || 'Unknown company';
 
+const websiteLabel = (url: string | null) => {
+    if (!url) {
+        return 'Website';
+    }
+
+    try {
+        return new URL(url).hostname.replace(/^www\./, '') || 'Website';
+    } catch {
+        return 'Website';
+    }
+};
+
+const applicationTitle = (application: Application) =>
+    application.job_title === 'Imported job'
+        ? application.job_post_url
+            ? 'Website'
+            : 'Untitled application'
+        : application.job_title;
+
+const applicationCompanyName = (application: Application) =>
+    companyName(application) === 'Imported'
+        ? application.job_post_url
+            ? websiteLabel(application.job_post_url)
+            : 'Unknown company'
+        : companyName(application);
+
 const cleanPageLabel = (label: string) =>
     label
         .replace('&laquo; Previous', 'Previous')
@@ -176,6 +203,8 @@ export default function Applications({
 }: Props) {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [editingApplication, setEditingApplication] =
+        useState<Application | null>(null);
+    const [selectedApplication, setSelectedApplication] =
         useState<Application | null>(null);
     const [reminderApplication, setReminderApplication] =
         useState<Application | null>(null);
@@ -315,7 +344,7 @@ export default function Applications({
         reminderForm.clearErrors();
         reminderForm.setData({
             job_application_id: application.application_id,
-            title: `Reminder: ${application.job_title}`,
+            title: `Reminder: ${applicationTitle(application)}`,
             description: '',
             remind_at: defaultReminderAt(),
         });
@@ -1162,6 +1191,118 @@ export default function Applications({
                         </Dialog>
 
                         <Dialog
+                            open={Boolean(selectedApplication)}
+                            onOpenChange={(open) => {
+                                if (!open) {
+                                    setSelectedApplication(null);
+                                }
+                            }}
+                        >
+                            <DialogContent className="sm:max-w-xl">
+                                {selectedApplication ? (
+                                    <>
+                                        <DialogHeader>
+                                            <DialogTitle>
+                                                {applicationTitle(
+                                                    selectedApplication,
+                                                )}
+                                            </DialogTitle>
+                                            <DialogDescription>
+                                                {applicationCompanyName(
+                                                    selectedApplication,
+                                                )}
+                                            </DialogDescription>
+                                        </DialogHeader>
+
+                                        <div className="space-y-4 text-sm">
+                                            <div className="grid gap-3 sm:grid-cols-2">
+                                                <div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Status
+                                                    </div>
+                                                    <div>
+                                                        {statusLabel(
+                                                            selectedApplication.status,
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Date
+                                                    </div>
+                                                    <div>
+                                                        {formatDate(
+                                                            selectedApplication.applied_date,
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Type
+                                                    </div>
+                                                    <div>
+                                                        {selectedApplication.job_type ||
+                                                            'Not specified'}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Work setup
+                                                    </div>
+                                                    <div>
+                                                        {selectedApplication.work_setup ||
+                                                            'Not specified'}
+                                                    </div>
+                                                </div>
+                                                <div className="sm:col-span-2">
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Location
+                                                    </div>
+                                                    <div>
+                                                        {selectedApplication.location ||
+                                                            'Not specified'}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {selectedApplication.job_description ? (
+                                                <div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Description
+                                                    </div>
+                                                    <p className="mt-1 whitespace-pre-line">
+                                                        {
+                                                            selectedApplication.job_description
+                                                        }
+                                                    </p>
+                                                </div>
+                                            ) : null}
+
+                                            {selectedApplication.job_post_url ? (
+                                                <Button
+                                                    asChild
+                                                    variant="outline"
+                                                    className="w-full"
+                                                >
+                                                    <a
+                                                        href={
+                                                            selectedApplication.job_post_url
+                                                        }
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        <ExternalLink className="size-4" />
+                                                        Website
+                                                    </a>
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    </>
+                                ) : null}
+                            </DialogContent>
+                        </Dialog>
+
+                        <Dialog
                             open={Boolean(reminderApplication)}
                             onOpenChange={(open) => {
                                 if (!open) {
@@ -1173,8 +1314,11 @@ export default function Applications({
                                 <DialogHeader>
                                     <DialogTitle>Add reminder</DialogTitle>
                                     <DialogDescription>
-                                        {reminderApplication?.job_title ||
-                                            'Application reminder'}
+                                        {reminderApplication
+                                            ? applicationTitle(
+                                                  reminderApplication,
+                                              )
+                                            : 'Application reminder'}
                                     </DialogDescription>
                                 </DialogHeader>
 
@@ -1267,8 +1411,11 @@ export default function Applications({
                                     <DialogTitle>Delete application</DialogTitle>
                                     <DialogDescription>
                                         This will delete{' '}
-                                        {deletingApplication?.job_title ||
-                                            'this application'}{' '}
+                                        {deletingApplication
+                                            ? applicationTitle(
+                                                  deletingApplication,
+                                              )
+                                            : 'this application'}{' '}
                                         from your tracked applications.
                                     </DialogDescription>
                                 </DialogHeader>
@@ -1372,12 +1519,14 @@ export default function Applications({
                         {
                             key: 'company',
                             label: 'Company',
-                            render: (application) => companyName(application),
+                            render: (application) =>
+                                applicationCompanyName(application),
                         },
                         {
                             key: 'job_title',
                             label: 'Job title',
-                            render: (application) => application.job_title,
+                            render: (application) =>
+                                applicationTitle(application),
                         },
                         {
                             key: 'status',
@@ -1402,14 +1551,28 @@ export default function Applications({
                         },
                     ]}
                     renderCard={(application) => (
-                        <div className="space-y-3">
+                        <div
+                            role="button"
+                            tabIndex={0}
+                            className="space-y-3 rounded-md outline-none transition hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                            onClick={() => setSelectedApplication(application)}
+                            onKeyDown={(event) => {
+                                if (
+                                    event.key === 'Enter' ||
+                                    event.key === ' '
+                                ) {
+                                    event.preventDefault();
+                                    setSelectedApplication(application);
+                                }
+                            }}
+                        >
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <h2 className="font-medium">
-                                        {application.job_title}
+                                        {applicationTitle(application)}
                                     </h2>
                                     <p className="text-sm text-muted-foreground">
-                                        {companyName(application)}
+                                        {applicationCompanyName(application)}
                                     </p>
                                 </div>
                                 <Badge variant="secondary">
@@ -1419,7 +1582,24 @@ export default function Applications({
                             <p className="text-xs text-muted-foreground">
                                 {formatDate(application.applied_date)}
                             </p>
-                            {applicationActions(application)}
+                            {application.job_post_url ? (
+                                <a
+                                    href={application.job_post_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                                    onClick={(event) => event.stopPropagation()}
+                                >
+                                    <ExternalLink className="size-3.5" />
+                                    Website
+                                </a>
+                            ) : null}
+                            <div
+                                onClick={(event) => event.stopPropagation()}
+                                onKeyDown={(event) => event.stopPropagation()}
+                            >
+                                {applicationActions(application)}
+                            </div>
                         </div>
                     )}
                     renderListItem={(application) => (
@@ -1427,14 +1607,14 @@ export default function Applications({
                             <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span className="font-medium">
-                                        {application.job_title}
+                                        {applicationTitle(application)}
                                     </span>
                                     <Badge variant="outline">
                                         {statusLabel(application.status)}
                                     </Badge>
                                 </div>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    {companyName(application)}
+                                    {applicationCompanyName(application)}
                                 </p>
                             </div>
                             <div className="flex flex-col gap-2 sm:items-end">

@@ -24,6 +24,23 @@ type Props = {
     importData: ImportData;
 };
 
+const importedPlaceholders = ['Imported', 'Imported job'];
+
+const importedValue = (value: string | undefined, fallback: string) =>
+    value && !importedPlaceholders.includes(value) ? value : fallback;
+
+const websiteLabel = (url: string | undefined) => {
+    if (!url) {
+        return 'Website';
+    }
+
+    try {
+        return new URL(url).hostname.replace(/^www\./, '') || 'Website';
+    } catch {
+        return 'Website';
+    }
+};
+
 type ApplicationImportForm = {
     import_url_only: boolean;
     from_import: boolean;
@@ -43,6 +60,7 @@ type ApplicationImportForm = {
 
 export default function ApplicationImport({ importData }: Props) {
     const [copied, setCopied] = useState(false);
+    const importedWebsite = websiteLabel(importData.url);
     const bookmarklet = useMemo(() => {
         const target = `${window.location.origin}/applications/import`;
         const script = `javascript:(()=>{const q=new URLSearchParams({url:location.href});location.href='${target}?'+q.toString();})();`;
@@ -52,9 +70,9 @@ export default function ApplicationImport({ importData }: Props) {
     const form = useForm<ApplicationImportForm>({
         import_url_only: !importData.extracted,
         from_import: true,
-        company: importData.company || 'Imported',
+        company: importedValue(importData.company, importedWebsite),
         company_industry: '',
-        job_title: importData.job_title || 'Imported job',
+        job_title: importedValue(importData.job_title, 'Website'),
         job_type: importData.job_type || '',
         work_setup: importData.work_setup || '',
         location: importData.location || '',
