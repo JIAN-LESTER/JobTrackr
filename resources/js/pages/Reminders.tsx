@@ -48,6 +48,8 @@ const applicationTitle = (reminder: Reminder) =>
 const companyName = (reminder: Reminder) =>
     reminder.job_application?.company?.name || 'Unknown company';
 
+const reminderNote = (reminder: Reminder) => reminder.description?.trim();
+
 const cleanPageLabel = (label: string) =>
     label
         .replace('&laquo; Previous', 'Previous')
@@ -116,6 +118,11 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                                     <div className="text-xs text-muted-foreground">
                                         {applicationTitle(reminder)}
                                     </div>
+                                    {reminderNote(reminder) ? (
+                                        <div className="mt-1 text-sm text-muted-foreground">
+                                            {reminderNote(reminder)}
+                                        </div>
+                                    ) : null}
                                 </div>
                             ),
                         },
@@ -174,6 +181,11 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                             <p className="text-sm text-muted-foreground">
                                 {companyName(reminder)}
                             </p>
+                            {reminderNote(reminder) ? (
+                                <p className="text-sm">
+                                    {reminderNote(reminder)}
+                                </p>
+                            ) : null}
                             <p className="text-xs text-muted-foreground">
                                 {formatDate(reminder.remind_at)}
                             </p>
@@ -196,6 +208,11 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                                     {applicationTitle(reminder)} ·{' '}
                                     {companyName(reminder)}
                                 </p>
+                                {reminderNote(reminder) ? (
+                                    <p className="mt-1 text-sm">
+                                        {reminderNote(reminder)}
+                                    </p>
+                                ) : null}
                             </div>
                             <p className="text-xs text-muted-foreground sm:text-right">
                                 {formatDate(reminder.remind_at)}

@@ -29,7 +29,7 @@ class ReminderController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        return Inertia::render('reminders/index', [
+        return Inertia::render('Reminders', [
             'reminders' => $reminders,
             'filters' => $request->only([
                 'search',
@@ -50,6 +50,10 @@ class ReminderController extends Controller
     public function store(Request $request)
     {
         $reminder = Reminder::create($this->validatedData($request));
+
+        if ($request->header('X-Inertia')) {
+            return back();
+        }
 
         return response()->json([
             'message' => 'Reminder created.',
