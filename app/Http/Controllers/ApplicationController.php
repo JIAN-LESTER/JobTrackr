@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Application;
+use App\Models\ApplicationStatusHistory;
 use App\Models\Company;
 use App\Models\Log;
 use Illuminate\Http\Request;
@@ -88,7 +89,7 @@ class ApplicationController extends Controller
 
   public function import(Request $request)
 {
-    if ($request->isMethod('post') && $request->filled('extracted', false) !== null && $request->has('company')) {
+    if ($this->hasExtensionImportData($request)) {
         return Inertia::render('ApplicationImport', [
             'importData' => $this->importDataFromExtension($request),
         ]);
@@ -101,23 +102,42 @@ class ApplicationController extends Controller
     ]);
 }
 
+private function hasExtensionImportData(Request $request): bool
+{
+    return collect([
+        'company',
+        'job_title',
+        'location',
+        'job_type',
+        'work_setup',
+        'salary_min',
+        'salary_max',
+        'job_description',
+    ])->contains(fn ($field) => $request->filled($field));
+}
+
 private function importDataFromExtension(Request $request): array
 {
     return [
-        'url' => $request->input('url'),
+        'extracted' => true,
+        'url' => $this->cleanJobPostUrl($request->input('url')),
         'company' => $this->cleanText($request->input('company')) ?: 'Imported',
         'job_title' => $this->cleanText($request->input('job_title')) ?: 'Imported job',
         'location' => $this->cleanText($request->input('location')),
         'job_type' => $this->cleanText($request->input('job_type')),
         'work_setup' => $this->cleanText($request->input('work_setup')),
-        'salary_min' => $request->input('salary_min') ?: null,
-        'salary_max' => $request->input('salary_max') ?: null,
+        'salary_min' => $this->cleanSalary($request->input('salary_min')),
+        'salary_max' => $this->cleanSalary($request->input('salary_max')),
         'job_description' => $this->cleanText($request->input('job_description')),
     ];
 }
 
     public function store(Request $request)
     {
+        $request->merge([
+            'job_post_url' => $this->cleanJobPostUrl($request->input('job_post_url')),
+        ]);
+
         $data = $request->validate([
             'company' => ['required', 'string', 'max:255'],
             'company_industry' => ['nullable', 'string', 'max:255'],
@@ -132,6 +152,7 @@ private function importDataFromExtension(Request $request): array
             'job_post_url' => ['nullable', 'url', 'max:255'],
             'job_description' => ['nullable', 'string'],
             'import_url_only' => ['sometimes', 'boolean'],
+            'from_import' => ['sometimes', 'boolean'],
         ]);
 
         if (($data['import_url_only'] ?? false) && ! empty($data['job_post_url'])) {
@@ -179,15 +200,28 @@ private function importDataFromExtension(Request $request): array
             'job_description' => $data['job_description'] ?? null,
         ]);
 
-        if ($request->header('X-Inertia')) {
-            return back();
-        }
+        $this->recordTimeline(
+            $application,
+            null,
+            ($data['from_import'] ?? false) ? 'imported' : 'added',
+            ($data['from_import'] ?? false) ? 'Application imported.' : 'Application added.',
+        );
 
         Log::create([
             'user_id' => $request->user()->getKey(),
             'action' => 'Created application for job title: ' . $application->job_title,
             'type' => 'application',
         ]);
+
+        if ($data['from_import'] ?? false) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Job imported successfully.']);
+
+            return redirect()->route('applications.index');
+        }
+
+        if ($request->header('X-Inertia')) {
+            return back();
+        }
 
         return response()->json([
             'message' => 'Application created.',
@@ -198,6 +232,12 @@ private function importDataFromExtension(Request $request): array
     public function update(Request $request, Application $application)
     {
         $this->authorizeApplication($application);
+
+        if ($request->has('job_post_url')) {
+            $request->merge([
+                'job_post_url' => $this->cleanJobPostUrl($request->input('job_post_url')),
+            ]);
+        }
 
         $data = $request->validate([
             'company' => ['sometimes', 'required', 'string', 'max:255'],
@@ -239,7 +279,17 @@ private function importDataFromExtension(Request $request): array
 
         unset($data['company'], $data['company_industry']);
 
+        $oldStatus = $application->status;
         $application->update($data);
+        $changes = collect($application->getChanges())->except('updated_at');
+
+        if ($changes->has('status')) {
+            $this->recordTimeline($application, $oldStatus, $application->status, 'Application status updated.');
+        }
+
+        if ($changes->except('status')->isNotEmpty()) {
+            $this->recordTimeline($application, null, 'updated', 'Application details updated.');
+        }
 
         Log::create([
             'user_id' => $request->user()->getKey(),
@@ -260,6 +310,8 @@ private function importDataFromExtension(Request $request): array
     public function destroy(Application $application)
     {
         $this->authorizeApplication($application);
+
+        $this->recordTimeline($application, null, 'deleted', 'Application deleted.');
 
         $application->delete();
 
@@ -321,6 +373,7 @@ private function importDataFromExtension(Request $request): array
     private function extractImportedJobData(?string $url): array
     {
         $data = [
+            'extracted' => false,
             'url' => $url,
             'company' => 'Imported',
             'job_title' => 'Imported job',
@@ -368,8 +421,8 @@ private function importDataFromExtension(Request $request): array
             'location' => $this->locationFromJobPosting($jobPosting),
             'job_type' => $this->cleanText($jobPosting['employmentType'] ?? null),
             'work_setup' => ($jobPosting['jobLocationType'] ?? null) === 'TELECOMMUTE' ? 'Remote' : null,
-            'salary_min' => is_array($salary) ? ($salary['minValue'] ?? $salaryValue) : $salaryValue,
-            'salary_max' => is_array($salary) ? ($salary['maxValue'] ?? $salaryValue) : $salaryValue,
+            'salary_min' => $this->cleanSalary(is_array($salary) ? ($salary['minValue'] ?? $salaryValue) : $salaryValue),
+            'salary_max' => $this->cleanSalary(is_array($salary) ? ($salary['maxValue'] ?? $salaryValue) : $salaryValue),
             'job_description' => $this->cleanText($description),
         ]);
     }
@@ -451,8 +504,64 @@ private function importDataFromExtension(Request $request): array
         return $text === '' ? null : mb_substr($text, 0, 5000);
     }
 
+    private function cleanSalary(mixed $value): ?string
+    {
+        if (! is_scalar($value)) {
+            return null;
+        }
+
+        $salary = str_replace(',', '', trim((string) $value));
+
+        return is_numeric($salary) ? $salary : null;
+    }
+
+    private function cleanJobPostUrl(mixed $value): ?string
+    {
+        if (! is_scalar($value)) {
+            return null;
+        }
+
+        $url = trim((string) $value);
+
+        if ($url === '') {
+            return null;
+        }
+
+        $parts = parse_url($url);
+
+        if (! is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return $url;
+        }
+
+        $host = $parts['host'];
+        $path = $parts['path'] ?? '';
+
+        if (str_ends_with(strtolower($host), 'linkedin.com') && preg_match('#^/jobs/view/(\d+)#', $path, $matches)) {
+            return "{$parts['scheme']}://{$host}/jobs/view/{$matches[1]}/";
+        }
+
+        if (mb_strlen($url) <= 255) {
+            return $url;
+        }
+
+        $port = isset($parts['port']) ? ":{$parts['port']}" : '';
+        $shortUrl = "{$parts['scheme']}://{$host}{$port}{$path}";
+
+        return mb_strlen($shortUrl) <= 255 ? $shortUrl : null;
+    }
+
     private function authorizeApplication(Application $application): void
     {
         abort_unless((string) $application->user_id === (string) request()->user()->getKey(), 404);
+    }
+
+    private function recordTimeline(Application $application, ?string $oldStatus, string $newStatus, string $remarks): void
+    {
+        ApplicationStatusHistory::create([
+            'job_application_id' => $application->getKey(),
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'remarks' => $remarks,
+        ]);
     }
 }

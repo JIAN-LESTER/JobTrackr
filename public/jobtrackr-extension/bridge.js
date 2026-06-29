@@ -4,6 +4,7 @@ const { baseUrl, ...fields } = payload;
 
 const form = document.getElementById('f');
 form.action = `${baseUrl}/applications/import`;
+form.method = 'GET'; // was POST — GET keeps SameSite=Lax cookies intact
 
 for (const [name, value] of Object.entries(fields)) {
   const input = document.createElement('input');

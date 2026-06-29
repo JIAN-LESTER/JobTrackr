@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
+    Bell,
     BriefcaseBusiness,
     Bookmark,
     Edit,
@@ -85,6 +86,13 @@ type ApplicationForm = {
     job_post_url: string;
 };
 
+type ReminderForm = {
+    job_application_id: number | '';
+    title: string;
+    description: string;
+    remind_at: string;
+};
+
 const statusLabel = (status: string) =>
     status
         .split('_')
@@ -143,6 +151,23 @@ const jobTypes = [
 
 const workSetups = ['On-site', 'Hybrid', 'Remote'];
 
+const toDateTimeLocal = (date: Date) => {
+    const localDate = new Date(
+        date.getTime() - date.getTimezoneOffset() * 60000,
+    );
+
+    return localDate.toISOString().slice(0, 16);
+};
+
+const defaultReminderAt = () => {
+    const date = new Date();
+
+    date.setDate(date.getDate() + 1);
+    date.setHours(9, 0, 0, 0);
+
+    return toDateTimeLocal(date);
+};
+
 export default function Applications({
     applications,
     stats,
@@ -151,6 +176,8 @@ export default function Applications({
 }: Props) {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [editingApplication, setEditingApplication] =
+        useState<Application | null>(null);
+    const [reminderApplication, setReminderApplication] =
         useState<Application | null>(null);
     const [deletingApplication, setDeletingApplication] =
         useState<Application | null>(null);
@@ -210,6 +237,12 @@ export default function Applications({
         status: 'applied',
         applied_date: '',
         job_post_url: '',
+    });
+    const reminderForm = useForm<ReminderForm>({
+        job_application_id: '',
+        title: '',
+        description: '',
+        remind_at: defaultReminderAt(),
     });
 
     const changeFilterStatus = (status: string) => {
@@ -277,6 +310,30 @@ export default function Applications({
         });
     };
 
+    const openReminder = (application: Application) => {
+        setReminderApplication(application);
+        reminderForm.clearErrors();
+        reminderForm.setData({
+            job_application_id: application.application_id,
+            title: `Reminder: ${application.job_title}`,
+            description: '',
+            remind_at: defaultReminderAt(),
+        });
+    };
+
+    const submitReminder = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        reminderForm.post('/reminders', {
+            preserveScroll: true,
+            onSuccess: () => {
+                reminderForm.reset();
+                reminderForm.setData('remind_at', defaultReminderAt());
+                setReminderApplication(null);
+            },
+        });
+    };
+
     const updateApplicationStatus = (
         application: Application,
         status: string,
@@ -318,6 +375,16 @@ export default function Applications({
                     ))}
                 </SelectContent>
             </Select>
+            <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-8"
+                aria-label="Add reminder"
+                onClick={() => openReminder(application)}
+            >
+                <Bell className="size-4" />
+            </Button>
             <Button
                 type="button"
                 variant="outline"
@@ -1085,6 +1152,99 @@ export default function Applications({
                                             disabled={editForm.processing}
                                         >
                                             {editForm.processing ? (
+                                                <Spinner />
+                                            ) : null}
+                                            Save
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+
+                        <Dialog
+                            open={Boolean(reminderApplication)}
+                            onOpenChange={(open) => {
+                                if (!open) {
+                                    setReminderApplication(null);
+                                }
+                            }}
+                        >
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Add reminder</DialogTitle>
+                                    <DialogDescription>
+                                        {reminderApplication?.job_title ||
+                                            'Application reminder'}
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <form
+                                    onSubmit={submitReminder}
+                                    className="space-y-4"
+                                >
+                                    <div className="space-y-2">
+                                        <Label htmlFor="remind_at">
+                                            Reminder date
+                                        </Label>
+                                        <Input
+                                            id="remind_at"
+                                            type="datetime-local"
+                                            value={
+                                                reminderForm.data.remind_at
+                                            }
+                                            onChange={(event) =>
+                                                reminderForm.setData(
+                                                    'remind_at',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            required
+                                        />
+                                        {reminderForm.errors.remind_at ? (
+                                            <p className="text-sm text-destructive">
+                                                {
+                                                    reminderForm.errors
+                                                        .remind_at
+                                                }
+                                            </p>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="reminder_note">
+                                            Notes
+                                        </Label>
+                                        <textarea
+                                            id="reminder_note"
+                                            value={
+                                                reminderForm.data.description
+                                            }
+                                            onChange={(event) =>
+                                                reminderForm.setData(
+                                                    'description',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                        />
+                                        {reminderForm.errors.description ? (
+                                            <p className="text-sm text-destructive">
+                                                {
+                                                    reminderForm.errors
+                                                        .description
+                                                }
+                                            </p>
+                                        ) : null}
+                                    </div>
+
+                                    <DialogFooter>
+                                        <Button
+                                            type="submit"
+                                            disabled={
+                                                reminderForm.processing
+                                            }
+                                        >
+                                            {reminderForm.processing ? (
                                                 <Spinner />
                                             ) : null}
                                             Save

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 
 type ImportData = {
+    extracted?: boolean;
     url?: string;
     company?: string;
     job_title?: string;
@@ -25,6 +26,7 @@ type Props = {
 
 type ApplicationImportForm = {
     import_url_only: boolean;
+    from_import: boolean;
     company: string;
     company_industry: string;
     job_title: string;
@@ -48,7 +50,8 @@ export default function ApplicationImport({ importData }: Props) {
         return script;
     }, []);
     const form = useForm<ApplicationImportForm>({
-        import_url_only: true,
+        import_url_only: !importData.extracted,
+        from_import: true,
         company: importData.company || 'Imported',
         company_industry: '',
         job_title: importData.job_title || 'Imported job',
