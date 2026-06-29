@@ -11,14 +11,22 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         origin: 'http://localhost:5173',
+
+        watch: {
+            usePolling: true,
+            interval: 100,
+        },
+
         cors: {
             origin: 'http://localhost:8000',
         },
+
         hmr: {
             host: 'localhost',
             port: 5173,
         },
     },
+
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
