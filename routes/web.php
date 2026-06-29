@@ -15,6 +15,8 @@ Route::redirect('/', '/applications')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', '/applications')->name('dashboard');
+    Route::get('applications/import', [ApplicationController::class, 'import'])->name('applications.import');
+    Route::post('/applications/import', [ApplicationController::class, 'import']);
     Route::resource('applications', ApplicationController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
     Route::resource('contacts', ApplicationContactController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
