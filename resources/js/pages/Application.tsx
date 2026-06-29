@@ -1,11 +1,14 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     BriefcaseBusiness,
+    Bookmark,
+    Edit,
     Handshake,
     MessagesSquare,
     Plus,
     Search,
     Send,
+    Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -147,6 +150,10 @@ export default function Applications({
     statuses,
 }: Props) {
     const [isAddOpen, setIsAddOpen] = useState(false);
+    const [editingApplication, setEditingApplication] =
+        useState<Application | null>(null);
+    const [deletingApplication, setDeletingApplication] =
+        useState<Application | null>(null);
     const [search, setSearch] = useState(filters.search || '');
     const selectedStatus = filters.status || 'all';
     const visibleStatuses = filterButtonStatuses.filter((status) =>
@@ -191,8 +198,21 @@ export default function Applications({
         applied_date: '',
         job_post_url: '',
     });
+    const editForm = useForm<ApplicationForm>({
+        company: '',
+        company_industry: '',
+        job_title: '',
+        job_type: '',
+        work_setup: '',
+        location: '',
+        salary_min: '',
+        salary_max: '',
+        status: 'applied',
+        applied_date: '',
+        job_post_url: '',
+    });
 
-    const changeStatus = (status: string) => {
+    const changeFilterStatus = (status: string) => {
         router.get(
             '/applications',
             {
@@ -225,6 +245,101 @@ export default function Applications({
             },
         });
     };
+
+    const openEditApplication = (application: Application) => {
+        setEditingApplication(application);
+        editForm.clearErrors();
+        editForm.setData({
+            company: companyName(application),
+            company_industry: application.company?.industry || '',
+            job_title: application.job_title,
+            job_type: application.job_type || '',
+            work_setup: application.work_setup || '',
+            location: application.location || '',
+            salary_min: application.salary_min || '',
+            salary_max: application.salary_max || '',
+            status: application.status,
+            applied_date: application.applied_date?.slice(0, 10) || '',
+            job_post_url: application.job_post_url || '',
+        });
+    };
+
+    const submitEditApplication = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        if (!editingApplication) {
+            return;
+        }
+
+        editForm.put(`/applications/${editingApplication.application_id}`, {
+            preserveScroll: true,
+            onSuccess: () => setEditingApplication(null),
+        });
+    };
+
+    const updateApplicationStatus = (
+        application: Application,
+        status: string,
+    ) => {
+        router.patch(
+            `/applications/${application.application_id}`,
+            { status },
+            { preserveScroll: true },
+        );
+    };
+
+    const deleteApplication = () => {
+        if (!deletingApplication) {
+            return;
+        }
+
+        router.delete(`/applications/${deletingApplication.application_id}`, {
+            preserveScroll: true,
+            onSuccess: () => setDeletingApplication(null),
+        });
+    };
+
+    const applicationActions = (application: Application) => (
+        <div className="flex flex-wrap items-center gap-2">
+            <Select
+                value={application.status}
+                onValueChange={(status) =>
+                    updateApplicationStatus(application, status)
+                }
+            >
+                <SelectTrigger className="h-8 w-[160px]">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {statuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                            {statusLabel(status)}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-8"
+                aria-label="Edit application"
+                onClick={() => openEditApplication(application)}
+            >
+                <Edit className="size-4" />
+            </Button>
+            <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-8 text-destructive"
+                aria-label="Delete application"
+                onClick={() => setDeletingApplication(application)}
+            >
+                <Trash2 className="size-4" />
+            </Button>
+        </div>
+    );
 
     return (
         <>
@@ -262,6 +377,13 @@ export default function Applications({
                                 <Search className="size-4" />
                             </Button>
                         </form>
+
+                        <Button asChild variant="outline">
+                            <Link href="/applications/import">
+                                <Bookmark className="size-4" />
+                                Import
+                            </Link>
+                        </Button>
 
                         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                             <DialogTrigger asChild>
@@ -586,7 +708,7 @@ export default function Applications({
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {visibleStatuses.map((status) => (
+                                                    {statuses.map((status) => (
                                                         <SelectItem
                                                             key={status}
                                                             value={status}
@@ -642,6 +764,374 @@ export default function Applications({
                                 </form>
                             </DialogContent>
                         </Dialog>
+
+                        <Dialog
+                            open={Boolean(editingApplication)}
+                            onOpenChange={(open) => {
+                                if (!open) {
+                                    setEditingApplication(null);
+                                }
+                            }}
+                        >
+                            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                                <DialogHeader>
+                                    <DialogTitle>Edit application</DialogTitle>
+                                    <DialogDescription>
+                                        Update the tracked role.
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <form
+                                    onSubmit={submitEditApplication}
+                                    className="space-y-4"
+                                >
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_company">
+                                                Company
+                                            </Label>
+                                            <Input
+                                                id="edit_company"
+                                                value={editForm.data.company}
+                                                onChange={(event) =>
+                                                    editForm.setData(
+                                                        'company',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Industry</Label>
+                                            <Select
+                                                value={
+                                                    editForm.data
+                                                        .company_industry ||
+                                                    optionalSelectNone
+                                                }
+                                                onValueChange={(value) =>
+                                                    editForm.setData(
+                                                        'company_industry',
+                                                        value ===
+                                                            optionalSelectNone
+                                                            ? ''
+                                                            : value,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value={
+                                                            optionalSelectNone
+                                                        }
+                                                    >
+                                                        Not specified
+                                                    </SelectItem>
+                                                    {industries.map(
+                                                        (industry) => (
+                                                            <SelectItem
+                                                                key={industry}
+                                                                value={
+                                                                    industry
+                                                                }
+                                                            >
+                                                                {industry}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="edit_job_title">
+                                            Job title
+                                        </Label>
+                                        <Input
+                                            id="edit_job_title"
+                                            value={editForm.data.job_title}
+                                            onChange={(event) =>
+                                                editForm.setData(
+                                                    'job_title',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label>Job type</Label>
+                                            <Select
+                                                value={
+                                                    editForm.data.job_type ||
+                                                    optionalSelectNone
+                                                }
+                                                onValueChange={(value) =>
+                                                    editForm.setData(
+                                                        'job_type',
+                                                        value ===
+                                                            optionalSelectNone
+                                                            ? ''
+                                                            : value,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value={
+                                                            optionalSelectNone
+                                                        }
+                                                    >
+                                                        Not specified
+                                                    </SelectItem>
+                                                    {jobTypes.map((jobType) => (
+                                                        <SelectItem
+                                                            key={jobType}
+                                                            value={jobType}
+                                                        >
+                                                            {jobType}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label>Work setup</Label>
+                                            <Select
+                                                value={
+                                                    editForm.data.work_setup ||
+                                                    optionalSelectNone
+                                                }
+                                                onValueChange={(value) =>
+                                                    editForm.setData(
+                                                        'work_setup',
+                                                        value ===
+                                                            optionalSelectNone
+                                                            ? ''
+                                                            : value,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value={
+                                                            optionalSelectNone
+                                                        }
+                                                    >
+                                                        Not specified
+                                                    </SelectItem>
+                                                    {workSetups.map(
+                                                        (workSetup) => (
+                                                            <SelectItem
+                                                                key={workSetup}
+                                                                value={
+                                                                    workSetup
+                                                                }
+                                                            >
+                                                                {workSetup}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_location">
+                                                Location
+                                            </Label>
+                                            <Input
+                                                id="edit_location"
+                                                value={editForm.data.location}
+                                                onChange={(event) =>
+                                                    editForm.setData(
+                                                        'location',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_job_post_url">
+                                                Job post URL
+                                            </Label>
+                                            <Input
+                                                id="edit_job_post_url"
+                                                type="url"
+                                                value={
+                                                    editForm.data.job_post_url
+                                                }
+                                                onChange={(event) =>
+                                                    editForm.setData(
+                                                        'job_post_url',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_salary_min">
+                                                Salary min
+                                            </Label>
+                                            <Input
+                                                id="edit_salary_min"
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={
+                                                    editForm.data.salary_min
+                                                }
+                                                onChange={(event) =>
+                                                    editForm.setData(
+                                                        'salary_min',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_salary_max">
+                                                Salary max
+                                            </Label>
+                                            <Input
+                                                id="edit_salary_max"
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={
+                                                    editForm.data.salary_max
+                                                }
+                                                onChange={(event) =>
+                                                    editForm.setData(
+                                                        'salary_max',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label>Status</Label>
+                                            <Select
+                                                value={editForm.data.status}
+                                                onValueChange={(value) =>
+                                                    editForm.setData(
+                                                        'status',
+                                                        value,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {statuses.map((status) => (
+                                                        <SelectItem
+                                                            key={status}
+                                                            value={status}
+                                                        >
+                                                            {statusLabel(
+                                                                status,
+                                                            )}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_applied_date">
+                                                Date
+                                            </Label>
+                                            <Input
+                                                id="edit_applied_date"
+                                                type="date"
+                                                value={
+                                                    editForm.data.applied_date
+                                                }
+                                                onChange={(event) =>
+                                                    editForm.setData(
+                                                        'applied_date',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <DialogFooter>
+                                        <Button
+                                            type="submit"
+                                            disabled={editForm.processing}
+                                        >
+                                            {editForm.processing ? (
+                                                <Spinner />
+                                            ) : null}
+                                            Save
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+
+                        <Dialog
+                            open={Boolean(deletingApplication)}
+                            onOpenChange={(open) => {
+                                if (!open) {
+                                    setDeletingApplication(null);
+                                }
+                            }}
+                        >
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Delete application</DialogTitle>
+                                    <DialogDescription>
+                                        This will delete{' '}
+                                        {deletingApplication?.job_title ||
+                                            'this application'}{' '}
+                                        from your tracked applications.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() =>
+                                            setDeletingApplication(null)
+                                        }
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        onClick={deleteApplication}
+                                    >
+                                        Delete
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 </div>
 
@@ -661,7 +1151,7 @@ export default function Applications({
                         type="button"
                         variant={selectedStatus === 'all' ? 'secondary' : 'outline'}
                         size="sm"
-                        onClick={() => changeStatus('all')}
+                        onClick={() => changeFilterStatus('all')}
                     >
                         All
                     </Button>
@@ -675,7 +1165,7 @@ export default function Applications({
                                     : 'outline'
                             }
                             size="sm"
-                            onClick={() => changeStatus(status)}
+                            onClick={() => changeFilterStatus(status)}
                         >
                             {statusLabel(status)}
                         </Button>
@@ -687,7 +1177,7 @@ export default function Applications({
                                     ? selectedStatus
                                     : 'more'
                             }
-                            onValueChange={changeStatus}
+                            onValueChange={changeFilterStatus}
                         >
                             <SelectTrigger
                                 size="sm"
@@ -744,6 +1234,12 @@ export default function Applications({
                             render: (application) =>
                                 formatDate(application.applied_date),
                         },
+                        {
+                            key: 'actions',
+                            label: 'Actions',
+                            render: (application) =>
+                                applicationActions(application),
+                        },
                     ]}
                     renderCard={(application) => (
                         <div className="space-y-3">
@@ -763,6 +1259,7 @@ export default function Applications({
                             <p className="text-xs text-muted-foreground">
                                 {formatDate(application.applied_date)}
                             </p>
+                            {applicationActions(application)}
                         </div>
                     )}
                     renderListItem={(application) => (
@@ -780,9 +1277,12 @@ export default function Applications({
                                     {companyName(application)}
                                 </p>
                             </div>
-                            <p className="text-xs text-muted-foreground sm:text-right">
-                                {formatDate(application.applied_date)}
-                            </p>
+                            <div className="flex flex-col gap-2 sm:items-end">
+                                <p className="text-xs text-muted-foreground sm:text-right">
+                                    {formatDate(application.applied_date)}
+                                </p>
+                                {applicationActions(application)}
+                            </div>
                         </div>
                     )}
                 />
