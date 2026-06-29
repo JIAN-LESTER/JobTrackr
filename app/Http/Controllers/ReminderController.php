@@ -65,6 +65,10 @@ class ReminderController extends Controller
     {
         $reminder->update($this->validatedData($request, true));
 
+        if ($request->header('X-Inertia')) {
+            return back();
+        }
+
         return response()->json([
             'message' => 'Reminder updated.',
             'reminder' => $reminder->fresh('jobApplication.company'),
@@ -73,7 +77,24 @@ class ReminderController extends Controller
 
     public function destroy(Reminder $reminder)
     {
+        if (! $reminder->is_completed) {
+            $reminder->update(['is_completed' => true]);
+
+            if (request()->header('X-Inertia')) {
+                return back();
+            }
+
+            return response()->json([
+                'message' => 'Reminder marked done.',
+                'reminder' => $reminder->fresh('jobApplication.company'),
+            ]);
+        }
+
         $reminder->delete();
+
+        if (request()->header('X-Inertia')) {
+            return back();
+        }
 
         return response()->noContent();
     }

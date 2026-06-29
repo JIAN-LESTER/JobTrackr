@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Search } from 'lucide-react';
+import { Check, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { PreferredView } from '@/components/preferred-view';
@@ -57,6 +57,12 @@ const cleanPageLabel = (label: string) =>
 
 export default function RemindersIndex({ reminders, filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
+    const selectedStatus =
+        filters.is_completed === '1' || filters.is_completed === 'true'
+            ? 'done'
+            : filters.is_completed === '0' || filters.is_completed === 'false'
+              ? 'pending'
+              : 'all';
 
     const submitSearch = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -67,6 +73,62 @@ export default function RemindersIndex({ reminders, filters }: Props) {
             { preserveState: true, replace: true },
         );
     };
+
+    const changeStatusFilter = (status: string) => {
+        router.get(
+            '/reminders',
+            {
+                ...filters,
+                is_completed:
+                    status === 'all'
+                        ? undefined
+                        : status === 'done'
+                          ? '1'
+                          : '0',
+            },
+            { preserveState: true, replace: true },
+        );
+    };
+
+    const markReminderDone = (reminder: Reminder) => {
+        router.patch(
+            `/reminders/${reminder.reminder_id}`,
+            { is_completed: true },
+            { preserveScroll: true },
+        );
+    };
+
+    const deleteReminder = (reminder: Reminder) => {
+        router.delete(`/reminders/${reminder.reminder_id}`, {
+            preserveScroll: true,
+        });
+    };
+
+    const reminderActions = (reminder: Reminder) => (
+        <div className="flex flex-wrap items-center gap-2">
+            {reminder.is_completed ? (
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteReminder(reminder)}
+                >
+                    <Trash2 className="size-4" />
+                    Delete
+                </Button>
+            ) : (
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => markReminderDone(reminder)}
+                >
+                    <Check className="size-4" />
+                    Done
+                </Button>
+            )}
+        </div>
+    );
 
     return (
         <>
@@ -99,6 +161,28 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                             <Search className="size-4" />
                         </Button>
                     </form>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                    {[
+                        ['all', 'All'],
+                        ['pending', 'Pending'],
+                        ['done', 'Done'],
+                    ].map(([value, label]) => (
+                        <Button
+                            key={value}
+                            type="button"
+                            variant={
+                                selectedStatus === value
+                                    ? 'secondary'
+                                    : 'outline'
+                            }
+                            size="sm"
+                            onClick={() => changeStatusFilter(value)}
+                        >
+                            {label}
+                        </Button>
+                    ))}
                 </div>
 
                 <PreferredView
@@ -154,6 +238,11 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                             render: (reminder) =>
                                 formatDate(reminder.remind_at),
                         },
+                        {
+                            key: 'actions',
+                            label: 'Actions',
+                            render: (reminder) => reminderActions(reminder),
+                        },
                     ]}
                     renderCard={(reminder) => (
                         <div className="space-y-3">
@@ -189,6 +278,7 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                             <p className="text-xs text-muted-foreground">
                                 {formatDate(reminder.remind_at)}
                             </p>
+                            {reminderActions(reminder)}
                         </div>
                     )}
                     renderListItem={(reminder) => (
@@ -214,9 +304,12 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                                     </p>
                                 ) : null}
                             </div>
-                            <p className="text-xs text-muted-foreground sm:text-right">
-                                {formatDate(reminder.remind_at)}
-                            </p>
+                            <div className="flex flex-col gap-2 sm:items-end">
+                                <p className="text-xs text-muted-foreground sm:text-right">
+                                    {formatDate(reminder.remind_at)}
+                                </p>
+                                {reminderActions(reminder)}
+                            </div>
                         </div>
                     )}
                 />
