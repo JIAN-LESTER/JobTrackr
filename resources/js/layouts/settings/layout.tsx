@@ -29,7 +29,11 @@ const sidebarNavItems: NavItem[] = [
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
-    const { isCurrentOrParentUrl } = useCurrentUrl();
+    const { isCurrentOrParentUrl, isCurrentUrl } = useCurrentUrl();
+
+    if (isCurrentUrl(edit())) {
+        return <div className="px-4 py-6">{children}</div>;
+    }
 
     return (
         <div className="px-4 py-6">
