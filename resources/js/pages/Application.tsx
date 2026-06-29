@@ -110,6 +110,9 @@ const formatDate = (value: string | null) =>
 const companyName = (application: Application) =>
     application.company?.name || 'Unknown company';
 
+const escapeRegExp = (value: string) =>
+    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const websiteLabel = (url: string | null) => {
     if (!url) {
         return 'Website';
@@ -122,19 +125,80 @@ const websiteLabel = (url: string | null) => {
     }
 };
 
+const isSiteLabel = (label: string, website: string) =>
+    ['linkedin', 'linkedin.com', website.toLowerCase()].includes(
+        label.toLowerCase(),
+    );
+
+const applicationDisplay = (application: Application) => {
+    const website = application.job_post_url
+        ? websiteLabel(application.job_post_url)
+        : '';
+    const storedCompany = companyName(application);
+    const hasRealCompany = ![
+        'Imported',
+        'Unknown company',
+        'Website',
+    ].includes(storedCompany) && !isSiteLabel(storedCompany, website);
+    const parts = application.job_title
+        .split('|')
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+    while (
+        parts.length > 1 &&
+        isSiteLabel(parts[parts.length - 1] || '', website)
+    ) {
+        parts.pop();
+    }
+
+    let company = hasRealCompany ? storedCompany : 'Unknown company';
+
+    if (parts.length > 1) {
+        const lastPart = parts[parts.length - 1] || '';
+
+        if (!hasRealCompany || lastPart.toLowerCase() === storedCompany.toLowerCase()) {
+            company = lastPart;
+            parts.pop();
+        }
+    }
+
+    [company, website]
+        .filter((label) => label && !isSiteLabel(label, website))
+        .forEach((label) => {
+            const lastIndex = parts.length - 1;
+
+            if (
+                lastIndex >= 0 &&
+                (parts[lastIndex] || '').toLowerCase() === label.toLowerCase()
+            ) {
+                parts.pop();
+            }
+        });
+
+    let title = parts.join(' | ') || application.job_title;
+    [company, website]
+        .filter((label) => label && !isSiteLabel(label, website))
+        .forEach((label) => {
+            title = title
+                .replace(new RegExp(`\\s*(?:\\||-| at )\\s*${escapeRegExp(label)}\\s*$`, 'i'), '')
+                .trim();
+        });
+
+    return {
+        title:
+            title && title !== 'Imported job' && !isSiteLabel(title, website)
+                ? title
+                : 'Application',
+        company,
+    };
+};
+
 const applicationTitle = (application: Application) =>
-    application.job_title === 'Imported job'
-        ? application.job_post_url
-            ? 'Website'
-            : 'Untitled application'
-        : application.job_title;
+    applicationDisplay(application).title;
 
 const applicationCompanyName = (application: Application) =>
-    companyName(application) === 'Imported'
-        ? application.job_post_url
-            ? websiteLabel(application.job_post_url)
-            : 'Unknown company'
-        : companyName(application);
+    applicationDisplay(application).company;
 
 const cleanPageLabel = (label: string) =>
     label

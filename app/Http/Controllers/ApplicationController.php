@@ -119,12 +119,14 @@ private function hasExtensionImportData(Request $request): bool
 private function importDataFromExtension(Request $request): array
 {
     $url = $this->cleanJobPostUrl($request->input('url'));
+    $company = $this->cleanText($request->input('company')) ?: $this->websiteLabel($url);
+    $application = $this->cleanApplicationImport($this->cleanText($request->input('job_title')) ?: 'Application', $company, $url);
 
     return [
         'extracted' => true,
         'url' => $url,
-        'company' => $this->cleanText($request->input('company')) ?: $this->websiteLabel($url),
-        'job_title' => $this->cleanText($request->input('job_title')) ?: 'Website',
+        'company' => $application['company'],
+        'job_title' => $application['title'],
         'location' => $this->cleanText($request->input('location')),
         'job_type' => $this->cleanText($request->input('job_type')),
         'work_setup' => $this->cleanText($request->input('work_setup')),
@@ -381,7 +383,7 @@ private function importDataFromExtension(Request $request): array
             'extracted' => false,
             'url' => $url,
             'company' => $this->websiteLabel($url),
-            'job_title' => 'Website',
+            'job_title' => 'Application',
             'location' => null,
             'job_type' => null,
             'work_setup' => null,
@@ -419,17 +421,74 @@ private function importDataFromExtension(Request $request): array
         $description = $jobPosting['description'] ?? $this->metaContent($xpath, 'name', 'description');
         $salary = $jobPosting['baseSalary']['value'] ?? null;
         $salaryValue = is_array($salary) ? ($salary['value'] ?? null) : $salary;
+        $employmentType = $jobPosting['employmentType'] ?? null;
+        $text = implode(' ', array_filter([
+            $this->cleanText($title),
+            $this->cleanText($description),
+            $this->cleanText($this->metaContent($xpath, 'property', 'og:description')),
+            $this->cleanText($this->pageText($xpath)),
+        ]));
+        $jobType = $this->cleanText(is_array($employmentType) ? implode(', ', $employmentType) : $employmentType)
+            ?? $this->firstTextMatch($text, ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship', 'Temporary']);
+        $workSetup = ($jobPosting['jobLocationType'] ?? null) === 'TELECOMMUTE'
+            ? 'Remote'
+            : $this->firstTextMatch($text, ['Remote', 'Hybrid', 'On-site', 'Onsite']);
+        $companyName = $this->cleanText($company) ?: $data['company'];
+        $application = $this->cleanApplicationImport($this->cleanText($title) ?: $data['job_title'], $companyName, $url);
 
         return array_merge($data, [
-            'company' => $this->cleanText($company) ?: $data['company'],
-            'job_title' => $this->cleanText($title) ?: $data['job_title'],
-            'location' => $this->locationFromJobPosting($jobPosting),
-            'job_type' => $this->cleanText($jobPosting['employmentType'] ?? null),
-            'work_setup' => ($jobPosting['jobLocationType'] ?? null) === 'TELECOMMUTE' ? 'Remote' : null,
+            'company' => $application['company'],
+            'job_title' => $application['title'],
+            'location' => $this->locationFromJobPosting($jobPosting) ?? $this->locationFromText($text),
+            'job_type' => $jobType,
+            'work_setup' => $workSetup === 'Onsite' ? 'On-site' : $workSetup,
             'salary_min' => $this->cleanSalary(is_array($salary) ? ($salary['minValue'] ?? $salaryValue) : $salaryValue),
             'salary_max' => $this->cleanSalary(is_array($salary) ? ($salary['maxValue'] ?? $salaryValue) : $salaryValue),
             'job_description' => $this->cleanText($description),
         ]);
+    }
+
+    private function cleanApplicationImport(string $title, string $company, ?string $url): array
+    {
+        $website = $this->websiteLabel($url);
+        $parts = array_values(array_filter(
+            array_map(fn ($part) => trim($part), explode('|', $title)),
+            fn ($part) => $part !== '',
+        ));
+
+        while (count($parts) > 1 && $this->isSiteLabel(end($parts), $website)) {
+            array_pop($parts);
+        }
+
+        $cleanCompany = $company;
+
+        if (count($parts) > 1 && ($this->isSiteLabel($cleanCompany, $website) || $cleanCompany === 'Website')) {
+            $cleanCompany = array_pop($parts) ?: $cleanCompany;
+        }
+
+        $cleanTitle = implode(' | ', $parts) ?: $title;
+
+        foreach (array_filter([$cleanCompany, $website]) as $label) {
+            if ($this->isSiteLabel($label, $website)) {
+                continue;
+            }
+
+            $cleanTitle = trim(preg_replace('/\s*(?:\||-| at )\s*' . preg_quote($label, '/') . '\s*$/i', '', $cleanTitle) ?? $cleanTitle);
+        }
+
+        return [
+            'company' => $cleanCompany === '' ? $website : $cleanCompany,
+            'title' => $cleanTitle === '' ? 'Application' : $cleanTitle,
+        ];
+    }
+
+    private function isSiteLabel(string|false $label, string $website): bool
+    {
+        if (! is_string($label)) {
+            return false;
+        }
+
+        return in_array(strtolower($label), ['linkedin', 'linkedin.com', strtolower($website)], true);
     }
 
     private function websiteLabel(?string $url): string
@@ -499,6 +558,26 @@ private function importDataFromExtension(Request $request): array
         ])));
     }
 
+    private function locationFromText(string $text): ?string
+    {
+        if (preg_match('/\bLocation\s*[:\-]\s*([^|•·]{2,120})/i', $text, $matches)) {
+            return $this->cleanText($matches[1]);
+        }
+
+        return null;
+    }
+
+    private function firstTextMatch(string $text, array $values): ?string
+    {
+        foreach ($values as $value) {
+            if (preg_match('/\b'.preg_quote($value, '/').'\b/i', $text)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
     private function metaContent(\DOMXPath $xpath, string $attribute, string $value): ?string
     {
         $nodes = $xpath->query("//meta[@{$attribute}='{$value}']/@content");
@@ -509,6 +588,13 @@ private function importDataFromExtension(Request $request): array
     private function pageTitle(\DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query('//title');
+
+        return $nodes->length ? $nodes->item(0)->textContent : null;
+    }
+
+    private function pageText(\DOMXPath $xpath): ?string
+    {
+        $nodes = $xpath->query('//body');
 
         return $nodes->length ? $nodes->item(0)->textContent : null;
     }

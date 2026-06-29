@@ -30,6 +30,23 @@ function extractJobData() {
     return el ? el.getAttribute('content') : null;
   };
 
+  const firstText = (selectors) => {
+    for (const selector of selectors) {
+      const el = document.querySelector(selector);
+      const text = clean(el?.innerText || el?.textContent);
+      if (text) return text;
+    }
+
+    return null;
+  };
+
+  const matchText = (text, values) => {
+    const source = clean(text);
+    if (!source) return null;
+
+    return values.find((value) => new RegExp(`\\b${value}\\b`, 'i').test(source)) || null;
+  };
+
   const findJobPosting = () => {
     for (const script of document.querySelectorAll('script[type="application/ld+json"]')) {
       let data;
@@ -53,13 +70,50 @@ function extractJobData() {
   const locationText = typeof address === 'object' && address
     ? [address.addressLocality, address.addressRegion, address.addressCountry].filter(Boolean).join(', ')
     : address;
+  const topCardText = firstText([
+    '.job-details-jobs-unified-top-card__primary-description-container',
+    '.topcard__flavor-row',
+    '[data-testid="jobsearch-JobInfoHeader-companyLocation"]',
+  ]);
+  const topCardParts = topCardText ? topCardText.split('·').map(clean).filter(Boolean) : [];
+  const locationFromTopCard = topCardParts.find((part, index) =>
+    index > 0 && !matchText(part, ['Remote', 'Hybrid', 'On-site', 'Onsite'])
+  );
+  const bodyText = clean(document.body.innerText);
+  const workSetup = job.jobLocationType === 'TELECOMMUTE'
+    ? 'Remote'
+    : matchText(topCardText || bodyText, ['Remote', 'Hybrid', 'On-site', 'Onsite']);
+  const jobType = clean(job.employmentType)
+    || matchText(topCardText || bodyText, ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship', 'Temporary']);
 
   return {
-    company: clean(job.hiringOrganization?.name) || clean(metaContent('property', 'og:site_name')),
-    job_title: clean(job.title) || clean(metaContent('property', 'og:title')) || clean(document.title),
-    location: clean(locationText),
-    job_type: clean(job.employmentType),
-    work_setup: job.jobLocationType === 'TELECOMMUTE' ? 'Remote' : null,
+    company: clean(job.hiringOrganization?.name)
+      || firstText([
+        '.job-details-jobs-unified-top-card__company-name a',
+        '.job-details-jobs-unified-top-card__company-name',
+        '.topcard__org-name-link',
+        '.topcard__flavor',
+      ])
+      || clean(metaContent('property', 'og:site_name')),
+    job_title: clean(job.title)
+      || firstText([
+        '.job-details-jobs-unified-top-card__job-title h1',
+        '.job-details-jobs-unified-top-card__job-title',
+        '.topcard__title',
+        'h1',
+      ])
+      || clean(metaContent('property', 'og:title'))
+      || clean(document.title),
+    location: clean(locationText)
+      || firstText([
+        '.job-details-jobs-unified-top-card__bullet',
+        '.topcard__flavor--bullet',
+        '.job-search-card__location',
+        '[data-testid="job-location"]',
+      ])
+      || locationFromTopCard,
+    job_type: jobType,
+    work_setup: workSetup === 'Onsite' ? 'On-site' : workSetup,
     salary_min: typeof salary === 'object' ? (salary?.minValue ?? salary?.value) : salary,
     salary_max: typeof salary === 'object' ? (salary?.maxValue ?? salary?.value) : salary,
     job_description: stripHtml(job.description) || clean(metaContent('name', 'description')),

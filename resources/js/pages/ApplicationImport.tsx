@@ -29,6 +29,9 @@ const importedPlaceholders = ['Imported', 'Imported job'];
 const importedValue = (value: string | undefined, fallback: string) =>
     value && !importedPlaceholders.includes(value) ? value : fallback;
 
+const escapeRegExp = (value: string) =>
+    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const websiteLabel = (url: string | undefined) => {
     if (!url) {
         return 'Website';
@@ -39,6 +42,53 @@ const websiteLabel = (url: string | undefined) => {
     } catch {
         return 'Website';
     }
+};
+
+const isSiteLabel = (label: string, website: string) =>
+    ['linkedin', 'linkedin.com', website.toLowerCase()].includes(
+        label.toLowerCase(),
+    );
+
+const cleanApplicationImport = (
+    title: string,
+    company: string,
+    website: string,
+) => {
+    const parts = title
+        .split('|')
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+    while (
+        parts.length > 1 &&
+        isSiteLabel(parts[parts.length - 1] || '', website)
+    ) {
+        parts.pop();
+    }
+
+    let cleanCompany = company;
+
+    if (
+        parts.length > 1 &&
+        (isSiteLabel(cleanCompany, website) || cleanCompany === 'Website')
+    ) {
+        cleanCompany = parts.pop() || cleanCompany;
+    }
+
+    let cleanTitle = parts.join(' | ') || title;
+
+    [cleanCompany, website]
+        .filter((label) => label && !isSiteLabel(label, website))
+        .forEach((label) => {
+            cleanTitle = cleanTitle
+                .replace(new RegExp(`\\s*(?:\\||-| at )\\s*${escapeRegExp(label)}\\s*$`, 'i'), '')
+                .trim();
+        });
+
+    return {
+        company: cleanCompany,
+        title: cleanTitle || 'Application',
+    };
 };
 
 type ApplicationImportForm = {
@@ -61,6 +111,12 @@ type ApplicationImportForm = {
 export default function ApplicationImport({ importData }: Props) {
     const [copied, setCopied] = useState(false);
     const importedWebsite = websiteLabel(importData.url);
+    const importedCompany = importedValue(importData.company, importedWebsite);
+    const importedApplication = cleanApplicationImport(
+        importedValue(importData.job_title, 'Application'),
+        importedCompany,
+        importedWebsite,
+    );
     const bookmarklet = useMemo(() => {
         const target = `${window.location.origin}/applications/import`;
         const script = `javascript:(()=>{const q=new URLSearchParams({url:location.href});location.href='${target}?'+q.toString();})();`;
@@ -70,9 +126,9 @@ export default function ApplicationImport({ importData }: Props) {
     const form = useForm<ApplicationImportForm>({
         import_url_only: !importData.extracted,
         from_import: true,
-        company: importedValue(importData.company, importedWebsite),
+        company: importedApplication.company,
         company_industry: '',
-        job_title: importedValue(importData.job_title, 'Website'),
+        job_title: importedApplication.title,
         job_type: importData.job_type || '',
         work_setup: importData.work_setup || '',
         location: importData.location || '',
@@ -149,6 +205,48 @@ export default function ApplicationImport({ importData }: Props) {
                                     {form.errors.job_post_url}
                                 </p>
                             ) : null}
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="location">Location</Label>
+                                <Input
+                                    id="location"
+                                    value={form.data.location}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'location',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="job_type">Job type</Label>
+                                <Input
+                                    id="job_type"
+                                    value={form.data.job_type}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'job_type',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="work_setup">Work setup</Label>
+                                <Input
+                                    id="work_setup"
+                                    value={form.data.work_setup}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'work_setup',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                            </div>
                         </div>
 
                         <div className="flex justify-end">
