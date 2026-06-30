@@ -16,11 +16,13 @@ class Reminder extends Model
         'title',
         'description',
         'remind_at',
+        'email_sent_at',
         'is_completed',
     ];
 
     protected $casts = [
         'remind_at' => 'datetime',
+        'email_sent_at' => 'datetime',
         'is_completed' => 'boolean',
     ];
 
