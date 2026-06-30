@@ -30,7 +30,7 @@ export function AppBottomNav() {
 
     return (
         <nav className="fixed inset-x-0 bottom-4 z-40 px-3 pb-[env(safe-area-inset-bottom)]">
-            <div className="mx-auto grid max-w-2xl grid-cols-4 gap-1 rounded-xl border bg-background/95 p-2 shadow-lg backdrop-blur">
+            <div className="mx-auto grid max-w-2xl grid-cols-4 gap-1 rounded-xl border border-[#cbd8cf] bg-card/95 p-2 shadow-lg shadow-[#17201b]/10 backdrop-blur">
                 {navItems.map((item) => {
                     const Icon = item.icon;
                     const active = isCurrentUrl(item.href);

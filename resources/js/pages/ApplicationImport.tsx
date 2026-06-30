@@ -110,6 +110,7 @@ type ApplicationImportForm = {
 
 export default function ApplicationImport({ importData }: Props) {
     const [copied, setCopied] = useState(false);
+    const extensionInstallUrl = import.meta.env.VITE_BROWSER_EXTENSION_URL?.trim();
     const importedWebsite = websiteLabel(importData.url);
     const importedCompany = importedValue(importData.company, importedWebsite);
     const importedApplication = cleanApplicationImport(
@@ -279,23 +280,31 @@ export default function ApplicationImport({ importData }: Props) {
                             <Copy />
                             {copied ? 'Copied' : 'Copy bookmarklet'}
                         </Button>
-                        <div className="space-y-2 border-t pt-4">
-                            <h2 className="font-medium">Browser extension</h2>
-                            <p className="text-sm text-muted-foreground">
-                                Load the folder at public/jobtrackr-extension as
-                                an unpacked extension.
-                            </p>
-                            <Button asChild variant="outline" className="w-full">
-                                <a
-                                    href="/jobtrackr-extension/manifest.json"
-                                    target="_blank"
-                                    rel="noreferrer"
+                        {extensionInstallUrl && (
+                            <div className="space-y-2 border-t pt-4">
+                                <h2 className="font-medium">
+                                    Google Chrome extension
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Download the JobTrackr extension for Google
+                                    Chrome.
+                                </p>
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="w-full"
                                 >
-                                    <ExternalLink />
-                                    Extension manifest
-                                </a>
-                            </Button>
-                        </div>
+                                    <a
+                                        href={extensionInstallUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        <ExternalLink />
+                                        Download JobTrackr extension
+                                    </a>
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
