@@ -37,6 +37,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 import type { Application } from '@/types/Application';
 
 type PaginationLink = {
@@ -247,6 +248,25 @@ const jobTypes = [
 
 const workSetups = ['On-site', 'Hybrid', 'Remote'];
 
+const statusBadgeClass = (status: string) => {
+    switch (status) {
+        case 'applied':
+            return 'border-[#2f6f4f]/15 bg-[#dcefe4] text-[#24543d] dark:bg-[#2f6f4f]/25 dark:text-[#b8e6ca]';
+        case 'saved':
+            return 'border-[#8f6a1f]/15 bg-[#f8edcf] text-[#755516] dark:bg-[#f3c76a]/20 dark:text-[#f8d98a]';
+        case 'assessment':
+            return 'border-[#2f6d7c]/15 bg-[#d9edf1] text-[#245867] dark:bg-[#2f6d7c]/25 dark:text-[#b5e2eb]';
+        case 'interviewing':
+            return 'border-[#5b4b8a]/15 bg-[#e6e1f2] text-[#4a3d75] dark:bg-[#5b4b8a]/30 dark:text-[#d8cff5]';
+        case 'offer':
+            return 'border-[#7a5b1c]/15 bg-[#f6e6b8] text-[#654914] dark:bg-[#f3c76a]/25 dark:text-[#ffe7a3]';
+        case 'rejected':
+            return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300';
+        default:
+            return 'border-[#cbd8cf] bg-[#eef3ef] text-[#324338] dark:border-[#33463a] dark:bg-[#213128] dark:text-[#d8e2da]';
+    }
+};
+
 const toDateTimeLocal = (date: Date) => {
     const localDate = new Date(
         date.getTime() - date.getTimezoneOffset() * 60000,
@@ -355,21 +375,29 @@ export default function Applications({
             title: 'Total',
             value: stats.total,
             icon: BriefcaseBusiness,
+            iconClassName:
+                'bg-[#17201b] text-[#f4f8f2] dark:bg-[#f3c76a] dark:text-[#17201b]',
         },
         {
             title: 'Applied',
             value: stats.applied,
             icon: Send,
+            iconClassName:
+                'bg-[#d5eadc] text-[#2f6f4f] dark:bg-[#2f6f4f]/30 dark:text-[#b8e6ca]',
         },
         {
             title: 'Interviews',
             value: stats.interviewing,
             icon: MessagesSquare,
+            iconClassName:
+                'bg-[#e2dbf3] text-[#5b4b8a] dark:bg-[#5b4b8a]/30 dark:text-[#d8cff5]',
         },
         {
             title: 'Rejected',
             value: stats.rejected,
             icon: Ban,
+            iconClassName:
+                'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300',
         },
     ];
     const form = useForm<ApplicationForm>({
@@ -561,7 +589,7 @@ export default function Applications({
                     updateApplicationStatus(application, status)
                 }
             >
-                <SelectTrigger className="h-8 w-[160px]">
+                <SelectTrigger className="h-8 w-[160px] border-[#cbd8cf] bg-white/80 dark:border-[#33463a] dark:bg-[#213128]/70">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -576,7 +604,7 @@ export default function Applications({
                 type="button"
                 variant="outline"
                 size="icon"
-                className="size-8"
+                className="size-8 border-[#cbd8cf] bg-white/80 text-[#2f6f4f] hover:bg-[#dcefe4] dark:border-[#33463a] dark:bg-[#213128]/70 dark:text-[#b8e6ca]"
                 aria-label="Add reminder"
                 onClick={() => openReminder(application)}
             >
@@ -586,7 +614,7 @@ export default function Applications({
                 type="button"
                 variant="outline"
                 size="icon"
-                className="size-8"
+                className="size-8 border-[#cbd8cf] bg-white/80 text-[#5b4b8a] hover:bg-[#e6e1f2] dark:border-[#33463a] dark:bg-[#213128]/70 dark:text-[#d8cff5]"
                 aria-label="Edit application"
                 onClick={() => openEditApplication(application)}
             >
@@ -596,7 +624,7 @@ export default function Applications({
                 type="button"
                 variant="outline"
                 size="icon"
-                className="size-8 text-destructive"
+                className="size-8 border-red-100 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300"
                 aria-label="Delete application"
                 onClick={() => setDeletingApplication(application)}
             >
@@ -609,7 +637,8 @@ export default function Applications({
         <>
             <Head title="Applications" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-[#eef3ef] p-4 dark:bg-background">
+                <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <h1 className="text-xl font-semibold tracking-tight">
@@ -631,7 +660,7 @@ export default function Applications({
                                     setSearch(event.target.value)
                                 }
                                 placeholder="Search applications"
-                                className="h-9"
+                                className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
                             />
                             <Button
                                 type="submit"
@@ -642,7 +671,11 @@ export default function Applications({
                             </Button>
                         </form>
 
-                        <Button asChild variant="outline">
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70"
+                        >
                             <Link href="/applications/import">
                                 <Bookmark className="size-4" />
                                 Import
@@ -654,7 +687,10 @@ export default function Applications({
                             onOpenChange={setAddDialogOpen}
                         >
                             <DialogTrigger asChild>
-                                <Button type="button">
+                                <Button
+                                    type="button"
+                                    className="bg-[#17201b] text-[#f4f8f2] hover:bg-[#2d3b31] dark:bg-[#f3c76a] dark:text-[#17201b] dark:hover:bg-[#e0b657]"
+                                >
                                     <Plus className="size-4" />
                                     Add
                                 </Button>
@@ -1612,8 +1648,9 @@ export default function Applications({
                         </Dialog>
                     </div>
                 </div>
+                </div>
 
-                <div className="grid grid-cols-2 gap-2 rounded-lg border bg-card p-2 sm:hidden">
+                <div className="grid grid-cols-2 gap-2 rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-2 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c] sm:hidden">
                     {statCards.map((stat) => {
                         const Icon = stat.icon;
 
@@ -1622,7 +1659,12 @@ export default function Applications({
                                 key={stat.title}
                                 className="flex items-center gap-2 rounded-md px-2 py-2"
                             >
-                                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                                <div
+                                    className={cn(
+                                        'flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground',
+                                        stat.iconClassName,
+                                    )}
+                                >
                                     <Icon className="size-4" />
                                 </div>
                                 <div className="min-w-0">
@@ -1645,15 +1687,21 @@ export default function Applications({
                             title={stat.title}
                             value={stat.value}
                             icon={stat.icon}
+                            iconClassName={stat.iconClassName}
                         />
                     ))}
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-2 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
                     <Button
                         type="button"
                         variant={selectedStatus === 'all' ? 'secondary' : 'outline'}
                         size="sm"
+                        className={
+                            selectedStatus === 'all'
+                                ? 'bg-[#17201b] text-[#f4f8f2] hover:bg-[#2d3b31] dark:bg-[#f3c76a] dark:text-[#17201b] dark:hover:bg-[#e0b657]'
+                                : 'border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70'
+                        }
                         onClick={() => changeFilterStatus('all')}
                     >
                         <span>All</span>
@@ -1673,6 +1721,11 @@ export default function Applications({
                                     : 'outline'
                             }
                             size="sm"
+                            className={
+                                selectedStatus === status
+                                    ? statusBadgeClass(status)
+                                    : 'border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70'
+                            }
                             onClick={() => changeFilterStatus(status)}
                         >
                             <span>{statusLabel(status)}</span>
@@ -1696,8 +1749,8 @@ export default function Applications({
                                 size="sm"
                                 className={
                                     isMoreStatusSelected
-                                        ? 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                                        : ''
+                                        ? statusBadgeClass(selectedStatus)
+                                        : 'border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70'
                                 }
                             >
                                 <SelectValue placeholder="More" />
@@ -1746,7 +1799,12 @@ export default function Applications({
                             key: 'status',
                             label: 'Status',
                             render: (application) => (
-                                <Badge variant="secondary">
+                                <Badge
+                                    variant="outline"
+                                    className={statusBadgeClass(
+                                        application.status,
+                                    )}
+                                >
                                     {statusLabel(application.status)}
                                 </Badge>
                             ),
@@ -1775,7 +1833,12 @@ export default function Applications({
                                         {applicationCompanyName(application)}
                                     </p>
                                 </div>
-                                <Badge variant="secondary">
+                                <Badge
+                                    variant="outline"
+                                    className={statusBadgeClass(
+                                        application.status,
+                                    )}
+                                >
                                     {statusLabel(application.status)}
                                 </Badge>
                             </div>
@@ -1804,7 +1867,12 @@ export default function Applications({
                                     <span className="font-medium">
                                         {applicationTitle(application)}
                                     </span>
-                                    <Badge variant="outline">
+                                    <Badge
+                                        variant="outline"
+                                        className={statusBadgeClass(
+                                            application.status,
+                                        )}
+                                    >
                                         {statusLabel(application.status)}
                                     </Badge>
                                 </div>
@@ -1820,6 +1888,13 @@ export default function Applications({
                             </div>
                         </div>
                     )}
+                    viewSwitcherClassName="border-[#cbd8cf] bg-[#f8faf7] shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]"
+                    emptyStateClassName="border-[#aebfb3] bg-[#f8faf7] dark:border-[#33463a] dark:bg-[#16231c]"
+                    cardClassName="border-[#cbd8cf] bg-[#f8faf7] shadow-md shadow-[#17201b]/10 hover:border-[#aebfb3] hover:bg-white/80 dark:border-[#33463a] dark:bg-[#16231c] dark:hover:border-[#f3c76a]/40 dark:hover:bg-[#1a2c22]"
+                    listClassName="divide-[#cbd8cf] border-[#cbd8cf] bg-[#f8faf7] shadow-sm shadow-[#17201b]/5 dark:divide-[#33463a] dark:border-[#33463a] dark:bg-[#16231c]"
+                    listItemClassName="hover:bg-[#eef3ef] dark:hover:bg-[#213128]"
+                    tableClassName="border-[#cbd8cf] bg-[#f8faf7] shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]"
+                    tableHeadClassName="bg-[#e6ece7] text-[#4c5c52] dark:bg-[#213128] dark:text-[#afbeb4]"
                 />
 
                 {applications.links.length > 3 ? (

@@ -22,6 +22,13 @@ type PreferredViewProps<T> = {
     renderListItem: (item: T) => ReactNode;
     onItemClick?: (item: T) => void;
     storageKey: string;
+    viewSwitcherClassName?: string;
+    emptyStateClassName?: string;
+    cardClassName?: string;
+    listClassName?: string;
+    listItemClassName?: string;
+    tableClassName?: string;
+    tableHeadClassName?: string;
 };
 
 const viewOptions: {
@@ -43,6 +50,13 @@ export function PreferredView<T>({
     renderListItem,
     onItemClick,
     storageKey,
+    viewSwitcherClassName,
+    emptyStateClassName,
+    cardClassName,
+    listClassName,
+    listItemClassName,
+    tableClassName,
+    tableHeadClassName,
 }: PreferredViewProps<T>) {
     const [viewMode, setViewMode] = useState<PreferredViewMode>('card');
 
@@ -80,7 +94,12 @@ export function PreferredView<T>({
     return (
         <section className="space-y-4">
             <div className="flex justify-end">
-                <div className="inline-flex rounded-lg border bg-background p-1">
+                <div
+                    className={cn(
+                        'inline-flex rounded-lg border bg-background p-1',
+                        viewSwitcherClassName,
+                    )}
+                >
                     {viewOptions.map((option) => {
                         const Icon = option.icon;
 
@@ -108,7 +127,12 @@ export function PreferredView<T>({
             </div>
 
             {items.length === 0 ? (
-                <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                <div
+                    className={cn(
+                        'rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground',
+                        emptyStateClassName,
+                    )}
+                >
                     {emptyState}
                 </div>
             ) : null}
@@ -125,6 +149,7 @@ export function PreferredView<T>({
                                 onItemClick
                                     ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
                                     : '',
+                                cardClassName,
                             )}
                             onClick={
                                 onItemClick
@@ -142,7 +167,12 @@ export function PreferredView<T>({
             ) : null}
 
             {items.length > 0 && viewMode === 'list' ? (
-                <div className="divide-y rounded-lg border bg-card">
+                <div
+                    className={cn(
+                        'divide-y rounded-lg border bg-card',
+                        listClassName,
+                    )}
+                >
                     {items.map((item) => (
                         <div
                             key={getKey(item)}
@@ -153,6 +183,7 @@ export function PreferredView<T>({
                                 onItemClick
                                     ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
                                     : '',
+                                listItemClassName,
                             )}
                             onClick={
                                 onItemClick
@@ -170,10 +201,20 @@ export function PreferredView<T>({
             ) : null}
 
             {items.length > 0 && viewMode === 'table' ? (
-                <div className="overflow-hidden rounded-lg border bg-card">
+                <div
+                    className={cn(
+                        'overflow-hidden rounded-lg border bg-card',
+                        tableClassName,
+                    )}
+                >
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                            <thead
+                                className={cn(
+                                    'bg-muted/50 text-xs uppercase text-muted-foreground',
+                                    tableHeadClassName,
+                                )}
+                            >
                                 <tr>
                                     {columns.map((column) => (
                                         <th

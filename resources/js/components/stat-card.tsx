@@ -1,13 +1,20 @@
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 type StatCardProps = {
     title: string;
     value: number | string;
     icon: LucideIcon;
+    iconClassName?: string;
 };
 
-export function StatCard({ title, value, icon: Icon }: StatCardProps) {
+export function StatCard({
+    title,
+    value,
+    icon: Icon,
+    iconClassName,
+}: StatCardProps) {
     return (
         <Card className="rounded-lg py-4">
             <CardContent className="flex items-center justify-between gap-3 px-4">
@@ -17,7 +24,12 @@ export function StatCard({ title, value, icon: Icon }: StatCardProps) {
                         {value}
                     </p>
                 </div>
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <div
+                    className={cn(
+                        'flex size-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground',
+                        iconClassName,
+                    )}
+                >
                     <Icon className="size-5" />
                 </div>
             </CardContent>
