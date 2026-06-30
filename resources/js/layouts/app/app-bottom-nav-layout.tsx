@@ -15,7 +15,7 @@ export default function AppBottomNavLayout({
                     <img
                         src="/jobtrackr-logo-white.png"
                         alt="JobTrackr"
-                        className="h-8 w-auto shrink-0"
+                        className="h-14 w-auto shrink-0"
                     />
                     <Breadcrumbs breadcrumbs={breadcrumbs} />
                 </div>

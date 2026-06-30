@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { Bell, BriefcaseBusiness, History, User } from 'lucide-react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
@@ -24,11 +24,9 @@ const navItems: NavItem[] = [
 ];
 
 export function AppBottomNav() {
-    const { auth } = usePage().props;
     const { isCurrentUrl } = useCurrentUrl();
-    const user = auth?.user;
-    const profileHref = user ? edit() : '/login';
-    const profileActive = user ? isCurrentUrl(edit()) : isCurrentUrl('/login');
+    const profileHref = edit();
+    const profileActive = isCurrentUrl(profileHref);
 
     return (
         <nav className="fixed inset-x-0 bottom-4 z-40 px-3 pb-[env(safe-area-inset-bottom)]">
@@ -43,9 +41,8 @@ export function AppBottomNav() {
                             href={item.href}
                             prefetch
                             className={cn(
-                                'flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground',
-                                active &&
-                                    'bg-secondary text-secondary-foreground',
+                                'flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-[#17201b]/70',
+                                active && 'bg-[#17201b] text-white',
                             )}
                         >
                             {Icon ? <Icon className="size-5" /> : null}
@@ -56,10 +53,10 @@ export function AppBottomNav() {
 
                 <Link
                     href={profileHref}
-                    prefetch={Boolean(user)}
+                    prefetch
                     className={cn(
-                        'flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground',
-                        profileActive && 'bg-secondary text-secondary-foreground',
+                        'flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-[#17201b]/70',
+                        profileActive && 'bg-[#17201b] text-white',
                     )}
                 >
                     <User className="size-5" />
