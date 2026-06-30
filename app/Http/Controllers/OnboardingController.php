@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
+use App\Support\AvatarPresets;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -25,17 +26,24 @@ class OnboardingController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             'industry' => ['required', 'string', 'max:255'],
             'job_title' => ['required', 'string', 'max:255'],
             'location' => ['required', 'string', 'max:255'],
             'education_school' => ['required', 'string', 'max:255'],
             'education_degree' => ['required', 'string', 'max:255'],
             'education_program' => ['required', 'string', 'max:255'],
+            'avatar_preset' => ['nullable', 'string', 'in:' . implode(',', AvatarPresets::keys())],
             'photo' => ['nullable', 'image', 'max:2048'],
         ]);
 
         $user = $request->user();
-        $user->fill(collect($validated)->except('photo')->all());
+        $user->fill(collect($validated)->except('photo', 'first_name', 'last_name')->all());
+        if ($request->hasFile('photo')) {
+            $user->avatar_preset = null;
+        }
+        $user->name = trim($validated['first_name'].' '.$validated['last_name']);
         $user->onboarding_completed_at = now();
         $user->save();
 

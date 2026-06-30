@@ -8,6 +8,8 @@ export type User = {
     education_school: string | null;
     education_degree: string | null;
     education_program: string | null;
+    avatar_preset: string | null;
+    avatar?: string | null;
     onboarding_completed_at: string | null;
     email_verified_at: string | null;
     created_at: string;

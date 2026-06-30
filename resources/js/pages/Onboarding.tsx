@@ -1,5 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
+import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import InputError from '@/components/input-error';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -13,31 +14,44 @@ type Props = {
 };
 
 type OnboardingForm = {
+    first_name: string;
+    last_name: string;
     industry: string;
     job_title: string;
     location: string;
     education_school: string;
     education_degree: string;
     education_program: string;
+    avatar_preset: string;
     photo: File | null;
 };
 
 export default function Onboarding({ user }: Props) {
     const [step, setStep] = useState(0);
+    const photoInputRef = useRef<HTMLInputElement>(null);
+    const [firstName = '', ...otherNames] = user.name.split(' ');
     const form = useForm<OnboardingForm>({
+        first_name: firstName,
+        last_name: otherNames.join(' '),
         industry: user.industry || '',
         job_title: user.job_title || '',
         location: user.location || '',
         education_school: user.education_school || '',
         education_degree: user.education_degree || '',
         education_program: user.education_program || '',
+        avatar_preset: user.avatar_preset || 'career-mark',
         photo: null,
     });
+    const avatarFallback =
+        `${form.data.first_name.charAt(0)}${form.data.last_name.charAt(0)}`.toUpperCase() ||
+        'JT';
 
     const canContinue =
         step === 0
             ? Boolean(
-                  form.data.industry.trim() &&
+                  form.data.first_name.trim() &&
+                      form.data.last_name.trim() &&
+                      form.data.industry.trim() &&
                       form.data.job_title.trim() &&
                       form.data.location.trim(),
               )
@@ -95,6 +109,51 @@ export default function Onboarding({ user }: Props) {
                         {step === 0 ? (
                             <div className="grid gap-5 sm:grid-cols-2">
                                 <div className="grid gap-2">
+                                    <Label htmlFor="first_name">
+                                        First name
+                                    </Label>
+                                    <Input
+                                        id="first_name"
+                                        value={form.data.first_name}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'first_name',
+                                                event.target.value,
+                                            )
+                                        }
+                                        required
+                                        autoFocus
+                                        autoComplete="given-name"
+                                        placeholder="First name"
+                                    />
+                                    <InputError
+                                        message={form.errors.first_name}
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="last_name">
+                                        Last name
+                                    </Label>
+                                    <Input
+                                        id="last_name"
+                                        value={form.data.last_name}
+                                        onChange={(event) =>
+                                            form.setData(
+                                                'last_name',
+                                                event.target.value,
+                                            )
+                                        }
+                                        required
+                                        autoComplete="family-name"
+                                        placeholder="Last name"
+                                    />
+                                    <InputError
+                                        message={form.errors.last_name}
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
                                     <Label htmlFor="industry">Industry</Label>
                                     <Input
                                         id="industry"
@@ -106,7 +165,6 @@ export default function Onboarding({ user }: Props) {
                                             )
                                         }
                                         required
-                                        autoFocus
                                         placeholder="Industry"
                                     />
                                     <InputError
@@ -231,21 +289,45 @@ export default function Onboarding({ user }: Props) {
                         ) : null}
 
                         {step === 2 ? (
-                            <div className="grid gap-2">
-                                <Label htmlFor="photo">Picture</Label>
-                                <Input
-                                    id="photo"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(event) =>
-                                        form.setData(
-                                            'photo',
-                                            event.target.files?.[0] ?? null,
-                                        )
-                                    }
-                                    autoFocus
+                            <div className="grid gap-4">
+                                <AvatarPresetPicker
+                                    value={form.data.avatar_preset}
+                                    onChange={(value) => {
+                                        form.setData('avatar_preset', value);
+                                        form.setData('photo', null);
+                                        if (photoInputRef.current) {
+                                            photoInputRef.current.value = '';
+                                        }
+                                    }}
+                                    currentAvatar={user.avatar}
+                                    fallback={avatarFallback}
                                 />
-                                <InputError message={form.errors.photo} />
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="photo">Picture</Label>
+                                    <Input
+                                        id="photo"
+                                        ref={photoInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(event) => {
+                                            const file =
+                                                event.target.files?.[0] ?? null;
+                                            form.setData('photo', file);
+                                            if (file) {
+                                                form.setData(
+                                                    'avatar_preset',
+                                                    '',
+                                                );
+                                            }
+                                        }}
+                                        autoFocus
+                                    />
+                                    <InputError message={form.errors.photo} />
+                                    <InputError
+                                        message={form.errors.avatar_preset}
+                                    />
+                                </div>
                             </div>
                         ) : null}
 
