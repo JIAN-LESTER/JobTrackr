@@ -1,6 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Bookmark, Check, Copy, ExternalLink } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Check, ExternalLink } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -109,7 +108,6 @@ type ApplicationImportForm = {
 };
 
 export default function ApplicationImport({ importData }: Props) {
-    const [copied, setCopied] = useState(false);
     const extensionInstallUrl = import.meta.env.VITE_BROWSER_EXTENSION_URL?.trim();
     const importedWebsite = websiteLabel(importData.url);
     const importedCompany = importedValue(importData.company, importedWebsite);
@@ -118,12 +116,6 @@ export default function ApplicationImport({ importData }: Props) {
         importedCompany,
         importedWebsite,
     );
-    const bookmarklet = useMemo(() => {
-        const target = `${window.location.origin}/applications/import`;
-        const script = `javascript:(()=>{const q=new URLSearchParams({url:location.href});location.href='${target}?'+q.toString();})();`;
-
-        return script;
-    }, []);
     const form = useForm<ApplicationImportForm>({
         import_url_only: !importData.extracted,
         from_import: true,
@@ -155,12 +147,6 @@ export default function ApplicationImport({ importData }: Props) {
                 form.reset();
             },
         });
-    };
-
-    const copyBookmarklet = async () => {
-        await navigator.clipboard.writeText(bookmarklet);
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
     };
 
     return (
@@ -260,50 +246,42 @@ export default function ApplicationImport({ importData }: Props) {
 
                     <div className="space-y-4 rounded-md border p-4">
                         <div className="space-y-2">
-                            <h2 className="font-medium">Bookmarklet</h2>
+                            <h2 className="font-medium">
+                                Download extension
+                            </h2>
                             <p className="text-sm text-muted-foreground">
-                                Drag or copy this to your bookmarks bar.
+                                Install the JobTrackr browser extension to send
+                                job post URLs from supported job boards into
+                                this import screen.
                             </p>
                         </div>
-                        <Button asChild className="w-full">
-                            <a href={bookmarklet}>
-                                <Bookmark />
-                                Save to JobTrackr
-                            </a>
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={copyBookmarklet}
-                        >
-                            <Copy />
-                            {copied ? 'Copied' : 'Copy bookmarklet'}
-                        </Button>
-                        {extensionInstallUrl && (
-                            <div className="space-y-2 border-t pt-4">
-                                <h2 className="font-medium">
-                                    Google Chrome extension
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    Download the JobTrackr extension for Google
-                                    Chrome.
-                                </p>
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="w-full"
+                        <div className="space-y-2 rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+                            <p>
+                                Use it while viewing a job listing to open
+                                JobTrackr with the posting URL ready to review
+                                and save.
+                            </p>
+                            <p>
+                                Works best with Google Chrome and compatible
+                                Chromium browsers.
+                            </p>
+                        </div>
+                        {extensionInstallUrl ? (
+                            <Button asChild className="w-full">
+                                <a
+                                    href={extensionInstallUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
                                 >
-                                    <a
-                                        href={extensionInstallUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        <ExternalLink />
-                                        Download JobTrackr extension
-                                    </a>
-                                </Button>
-                            </div>
+                                    <ExternalLink />
+                                    Download JobTrackr extension
+                                </a>
+                            </Button>
+                        ) : (
+                            <Button type="button" className="w-full" disabled>
+                                <ExternalLink />
+                                Extension download unavailable
+                            </Button>
                         )}
                     </div>
                 </div>
