@@ -30,7 +30,7 @@ export function AppBottomNav() {
 
     return (
         <nav className="fixed inset-x-0 bottom-4 z-40 px-3 pb-[env(safe-area-inset-bottom)]">
-            <div className="mx-auto grid max-w-2xl grid-cols-4 gap-1 rounded-xl border border-[#cbd8cf] bg-card/95 p-2 shadow-lg shadow-[#17201b]/10 backdrop-blur">
+            <div className="mx-auto grid max-w-2xl grid-cols-4 gap-1 rounded-xl border bg-card/95 p-2 shadow-lg shadow-[#17201b]/10 backdrop-blur dark:shadow-black/30">
                 {navItems.map((item) => {
                     const Icon = item.icon;
                     const active = isCurrentUrl(item.href);
@@ -41,8 +41,8 @@ export function AppBottomNav() {
                             href={item.href}
                             prefetch
                             className={cn(
-                                'flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-[#17201b]/70',
-                                active && 'bg-[#17201b] text-white',
+                                'flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                                active && 'bg-primary text-primary-foreground',
                             )}
                         >
                             {Icon ? <Icon className="size-5" /> : null}
@@ -55,8 +55,8 @@ export function AppBottomNav() {
                     href={profileHref}
                     prefetch
                     className={cn(
-                        'flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-[#17201b]/70',
-                        profileActive && 'bg-[#17201b] text-white',
+                        'flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                        profileActive && 'bg-primary text-primary-foreground',
                     )}
                 >
                     <User className="size-5" />

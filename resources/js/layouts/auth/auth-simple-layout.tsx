@@ -13,7 +13,7 @@ export default function AuthSimpleLayout({
             <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-[#e8eee9] p-5 md:p-10 dark:bg-background">
                 <div className="absolute inset-x-0 top-0 h-56 bg-[#cfdcd3] dark:bg-muted/20" />
                 <div className="absolute inset-x-0 bottom-0 h-40 bg-[#dfe8e2] dark:bg-muted/10" />
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(23,32,27,0.09)_1px,transparent_1px),linear-gradient(to_bottom,rgba(23,32,27,0.09)_1px,transparent_1px)] bg-[size:48px_48px] dark:opacity-20" />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(23,32,27,0.09)_1px,transparent_1px),linear-gradient(to_bottom,rgba(23,32,27,0.09)_1px,transparent_1px)] bg-[size:48px_48px] dark:bg-[linear-gradient(to_right,rgba(243,199,106,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(243,199,106,0.08)_1px,transparent_1px)]" />
 
                 <div className="relative grid w-full max-w-5xl gap-5 lg:min-h-[520px] lg:grid-cols-2 lg:items-stretch">
                     <div
