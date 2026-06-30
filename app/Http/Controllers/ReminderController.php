@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reminder;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -63,7 +64,16 @@ class ReminderController extends Controller
 
     public function update(Request $request, Reminder $reminder)
     {
-        $reminder->update($this->validatedData($request, true));
+        $data = $this->validatedData($request, true);
+
+        if (
+            array_key_exists('remind_at', $data) &&
+            ! $reminder->remind_at->equalTo(Carbon::parse($data['remind_at']))
+        ) {
+            $data['email_sent_at'] = null;
+        }
+
+        $reminder->update($data);
 
         if ($request->header('X-Inertia')) {
             return back();

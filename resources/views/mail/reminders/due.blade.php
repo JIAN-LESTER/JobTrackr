@@ -7,7 +7,7 @@ Your reminder is due for {{ $reminder->jobApplication->job_title }} at {{ $remin
 {{ $reminder->description }}
 @endif
 
-Scheduled for: {{ $reminder->remind_at->format('M j, Y g:i A') }}
+Scheduled for: {{ $reminder->remind_at->timezone(config('app.timezone'))->format('M j, Y g:i A') }}
 
 @component('mail::button', ['url' => route('reminders.index')])
 View reminders

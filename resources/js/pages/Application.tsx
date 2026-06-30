@@ -536,7 +536,7 @@ export default function Applications({
         reminderForm.clearErrors();
         reminderForm.setData({
             job_application_id: application.application_id,
-            title: `Reminder: ${applicationTitle(application)}`,
+            title: `${applicationTitle(application)}`,
             description: '',
             remind_at: defaultReminderAt(),
         });
