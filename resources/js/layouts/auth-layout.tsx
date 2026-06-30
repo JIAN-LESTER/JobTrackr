@@ -5,14 +5,20 @@ export default function AuthLayout({
     description = '',
     side,
     sidePosition,
+    modalOnly = false,
     children,
 }: {
     title?: string;
     description?: string;
     side?: React.ReactNode;
     sidePosition?: 'left' | 'right';
+    modalOnly?: boolean;
     children: React.ReactNode;
 }) {
+    if (modalOnly) {
+        return <>{children}</>;
+    }
+
     return (
         <AuthLayoutTemplate
             title={title}

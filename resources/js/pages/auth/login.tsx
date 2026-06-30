@@ -1,5 +1,6 @@
-import { Form, Head } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { Bell, BriefcaseBusiness, History } from 'lucide-react';
+import type { FormEvent } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -16,79 +17,124 @@ type Props = {
     canResetPassword: boolean;
 };
 
+type LoginForm = {
+    email: string;
+    password: string;
+};
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Login({ status, canResetPassword }: Props) {
+    const form = useForm<LoginForm>({
+        email: '',
+        password: '',
+    });
+
+    const submit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        form.clearErrors();
+
+        const email = form.data.email.trim();
+        let hasErrors = false;
+
+        if (!email) {
+            form.setError('email', 'Email address is required.');
+            hasErrors = true;
+        } else if (!emailPattern.test(email)) {
+            form.setError('email', 'Enter a valid email address.');
+            hasErrors = true;
+        }
+
+        if (!form.data.password) {
+            form.setError('password', 'Password is required.');
+            hasErrors = true;
+        }
+
+        if (hasErrors) {
+            return;
+        }
+
+        form.post(store.url(), {
+            onSuccess: () => form.reset('password'),
+        });
+    };
+
     return (
         <>
             <Head title="Log in" />
 
-            <Form
-                {...store.form()}
-                resetOnSuccess={['password']}
+            <form
+                onSubmit={submit}
+                noValidate
                 className="flex flex-col gap-6"
             >
-                {({ processing, errors }) => (
-                    <>
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="email"
-                                    placeholder="Enter email address"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
+                <div className="grid gap-6">
+                    <div className="grid gap-2">
+                        <Label htmlFor="email">Email address</Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            name="email"
+                            value={form.data.email}
+                            onChange={(event) => {
+                                form.setData('email', event.target.value);
+                                form.clearErrors('email');
+                            }}
+                            autoFocus
+                            tabIndex={1}
+                            autoComplete="email"
+                            placeholder="Enter email address"
+                        />
+                        <InputError message={form.errors.email} />
+                    </div>
 
-                            <div className="grid gap-2">
-                                <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
-                                    {canResetPassword && (
-                                        <TextLink
-                                            href={request()}
-                                            className="ml-auto text-sm"
-                                            tabIndex={5}
-                                        >
-                                            Forgot your password?
-                                        </TextLink>
-                                    )}
-                                </div>
-                                <PasswordInput
-                                    id="password"
-                                    name="password"
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="current-password"
-                                    placeholder="Enter Password"
-                                />
-                                <InputError message={errors.password} />
-                            </div>
-
-                            <Button
-                                type="submit"
-                                className="mt-4 w-full"
-                                tabIndex={4}
-                                disabled={processing}
-                                data-test="login-button"
-                            >
-                                {processing && <Spinner />}
-                                Log in
-                            </Button>
+                    <div className="grid gap-2">
+                        <div className="flex items-center">
+                            <Label htmlFor="password">Password</Label>
+                            {canResetPassword && (
+                                <TextLink
+                                    href={request()}
+                                    className="ml-auto text-sm"
+                                    tabIndex={5}
+                                >
+                                    Forgot your password?
+                                </TextLink>
+                            )}
                         </div>
+                        <PasswordInput
+                            id="password"
+                            name="password"
+                            value={form.data.password}
+                            onChange={(event) => {
+                                form.setData('password', event.target.value);
+                                form.clearErrors('password');
+                            }}
+                            tabIndex={2}
+                            autoComplete="current-password"
+                            placeholder="Enter Password"
+                        />
+                        <InputError message={form.errors.password} />
+                    </div>
 
-                        <div className="text-center text-sm text-muted-foreground">
-                            Don't have an account?{' '}
-                            <TextLink href={register()} tabIndex={5}>
-                                Sign up
-                            </TextLink>
-                        </div>
-                    </>
-                )}
-            </Form>
+                    <Button
+                        type="submit"
+                        className="mt-4 w-full"
+                        tabIndex={4}
+                        disabled={form.processing}
+                        data-test="login-button"
+                    >
+                        {form.processing && <Spinner />}
+                        Log in
+                    </Button>
+                </div>
+
+                <div className="text-center text-sm text-muted-foreground">
+                    Don't have an account?{' '}
+                    <TextLink href={register()} tabIndex={5}>
+                        Sign up
+                    </TextLink>
+                </div>
+            </form>
 
             {status && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600 dark:text-green-300">
