@@ -1,5 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
-import { CheckCircle2, ListTodo, ShieldCheck } from 'lucide-react';
+import { ListTodo, MailCheck, ShieldCheck } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -28,30 +28,13 @@ export default function Register({ passwordRules }: Props) {
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    type="text"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="name"
-                                    name="name"
-                                    placeholder="Full name"
-                                />
-                                <InputError
-                                    message={errors.name}
-                                    className="mt-2"
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
                                 <Label htmlFor="email">Email address</Label>
                                 <Input
                                     id="email"
                                     type="email"
                                     required
-                                    tabIndex={2}
+                                    autoFocus
+                                    tabIndex={1}
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
@@ -64,7 +47,7 @@ export default function Register({ passwordRules }: Props) {
                                 <PasswordInput
                                     id="password"
                                     required
-                                    tabIndex={3}
+                                    tabIndex={2}
                                     autoComplete="new-password"
                                     name="password"
                                     placeholder="Password"
@@ -80,7 +63,7 @@ export default function Register({ passwordRules }: Props) {
                                 <PasswordInput
                                     id="password_confirmation"
                                     required
-                                    tabIndex={4}
+                                    tabIndex={3}
                                     autoComplete="new-password"
                                     name="password_confirmation"
                                     placeholder="Confirm password"
@@ -94,7 +77,7 @@ export default function Register({ passwordRules }: Props) {
                             <Button
                                 type="submit"
                                 className="mt-2 w-full"
-                                tabIndex={5}
+                                tabIndex={4}
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
@@ -104,7 +87,7 @@ export default function Register({ passwordRules }: Props) {
 
                         <div className="text-center text-sm text-muted-foreground">
                             Already have an account?{' '}
-                            <TextLink href={login()} tabIndex={6}>
+                            <TextLink href={login()} tabIndex={5}>
                                 Log in
                             </TextLink>
                         </div>
@@ -117,10 +100,10 @@ export default function Register({ passwordRules }: Props) {
 
 Register.layout = {
     title: 'Register to JobTrackr',
-    description: 'Add your details to start tracking applications.',
+    description: 'Create your account to start tracking applications.',
     sidePosition: 'right',
     side: (
-        <div className="flex h-full flex-col justify-between gap-5 rounded-md bg-[#17201b] p-6 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 sm:p-8 lg:min-h-[500px]">
+        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 sm:p-8 lg:min-h-[500px]">
             <div className="space-y-3">
                 <p className="text-sm font-medium text-[#f3c76a]">
                     Account setup
@@ -136,11 +119,11 @@ Register.layout = {
 
             <div className="space-y-3 text-sm">
                 <div className="flex gap-3">
-                    <CheckCircle2 className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <MailCheck className="mt-0.5 size-5 text-[#f3c76a]" />
                     <div>
-                        <p className="font-medium">Create your profile</p>
+                        <p className="font-medium">Verify your email</p>
                         <p className="text-white/65">
-                            Add your name and email so your workspace is ready.
+                            Confirm your address before opening your workspace.
                         </p>
                     </div>
                 </div>
@@ -163,14 +146,6 @@ Register.layout = {
                         </p>
                     </div>
                 </div>
-            </div>
-
-            <div className="rounded-md bg-white/10 p-4 text-sm ring-1 ring-white/10">
-                <p className="font-medium">Ready in minutes</p>
-                <p className="mt-1 text-white/65">
-                    Sign up, add your first role, and keep every next step in
-                    view.
-                </p>
             </div>
         </div>
     ),
