@@ -58,13 +58,9 @@ class ApplicationController extends Controller
                     'final_interview',
                     'awaiting_interview_with_hr',
                 ])->sum(fn ($status) => $statusCounts[$status] ?? 0),
-                'offers' => (int) collect([
-                    'offer',
-                    'awaiting_client_offer',
-                    'contract_signing',
-                    'hired',
-                ])->sum(fn ($status) => $statusCounts[$status] ?? 0),
+                'rejected' => (int) ($statusCounts['rejected'] ?? 0),
             ],
+            'statusCounts' => $statusCounts->map(fn ($total) => (int) $total),
             'filters' => $request->only([
                 'search',
                 'user_id',

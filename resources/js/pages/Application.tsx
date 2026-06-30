@@ -1,11 +1,11 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
+    Ban,
     Bell,
     BriefcaseBusiness,
     Bookmark,
     Edit,
     ExternalLink,
-    Handshake,
     MessagesSquare,
     Plus,
     Search,
@@ -63,12 +63,13 @@ type ApplicationStats = {
     total: number;
     applied: number;
     interviewing: number;
-    offers: number;
+    rejected: number;
 };
 
 type Props = {
     applications: Paginated<Application>;
     stats: ApplicationStats;
+    statusCounts: Record<string, number>;
     filters: Filters;
     statuses: string[];
 };
@@ -262,6 +263,7 @@ const defaultReminderAt = () => {
 export default function Applications({
     applications,
     stats,
+    statusCounts,
     filters,
     statuses,
 }: Props) {
@@ -300,9 +302,9 @@ export default function Applications({
             icon: MessagesSquare,
         },
         {
-            title: 'Offers',
-            value: stats.offers,
-            icon: Handshake,
+            title: 'Rejected',
+            value: stats.rejected,
+            icon: Ban,
         },
     ];
     const form = useForm<ApplicationForm>({
@@ -348,6 +350,8 @@ export default function Applications({
             { preserveState: true, replace: true },
         );
     };
+    const statusCount = (status: string) =>
+        status === 'all' ? stats.total : statusCounts[status] || 0;
 
     const submitSearch = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -1360,7 +1364,9 @@ export default function Applications({
                                                         rel="noreferrer"
                                                     >
                                                         <ExternalLink className="size-4" />
-                                                        Website
+                                                        {websiteLabel(
+                                                            selectedApplication.job_post_url,
+                                                        )}
                                                     </a>
                                                 </Button>
                                             ) : null}
@@ -1510,7 +1516,32 @@ export default function Applications({
                     </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 rounded-lg border bg-card p-2 sm:hidden">
+                    {statCards.map((stat) => {
+                        const Icon = stat.icon;
+
+                        return (
+                            <div
+                                key={stat.title}
+                                className="flex items-center gap-2 rounded-md px-2 py-2"
+                            >
+                                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                                    <Icon className="size-4" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="truncate text-xs text-muted-foreground">
+                                        {stat.title}
+                                    </p>
+                                    <p className="text-lg leading-none font-semibold">
+                                        {stat.value}
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="hidden gap-3 sm:grid sm:grid-cols-2 xl:grid-cols-4">
                     {statCards.map((stat) => (
                         <StatCard
                             key={stat.title}
@@ -1528,7 +1559,12 @@ export default function Applications({
                         size="sm"
                         onClick={() => changeFilterStatus('all')}
                     >
-                        All
+                        <span>All</span>
+                        {selectedStatus === 'all' ? (
+                            <span className="text-muted-foreground">
+                                {statusCount('all')}
+                            </span>
+                        ) : null}
                     </Button>
                     {filterButtonStatuses.map((status) => (
                         <Button
@@ -1542,7 +1578,12 @@ export default function Applications({
                             size="sm"
                             onClick={() => changeFilterStatus(status)}
                         >
-                            {statusLabel(status)}
+                            <span>{statusLabel(status)}</span>
+                            {selectedStatus === status ? (
+                                <span className="text-muted-foreground">
+                                    {statusCount(status)}
+                                </span>
+                            ) : null}
                         </Button>
                     ))}
                     {moreStatuses.length > 0 ? (
@@ -1563,6 +1604,11 @@ export default function Applications({
                                 }
                             >
                                 <SelectValue placeholder="More" />
+                                {isMoreStatusSelected ? (
+                                    <span className="text-muted-foreground">
+                                        {statusCount(selectedStatus)}
+                                    </span>
+                                ) : null}
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="more" disabled>
@@ -1662,7 +1708,7 @@ export default function Applications({
                                     onClick={(event) => event.stopPropagation()}
                                 >
                                     <ExternalLink className="size-3.5" />
-                                    Website
+                                    {websiteLabel(application.job_post_url)}
                                 </a>
                             ) : null}
                             {applicationActions(application)}
