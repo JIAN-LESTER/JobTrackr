@@ -55,6 +55,11 @@ const cleanPageLabel = (label: string) =>
         .replace('&laquo; Previous', 'Previous')
         .replace('Next &raquo;', 'Next');
 
+const reminderBadgeClass = (isCompleted: boolean) =>
+    isCompleted
+        ? 'border-[#cbd8cf] bg-[#eef3ef] text-[#324338] dark:border-[#33463a] dark:bg-[#213128] dark:text-[#d8e2da]'
+        : 'border-[#8f6a1f]/15 bg-[#f8edcf] text-[#755516] dark:bg-[#f3c76a]/20 dark:text-[#f8d98a]';
+
 export default function RemindersIndex({ reminders, filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
     const selectedStatus =
@@ -111,6 +116,7 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="border-red-100 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300"
                     onClick={() => deleteReminder(reminder)}
                 >
                     <Trash2 className="size-4" />
@@ -121,6 +127,7 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="border-[#cbd8cf] bg-white/80 text-[#2f6f4f] hover:bg-[#dcefe4] dark:border-[#33463a] dark:bg-[#213128]/70 dark:text-[#b8e6ca]"
                     onClick={() => markReminderDone(reminder)}
                 >
                     <Check className="size-4" />
@@ -134,7 +141,8 @@ export default function RemindersIndex({ reminders, filters }: Props) {
         <>
             <Head title="Reminders" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-[#eef3ef] p-4 dark:bg-background">
+                <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-xl font-semibold tracking-tight">
@@ -155,15 +163,16 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                                 setSearch(event.target.value)
                             }
                             placeholder="Search reminders"
-                            className="h-9"
+                            className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
                         />
                         <Button type="submit" size="icon" aria-label="Search">
                             <Search className="size-4" />
                         </Button>
                     </form>
                 </div>
+                </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-2 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
                     {[
                         ['all', 'All'],
                         ['pending', 'Pending'],
@@ -178,6 +187,15 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                                     : 'outline'
                             }
                             size="sm"
+                            className={
+                                selectedStatus === value
+                                    ? value === 'done'
+                                        ? reminderBadgeClass(true)
+                                        : value === 'pending'
+                                          ? reminderBadgeClass(false)
+                                          : 'bg-[#17201b] text-[#f4f8f2] hover:bg-[#2d3b31] dark:bg-[#f3c76a] dark:text-[#17201b] dark:hover:bg-[#e0b657]'
+                                    : 'border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70'
+                            }
                             onClick={() => changeStatusFilter(value)}
                         >
                             {label}
@@ -225,6 +243,9 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                                             ? 'outline'
                                             : 'secondary'
                                     }
+                                    className={reminderBadgeClass(
+                                        reminder.is_completed,
+                                    )}
                                 >
                                     {reminder.is_completed
                                         ? 'Done'
@@ -261,6 +282,9 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                                             ? 'outline'
                                             : 'secondary'
                                     }
+                                    className={reminderBadgeClass(
+                                        reminder.is_completed,
+                                    )}
                                 >
                                     {reminder.is_completed
                                         ? 'Done'
@@ -288,7 +312,12 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                                     <span className="font-medium">
                                         {reminder.title}
                                     </span>
-                                    <Badge variant="outline">
+                                    <Badge
+                                        variant="outline"
+                                        className={reminderBadgeClass(
+                                            reminder.is_completed,
+                                        )}
+                                    >
                                         {reminder.is_completed
                                             ? 'Done'
                                             : 'Pending'}
@@ -312,6 +341,13 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                             </div>
                         </div>
                     )}
+                    viewSwitcherClassName="border-[#cbd8cf] bg-[#f8faf7] shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]"
+                    emptyStateClassName="border-[#aebfb3] bg-[#f8faf7] dark:border-[#33463a] dark:bg-[#16231c]"
+                    cardClassName="border-[#cbd8cf] bg-[#f8faf7] shadow-md shadow-[#17201b]/10 hover:border-[#aebfb3] hover:bg-white/80 dark:border-[#33463a] dark:bg-[#16231c] dark:hover:border-[#f3c76a]/40 dark:hover:bg-[#1a2c22]"
+                    listClassName="divide-[#cbd8cf] border-[#cbd8cf] bg-[#f8faf7] shadow-sm shadow-[#17201b]/5 dark:divide-[#33463a] dark:border-[#33463a] dark:bg-[#16231c]"
+                    listItemClassName="hover:bg-[#eef3ef] dark:hover:bg-[#213128]"
+                    tableClassName="border-[#cbd8cf] bg-[#f8faf7] shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]"
+                    tableHeadClassName="bg-[#e6ece7] text-[#4c5c52] dark:bg-[#213128] dark:text-[#afbeb4]"
                 />
 
                 {reminders.links.length > 3 ? (
