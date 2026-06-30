@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { useRef, useState, type FormEvent } from 'react';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
+import DegreeSelect from '@/components/degree-select';
 import InputError from '@/components/input-error';
 import Heading from '@/components/heading';
 import LocationSelect from '@/components/location-select';
@@ -280,17 +281,16 @@ export default function Onboarding({ user }: Props) {
                                     <Label htmlFor="education_degree">
                                         Degree
                                     </Label>
-                                    <Input
+                                    <DegreeSelect
                                         id="education_degree"
                                         value={form.data.education_degree}
-                                        onChange={(event) =>
+                                        onChange={(value) =>
                                             form.setData(
                                                 'education_degree',
-                                                event.target.value,
+                                                value,
                                             )
                                         }
-                                        required
-                                        placeholder="Degree"
+                                        placeholder="Select degree"
                                     />
                                     <InputError
                                         message={

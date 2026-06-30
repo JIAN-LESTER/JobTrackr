@@ -4,6 +4,7 @@ import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileCo
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import AppearanceTabs from '@/components/appearance-tabs';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
+import DegreeSelect from '@/components/degree-select';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -39,6 +40,7 @@ export default function Profile() {
         typeof user?.avatar_preset === 'string' ? user.avatar_preset : '',
     );
     const [location, setLocation] = useState(user?.location || '');
+    const [degree, setDegree] = useState(user?.education_degree || '');
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
     const photoInput = useRef<HTMLInputElement>(null);
@@ -217,14 +219,12 @@ export default function Profile() {
                                             Degree
                                         </Label>
 
-                                        <Input
+                                        <DegreeSelect
                                             id="education_degree"
-                                            className="block w-full"
-                                            defaultValue={
-                                                user.education_degree || ''
-                                            }
                                             name="education_degree"
-                                            placeholder="Degree"
+                                            value={degree}
+                                            onChange={setDegree}
+                                            placeholder="Select degree"
                                         />
 
                                         <InputError
