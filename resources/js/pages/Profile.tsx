@@ -1,8 +1,9 @@
 import { Form, Head, usePage } from '@inertiajs/react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import AppearanceTabs from '@/components/appearance-tabs';
+import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -10,6 +11,7 @@ import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useInitials } from '@/hooks/use-initials';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
 import type { Auth } from '@/types';
@@ -19,7 +21,7 @@ type PageProps = {
     user?: Auth['user'];
     passwordRules?: string;
     profileDocuments: {
-        document_type: 'resume' | 'photo';
+        document_type: 'photo';
         file_name: string;
     }[];
 };
@@ -32,11 +34,13 @@ export default function Profile() {
         profileDocuments = [],
     } = usePage<PageProps>().props;
     const user = auth?.user ?? profileUser;
+    const [avatarPreset, setAvatarPreset] = useState(
+        typeof user?.avatar_preset === 'string' ? user.avatar_preset : '',
+    );
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
-    const latestResume = profileDocuments.find(
-        (document) => document.document_type === 'resume',
-    );
+    const photoInput = useRef<HTMLInputElement>(null);
+    const getInitials = useInitials();
     const latestPhoto = profileDocuments.find(
         (document) => document.document_type === 'photo',
     );
@@ -76,6 +80,26 @@ export default function Profile() {
                         >
                             {({ processing, errors }) => (
                                 <>
+                                    <div className="grid gap-2 sm:col-span-2">
+                                        <AvatarPresetPicker
+                                            name="avatar_preset"
+                                            value={avatarPreset}
+                                            onChange={(value) => {
+                                                setAvatarPreset(value);
+                                                if (photoInput.current) {
+                                                    photoInput.current.value =
+                                                        '';
+                                                }
+                                            }}
+                                            currentAvatar={user.avatar}
+                                            fallback={getInitials(user.name)}
+                                        />
+
+                                        <InputError
+                                            message={errors.avatar_preset}
+                                        />
+                                    </div>
+
                                     <div className="grid gap-2">
                                         <Label htmlFor="name">Name</Label>
 
@@ -109,6 +133,24 @@ export default function Profile() {
                                         />
 
                                         <InputError message={errors.email} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="industry">
+                                            Industry
+                                        </Label>
+
+                                        <Input
+                                            id="industry"
+                                            className="block w-full"
+                                            defaultValue={user.industry || ''}
+                                            name="industry"
+                                            placeholder="Industry"
+                                        />
+
+                                        <InputError
+                                            message={errors.industry}
+                                        />
                                     </div>
 
                                     <div className="grid gap-2">
@@ -150,35 +192,82 @@ export default function Profile() {
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="resume">Resume</Label>
+                                        <Label htmlFor="education_school">
+                                            School
+                                        </Label>
 
                                         <Input
-                                            id="resume"
-                                            type="file"
+                                            id="education_school"
                                             className="block w-full"
-                                            name="resume"
-                                            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                            defaultValue={
+                                                user.education_school || ''
+                                            }
+                                            name="education_school"
+                                            placeholder="School"
                                         />
 
-                                        {latestResume ? (
-                                            <p className="truncate rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-                                                Current:{' '}
-                                                {latestResume.file_name}
-                                            </p>
-                                        ) : null}
-
-                                        <InputError message={errors.resume} />
+                                        <InputError
+                                            message={errors.education_school}
+                                        />
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="photo">Photo</Label>
+                                        <Label htmlFor="education_degree">
+                                            Degree
+                                        </Label>
+
+                                        <Input
+                                            id="education_degree"
+                                            className="block w-full"
+                                            defaultValue={
+                                                user.education_degree || ''
+                                            }
+                                            name="education_degree"
+                                            placeholder="Degree"
+                                        />
+
+                                        <InputError
+                                            message={errors.education_degree}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="education_program">
+                                            Program
+                                        </Label>
+
+                                        <Input
+                                            id="education_program"
+                                            className="block w-full"
+                                            defaultValue={
+                                                user.education_program || ''
+                                            }
+                                            name="education_program"
+                                            placeholder="Program"
+                                        />
+
+                                        <InputError
+                                            message={errors.education_program}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="photo">Picture</Label>
 
                                         <Input
                                             id="photo"
+                                            ref={photoInput}
                                             type="file"
                                             className="block w-full"
                                             name="photo"
                                             accept="image/*"
+                                            onChange={(event) => {
+                                                if (
+                                                    event.target.files?.[0]
+                                                ) {
+                                                    setAvatarPreset('');
+                                                }
+                                            }}
                                         />
 
                                         {latestPhoto ? (
@@ -306,8 +395,8 @@ export default function Profile() {
                     </section>
                     </div>
 
-                    <div className="grid gap-5 lg:grid-cols-3">
-                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                    <div className="grid gap-5 lg:grid-cols-3 lg:items-stretch">
+                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:min-h-52">
                         <Heading
                             variant="small"
                             title="Appearance settings"
@@ -318,7 +407,7 @@ export default function Profile() {
                         </div>
                     </section>
 
-                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:min-h-52">
                         <Heading
                             variant="small"
                             title="Account actions"
@@ -339,7 +428,7 @@ export default function Profile() {
                         </Form>
                     </section>
 
-                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:min-h-52">
                         <DeleteUser />
                     </section>
                     </div>

@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\VerifyEmail;
+use App\Support\AvatarPresets;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,9 +28,9 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'industry', 'job_title', 'location', 'education_school', 'education_degree', 'education_program', 'onboarding_completed_at'])]
+#[Fillable(['name', 'email', 'password', 'industry', 'job_title', 'location', 'education_school', 'education_degree', 'education_program', 'avatar_preset', 'onboarding_completed_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
@@ -58,11 +60,20 @@ class User extends Authenticatable
 
     public function getAvatarAttribute(): ?string
     {
+        if ($preset = AvatarPresets::url($this->avatar_preset)) {
+            return $preset;
+        }
+
         $photo = $this->documents()
             ->where('document_type', 'photo')
             ->latest()
             ->first();
 
         return $photo ? Storage::disk('public')->url($photo->file_path) : null;
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmail);
     }
 }

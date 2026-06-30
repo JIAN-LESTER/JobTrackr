@@ -52,6 +52,9 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $user->fill(collect($validated)->except('photo')->all());
+        if ($request->hasFile('photo')) {
+            $user->avatar_preset = null;
+        }
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
