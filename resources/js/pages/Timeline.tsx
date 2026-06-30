@@ -48,10 +48,41 @@ const lifecycleEvents = ['added', 'imported', 'updated', 'deleted'];
 const isLifecycleEvent = (history: ApplicationStatusHistory) =>
     !history.old_status && lifecycleEvents.includes(history.new_status);
 
+const statusBadgeClass = (status: string | null) => {
+    switch (status) {
+        case 'applied':
+            return 'border-[#2f6f4f]/15 bg-[#dcefe4] text-[#24543d] dark:bg-[#2f6f4f]/25 dark:text-[#b8e6ca]';
+        case 'saved':
+            return 'border-[#8f6a1f]/15 bg-[#f8edcf] text-[#755516] dark:bg-[#f3c76a]/20 dark:text-[#f8d98a]';
+        case 'assessment':
+            return 'border-[#2f6d7c]/15 bg-[#d9edf1] text-[#245867] dark:bg-[#2f6d7c]/25 dark:text-[#b5e2eb]';
+        case 'interviewing':
+            return 'border-[#5b4b8a]/15 bg-[#e6e1f2] text-[#4a3d75] dark:bg-[#5b4b8a]/30 dark:text-[#d8cff5]';
+        case 'offer':
+            return 'border-[#7a5b1c]/15 bg-[#f6e6b8] text-[#654914] dark:bg-[#f3c76a]/25 dark:text-[#ffe7a3]';
+        case 'rejected':
+            return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300';
+        case 'added':
+        case 'imported':
+            return 'border-[#2f6f4f]/15 bg-[#dcefe4] text-[#24543d] dark:bg-[#2f6f4f]/25 dark:text-[#b8e6ca]';
+        case 'updated':
+            return 'border-[#2f6d7c]/15 bg-[#d9edf1] text-[#245867] dark:bg-[#2f6d7c]/25 dark:text-[#b5e2eb]';
+        case 'deleted':
+            return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300';
+        default:
+            return 'border-[#cbd8cf] bg-[#eef3ef] text-[#324338] dark:border-[#33463a] dark:bg-[#213128] dark:text-[#d8e2da]';
+    }
+};
+
 const TimelineChange = ({ history }: { history: ApplicationStatusHistory }) =>
     isLifecycleEvent(history) ? (
         <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{statusLabel(history.new_status)}</Badge>
+            <Badge
+                variant="outline"
+                className={statusBadgeClass(history.new_status)}
+            >
+                {statusLabel(history.new_status)}
+            </Badge>
             {history.remarks ? (
                 <span className="text-sm text-muted-foreground">
                     {history.remarks}
@@ -60,9 +91,19 @@ const TimelineChange = ({ history }: { history: ApplicationStatusHistory }) =>
         </div>
     ) : (
         <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{statusLabel(history.old_status)}</Badge>
+            <Badge
+                variant="outline"
+                className={statusBadgeClass(history.old_status)}
+            >
+                {statusLabel(history.old_status)}
+            </Badge>
             <span className="text-xs text-muted-foreground">to</span>
-            <Badge variant="secondary">{statusLabel(history.new_status)}</Badge>
+            <Badge
+                variant="outline"
+                className={statusBadgeClass(history.new_status)}
+            >
+                {statusLabel(history.new_status)}
+            </Badge>
         </div>
     );
 
@@ -103,7 +144,8 @@ export default function StatusHistoriesIndex({
         <>
             <Head title="Timeline" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-[#eef3ef] p-4 dark:bg-background">
+                <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-xl font-semibold tracking-tight">
@@ -124,12 +166,13 @@ export default function StatusHistoriesIndex({
                                 setSearch(event.target.value)
                             }
                             placeholder="Search timeline"
-                            className="h-9"
+                            className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
                         />
                         <Button type="submit" size="icon" aria-label="Search">
                             <Search className="size-4" />
                         </Button>
                     </form>
+                </div>
                 </div>
 
                 <PreferredView
@@ -200,6 +243,13 @@ export default function StatusHistoriesIndex({
                             </p>
                         </div>
                     )}
+                    viewSwitcherClassName="border-[#cbd8cf] bg-[#f8faf7] shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]"
+                    emptyStateClassName="border-[#aebfb3] bg-[#f8faf7] dark:border-[#33463a] dark:bg-[#16231c]"
+                    cardClassName="border-[#cbd8cf] bg-[#f8faf7] shadow-md shadow-[#17201b]/10 hover:border-[#aebfb3] hover:bg-white/80 dark:border-[#33463a] dark:bg-[#16231c] dark:hover:border-[#f3c76a]/40 dark:hover:bg-[#1a2c22]"
+                    listClassName="divide-[#cbd8cf] border-[#cbd8cf] bg-[#f8faf7] shadow-sm shadow-[#17201b]/5 dark:divide-[#33463a] dark:border-[#33463a] dark:bg-[#16231c]"
+                    listItemClassName="hover:bg-[#eef3ef] dark:hover:bg-[#213128]"
+                    tableClassName="border-[#cbd8cf] bg-[#f8faf7] shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]"
+                    tableHeadClassName="bg-[#e6ece7] text-[#4c5c52] dark:bg-[#213128] dark:text-[#afbeb4]"
                 />
 
                 {statusHistories.links.length > 3 ? (
