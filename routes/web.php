@@ -7,13 +7,20 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\UserController;
+use App\Http\Middleware\EnsureOnboardingIsComplete;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/applications')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('onboarding', [OnboardingController::class, 'edit'])->name('onboarding.edit');
+    Route::post('onboarding', [OnboardingController::class, 'update'])->name('onboarding.update');
+});
+
+Route::middleware(['auth', 'verified', EnsureOnboardingIsComplete::class])->group(function () {
     Route::redirect('dashboard', '/applications')->name('dashboard');
     Route::get('applications/import', [ApplicationController::class, 'import'])->name('applications.import');
     Route::post('/applications/import', [ApplicationController::class, 'import']);

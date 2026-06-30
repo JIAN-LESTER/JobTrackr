@@ -118,7 +118,22 @@ export function PreferredView<T>({
                     {items.map((item) => (
                         <article
                             key={getKey(item)}
-                            className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
+                            role={onItemClick ? 'button' : undefined}
+                            tabIndex={onItemClick ? 0 : undefined}
+                            className={cn(
+                                'rounded-lg border bg-card p-4 text-card-foreground shadow-sm',
+                                onItemClick
+                                    ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
+                                    : '',
+                            )}
+                            onClick={
+                                onItemClick
+                                    ? () => onItemClick(item)
+                                    : undefined
+                            }
+                            onKeyDown={(event) =>
+                                handleItemKeyDown(item, event)
+                            }
                         >
                             {renderCard(item)}
                         </article>

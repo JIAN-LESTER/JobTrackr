@@ -17,13 +17,18 @@ export default function AuthCardLayout({
     description?: string;
 }>) {
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-[#e8eee9] p-6 dark:bg-background md:p-10">
             <div className="flex w-full max-w-md flex-col gap-6">
                 <div className="flex items-center justify-center self-center">
                     <img
                         src="/JobTrackr-logo.png"
                         alt="JobTrackr"
-                        className="h-20 w-auto object-contain"
+                        className="h-20 w-auto object-contain dark:hidden"
+                    />
+                    <img
+                        src="/JobTrackr-logo-white.png"
+                        alt="JobTrackr"
+                        className="hidden h-20 w-auto object-contain dark:block"
                     />
                 </div>
 

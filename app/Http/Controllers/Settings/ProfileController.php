@@ -24,7 +24,7 @@ class ProfileController extends Controller
     {
         $documents = $request->user()
             ->documents()
-            ->whereIn('document_type', ['resume', 'photo'])
+            ->where('document_type', 'photo')
             ->latest()
             ->get()
             ->unique('document_type')
@@ -51,7 +51,7 @@ class ProfileController extends Controller
         $validated = $request->validated();
         $user = $request->user();
 
-        $user->fill(collect($validated)->except(['resume', 'photo'])->all());
+        $user->fill(collect($validated)->except('photo')->all());
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
@@ -59,7 +59,6 @@ class ProfileController extends Controller
 
         $user->save();
 
-        $this->storeProfileDocument($user->getKey(), $request->file('resume'), 'resume');
         $this->storeProfileDocument($user->getKey(), $request->file('photo'), 'photo');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);

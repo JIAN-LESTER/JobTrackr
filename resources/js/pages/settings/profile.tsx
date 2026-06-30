@@ -19,7 +19,7 @@ type PageProps = {
     user?: Auth['user'];
     passwordRules?: string;
     profileDocuments: {
-        document_type: 'resume' | 'photo';
+        document_type: 'photo';
         file_name: string;
     }[];
 };
@@ -34,9 +34,6 @@ export default function Profile() {
     const user = auth?.user ?? profileUser;
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
-    const latestResume = profileDocuments.find(
-        (document) => document.document_type === 'resume',
-    );
     const latestPhoto = profileDocuments.find(
         (document) => document.document_type === 'photo',
     );
@@ -112,6 +109,24 @@ export default function Profile() {
                                     </div>
 
                                     <div className="grid gap-2">
+                                        <Label htmlFor="industry">
+                                            Industry
+                                        </Label>
+
+                                        <Input
+                                            id="industry"
+                                            className="block w-full"
+                                            defaultValue={user.industry || ''}
+                                            name="industry"
+                                            placeholder="Industry"
+                                        />
+
+                                        <InputError
+                                            message={errors.industry}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
                                         <Label htmlFor="job_title">
                                             Job title
                                         </Label>
@@ -150,28 +165,67 @@ export default function Profile() {
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="resume">Resume</Label>
+                                        <Label htmlFor="education_school">
+                                            School
+                                        </Label>
 
                                         <Input
-                                            id="resume"
-                                            type="file"
+                                            id="education_school"
                                             className="block w-full"
-                                            name="resume"
-                                            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                            defaultValue={
+                                                user.education_school || ''
+                                            }
+                                            name="education_school"
+                                            placeholder="School"
                                         />
 
-                                        {latestResume ? (
-                                            <p className="truncate rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-                                                Current:{' '}
-                                                {latestResume.file_name}
-                                            </p>
-                                        ) : null}
-
-                                        <InputError message={errors.resume} />
+                                        <InputError
+                                            message={errors.education_school}
+                                        />
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="photo">Photo</Label>
+                                        <Label htmlFor="education_degree">
+                                            Degree
+                                        </Label>
+
+                                        <Input
+                                            id="education_degree"
+                                            className="block w-full"
+                                            defaultValue={
+                                                user.education_degree || ''
+                                            }
+                                            name="education_degree"
+                                            placeholder="Degree"
+                                        />
+
+                                        <InputError
+                                            message={errors.education_degree}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="education_program">
+                                            Program
+                                        </Label>
+
+                                        <Input
+                                            id="education_program"
+                                            className="block w-full"
+                                            defaultValue={
+                                                user.education_program || ''
+                                            }
+                                            name="education_program"
+                                            placeholder="Program"
+                                        />
+
+                                        <InputError
+                                            message={errors.education_program}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="photo">Picture</Label>
 
                                         <Input
                                             id="photo"
@@ -306,8 +360,8 @@ export default function Profile() {
                     </section>
                     </div>
 
-                    <div className="grid gap-5 lg:grid-cols-3">
-                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                    <div className="grid gap-5 lg:grid-cols-3 lg:items-stretch">
+                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:min-h-52">
                         <Heading
                             variant="small"
                             title="Appearance settings"
@@ -318,7 +372,7 @@ export default function Profile() {
                         </div>
                     </section>
 
-                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:min-h-52">
                         <Heading
                             variant="small"
                             title="Account actions"
@@ -339,7 +393,7 @@ export default function Profile() {
                         </Form>
                     </section>
 
-                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:min-h-52">
                         <DeleteUser />
                     </section>
                     </div>

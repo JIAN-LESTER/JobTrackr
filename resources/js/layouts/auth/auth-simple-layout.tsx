@@ -25,14 +25,19 @@ export default function AuthSimpleLayout({
                         {side}
                     </div>
 
-                    <div className="h-full w-full rounded-md border bg-background/95 p-6 shadow-2xl shadow-black/15 backdrop-blur sm:p-8">
+                    <div className="h-full w-full rounded-md border bg-card/95 p-6 shadow-2xl shadow-black/15 backdrop-blur dark:shadow-black/40 sm:p-8">
                         <div className="flex h-full flex-col justify-center gap-6">
                             <div className="flex flex-col items-center gap-4">
                                 <div className="flex flex-col items-center gap-2 font-medium">
                                     <img
                                         src="/JobTrackr-logo.png"
                                         alt="JobTrackr"
-                                        className="h-20 w-auto object-contain"
+                                        className="h-20 w-auto object-contain dark:hidden"
+                                    />
+                                    <img
+                                        src="/JobTrackr-logo-white.png"
+                                        alt="JobTrackr"
+                                        className="hidden h-20 w-auto object-contain dark:block"
                                     />
                                     <span className="sr-only">{title}</span>
                                 </div>
@@ -55,7 +60,7 @@ export default function AuthSimpleLayout({
     }
 
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
+        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-[#e8eee9] p-6 dark:bg-background md:p-10">
             <div className="w-full max-w-sm">
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-col items-center gap-4">
@@ -63,7 +68,12 @@ export default function AuthSimpleLayout({
                             <img
                                 src="/JobTrackr-logo.png"
                                 alt="JobTrackr"
-                                className="h-20 w-auto object-contain"
+                                className="h-20 w-auto object-contain dark:hidden"
+                            />
+                            <img
+                                src="/JobTrackr-logo-white.png"
+                                alt="JobTrackr"
+                                className="hidden h-20 w-auto object-contain dark:block"
                             />
                             <span className="sr-only">{title}</span>
                         </div>

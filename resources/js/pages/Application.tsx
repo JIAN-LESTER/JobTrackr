@@ -1668,21 +1668,7 @@ export default function Applications({
                         },
                     ]}
                     renderCard={(application) => (
-                        <div
-                            role="button"
-                            tabIndex={0}
-                            className="cursor-pointer space-y-3 rounded-md outline-none transition hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                            onClick={() => setSelectedApplication(application)}
-                            onKeyDown={(event) => {
-                                if (
-                                    event.key === 'Enter' ||
-                                    event.key === ' '
-                                ) {
-                                    event.preventDefault();
-                                    setSelectedApplication(application);
-                                }
-                            }}
-                        >
+                        <div className="space-y-3">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <h2 className="font-medium">
