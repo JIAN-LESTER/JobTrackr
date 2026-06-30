@@ -18,4 +18,6 @@ export type AuthLayoutProps = {
     name?: string;
     title?: string;
     description?: string;
+    side?: ReactNode;
+    sidePosition?: 'left' | 'right';
 };

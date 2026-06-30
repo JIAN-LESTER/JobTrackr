@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
 
 /**
@@ -25,7 +26,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'job_title', 'location'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -33,6 +34,8 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes;
 
     protected $primaryKey = 'user_id';
+
+    protected $appends = ['avatar'];
 
     /**
      * Get the attributes that should be cast.
@@ -45,5 +48,20 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(Document::class, 'user_id', 'user_id');
+    }
+
+    public function getAvatarAttribute(): ?string
+    {
+        $photo = $this->documents()
+            ->where('document_type', 'photo')
+            ->latest()
+            ->first();
+
+        return $photo ? Storage::disk('public')->url($photo->file_path) : null;
     }
 }

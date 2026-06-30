@@ -18,6 +18,10 @@ trait ProfileValidationRules
         return [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
+            'job_title' => ['nullable', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+            'photo' => ['nullable', 'image', 'max:2048'],
         ];
     }
 

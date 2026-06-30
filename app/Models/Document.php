@@ -9,6 +9,7 @@ class Document extends Model
     protected $primaryKey = 'document_id';
 
     protected $fillable = [
+        'user_id',
         'job_application_id',
         'document_type',
         'file_name',
@@ -20,5 +21,10 @@ class Document extends Model
     public function jobApplication()
     {
         return $this->belongsTo(Application::class, 'job_application_id', 'application_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 }
