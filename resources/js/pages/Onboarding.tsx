@@ -3,9 +3,17 @@ import { useRef, useState, type FormEvent } from 'react';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import InputError from '@/components/input-error';
 import Heading from '@/components/heading';
+import LocationSelect from '@/components/location-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import type { Auth } from '@/types';
 
@@ -26,6 +34,22 @@ type OnboardingForm = {
     photo: File | null;
 };
 
+const industries = [
+    'Accounting',
+    'Advertising',
+    'Business Process Outsourcing',
+    'Construction',
+    'Education',
+    'Finance',
+    'Healthcare',
+    'Hospitality',
+    'Information Technology',
+    'Manufacturing',
+    'Retail',
+    'Telecommunications',
+    'Transportation',
+];
+
 export default function Onboarding({ user }: Props) {
     const [step, setStep] = useState(0);
     const photoInputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +69,9 @@ export default function Onboarding({ user }: Props) {
     const avatarFallback =
         `${form.data.first_name.charAt(0)}${form.data.last_name.charAt(0)}`.toUpperCase() ||
         'JT';
+    const industryOptions = industries.includes(form.data.industry)
+        ? industries
+        : [form.data.industry, ...industries].filter(Boolean);
 
     const canContinue =
         step === 0
@@ -155,18 +182,32 @@ export default function Onboarding({ user }: Props) {
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="industry">Industry</Label>
-                                    <Input
-                                        id="industry"
+                                    <Select
                                         value={form.data.industry}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'industry',
-                                                event.target.value,
-                                            )
+                                        onValueChange={(value) =>
+                                            form.setData('industry', value)
                                         }
                                         required
-                                        placeholder="Industry"
-                                    />
+                                    >
+                                        <SelectTrigger
+                                            id="industry"
+                                            className="w-full"
+                                        >
+                                            <SelectValue placeholder="Select industry" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {industryOptions.map(
+                                                (industry) => (
+                                                    <SelectItem
+                                                        key={industry}
+                                                        value={industry}
+                                                    >
+                                                        {industry}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectContent>
+                                    </Select>
                                     <InputError
                                         message={form.errors.industry}
                                     />
@@ -194,18 +235,13 @@ export default function Onboarding({ user }: Props) {
 
                                 <div className="grid gap-2 sm:col-span-2">
                                     <Label htmlFor="location">Location</Label>
-                                    <Input
+                                    <LocationSelect
                                         id="location"
                                         value={form.data.location}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'location',
-                                                event.target.value,
-                                            )
+                                        onChange={(value) =>
+                                            form.setData('location', value)
                                         }
-                                        required
-                                        autoComplete="address-level2"
-                                        placeholder="Location"
+                                        placeholder="Select location"
                                     />
                                     <InputError
                                         message={form.errors.location}

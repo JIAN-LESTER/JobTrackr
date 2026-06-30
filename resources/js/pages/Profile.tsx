@@ -7,6 +7,7 @@ import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import LocationSelect from '@/components/location-select';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,7 @@ export default function Profile() {
     const [avatarPreset, setAvatarPreset] = useState(
         typeof user?.avatar_preset === 'string' ? user.avatar_preset : '',
     );
+    const [location, setLocation] = useState(user?.location || '');
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
     const photoInput = useRef<HTMLInputElement>(null);
@@ -174,16 +176,15 @@ export default function Profile() {
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="location">
-                                            Location
+                                            Country
                                         </Label>
 
-                                        <Input
+                                        <LocationSelect
                                             id="location"
-                                            className="block w-full"
-                                            defaultValue={user.location || ''}
                                             name="location"
-                                            autoComplete="address-level2"
-                                            placeholder="Location"
+                                            value={location}
+                                            onChange={setLocation}
+                                            placeholder="Select country"
                                         />
 
                                         <InputError
