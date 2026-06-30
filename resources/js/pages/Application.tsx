@@ -450,7 +450,11 @@ export default function Applications({
     };
 
     const applicationActions = (application: Application) => (
-        <div className="flex flex-wrap items-center gap-2">
+        <div
+            className="flex flex-wrap items-center gap-2"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+        >
             <Select
                 value={application.status}
                 onValueChange={(status) =>
@@ -1579,6 +1583,9 @@ export default function Applications({
                     storageKey="jobtrackr.applications.preferred-view"
                     emptyState="No applications found."
                     getKey={(application) => application.application_id}
+                    onItemClick={(application) =>
+                        setSelectedApplication(application)
+                    }
                     columns={[
                         {
                             key: 'company',
@@ -1618,7 +1625,7 @@ export default function Applications({
                         <div
                             role="button"
                             tabIndex={0}
-                            className="space-y-3 rounded-md outline-none transition hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                            className="cursor-pointer space-y-3 rounded-md outline-none transition hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             onClick={() => setSelectedApplication(application)}
                             onKeyDown={(event) => {
                                 if (
@@ -1658,12 +1665,7 @@ export default function Applications({
                                     Website
                                 </a>
                             ) : null}
-                            <div
-                                onClick={(event) => event.stopPropagation()}
-                                onKeyDown={(event) => event.stopPropagation()}
-                            >
-                                {applicationActions(application)}
-                            </div>
+                            {applicationActions(application)}
                         </div>
                     )}
                     renderListItem={(application) => (

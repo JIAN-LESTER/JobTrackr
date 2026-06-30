@@ -1,6 +1,6 @@
 import { Grid2X2, List, Table2 } from 'lucide-react';
 import { useEffect, useState  } from 'react';
-import type {ReactNode} from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +20,7 @@ type PreferredViewProps<T> = {
     getKey: (item: T) => string | number;
     renderCard: (item: T) => ReactNode;
     renderListItem: (item: T) => ReactNode;
+    onItemClick?: (item: T) => void;
     storageKey: string;
 };
 
@@ -40,6 +41,7 @@ export function PreferredView<T>({
     getKey,
     renderCard,
     renderListItem,
+    onItemClick,
     storageKey,
 }: PreferredViewProps<T>) {
     const [viewMode, setViewMode] = useState<PreferredViewMode>('card');
@@ -59,6 +61,20 @@ export function PreferredView<T>({
     const updateViewMode = (nextViewMode: PreferredViewMode) => {
         setViewMode(nextViewMode);
         window.localStorage.setItem(storageKey, nextViewMode);
+    };
+
+    const handleItemKeyDown = (
+        item: T,
+        event: KeyboardEvent<HTMLElement>,
+    ) => {
+        if (!onItemClick) {
+            return;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onItemClick(item);
+        }
     };
 
     return (
@@ -113,7 +129,25 @@ export function PreferredView<T>({
             {items.length > 0 && viewMode === 'list' ? (
                 <div className="divide-y rounded-lg border bg-card">
                     {items.map((item) => (
-                        <div key={getKey(item)} className="p-4">
+                        <div
+                            key={getKey(item)}
+                            role={onItemClick ? 'button' : undefined}
+                            tabIndex={onItemClick ? 0 : undefined}
+                            className={cn(
+                                'p-4',
+                                onItemClick
+                                    ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
+                                    : '',
+                            )}
+                            onClick={
+                                onItemClick
+                                    ? () => onItemClick(item)
+                                    : undefined
+                            }
+                            onKeyDown={(event) =>
+                                handleItemKeyDown(item, event)
+                            }
+                        >
                             {renderListItem(item)}
                         </div>
                     ))}
@@ -142,7 +176,26 @@ export function PreferredView<T>({
                             </thead>
                             <tbody className="divide-y">
                                 {items.map((item) => (
-                                    <tr key={getKey(item)}>
+                                    <tr
+                                        key={getKey(item)}
+                                        role={
+                                            onItemClick ? 'button' : undefined
+                                        }
+                                        tabIndex={onItemClick ? 0 : undefined}
+                                        className={cn(
+                                            onItemClick
+                                                ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
+                                                : '',
+                                        )}
+                                        onClick={
+                                            onItemClick
+                                                ? () => onItemClick(item)
+                                                : undefined
+                                        }
+                                        onKeyDown={(event) =>
+                                            handleItemKeyDown(item, event)
+                                        }
+                                    >
                                         {columns.map((column) => (
                                             <td
                                                 key={column.key}
