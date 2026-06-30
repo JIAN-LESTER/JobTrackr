@@ -1,9 +1,9 @@
 import { Head, useForm } from '@inertiajs/react';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+from 'react';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DegreeSelect from '@/components/degree-select';
 import InputError from '@/components/input-error';
-import Heading from '@/components/heading';
+
 import LocationSelect from '@/components/location-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import type { Auth } from '@/types';
+import Heading from '@/components/heading';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
 type Props = {
     user: Auth['user'];

@@ -74,9 +74,8 @@ export default function Profile() {
                     description="Manage your profile and account settings"
                 />
 
-                <div className="grid gap-5">
-                    <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch">
+                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:h-full">
                         <Heading
                             variant="small"
                             title="Account information"
@@ -313,6 +312,7 @@ export default function Profile() {
                         </Form>
                     </section>
 
+                    <div className="grid gap-4">
                     <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
                         <Heading
                             variant="small"
@@ -414,10 +414,9 @@ export default function Profile() {
                             )}
                         </Form>
                     </section>
-                    </div>
 
-                    <div className="grid gap-5 lg:grid-cols-3 lg:items-stretch">
-                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:min-h-52">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
                         <Heading
                             variant="small"
                             title="Appearance settings"
@@ -428,7 +427,7 @@ export default function Profile() {
                         </div>
                     </section>
 
-                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:min-h-52">
+                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
                         <Heading
                             variant="small"
                             title="Account actions"
@@ -449,9 +448,10 @@ export default function Profile() {
                         </Form>
                     </section>
 
-                    <section className="h-full rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:min-h-52">
+                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:col-span-2 sm:p-6">
                         <DeleteUser />
                     </section>
+                    </div>
                     </div>
                 </div>
             </div>
