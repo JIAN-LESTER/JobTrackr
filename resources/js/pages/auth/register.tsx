@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import { CheckCircle2, ListTodo, ShieldCheck } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -115,6 +116,62 @@ export default function Register({ passwordRules }: Props) {
 }
 
 Register.layout = {
-    title: 'Create an account',
-    description: 'Enter your details below to create your account',
+    title: 'Register to JobTrackr',
+    description: 'Add your details to start tracking applications.',
+    sidePosition: 'right',
+    side: (
+        <div className="flex h-full flex-col justify-between gap-5 rounded-md bg-[#17201b] p-6 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 sm:p-8 lg:min-h-[500px]">
+            <div className="space-y-3">
+                <p className="text-sm font-medium text-[#f3c76a]">
+                    Account setup
+                </p>
+                <h2 className="text-3xl font-semibold">
+                    Start with a clean system for every opportunity.
+                </h2>
+                <p className="text-white/70">
+                    Create your account, set your password, then begin tracking
+                    roles, interviews, reminders, and decisions.
+                </p>
+            </div>
+
+            <div className="space-y-3 text-sm">
+                <div className="flex gap-3">
+                    <CheckCircle2 className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Create your profile</p>
+                        <p className="text-white/65">
+                            Add your name and email so your workspace is ready.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <ShieldCheck className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Protect your access</p>
+                        <p className="text-white/65">
+                            Choose a password that keeps your job search data
+                            secure.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <ListTodo className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Build your pipeline</p>
+                        <p className="text-white/65">
+                            Add applications and keep the next action visible.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="rounded-md bg-white/10 p-4 text-sm ring-1 ring-white/10">
+                <p className="font-medium">Ready in minutes</p>
+                <p className="mt-1 text-white/65">
+                    Sign up, add your first role, and keep every next step in
+                    view.
+                </p>
+            </div>
+        </div>
+    ),
 };
