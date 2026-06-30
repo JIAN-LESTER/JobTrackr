@@ -153,7 +153,8 @@ export default function ApplicationImport({ importData }: Props) {
         <>
             <Head title="Job Import" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-[#eef3ef] p-4 dark:bg-background">
+                <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <h1 className="text-xl font-semibold tracking-tight">
@@ -164,15 +165,20 @@ export default function ApplicationImport({ importData }: Props) {
                             other job boards.
                         </p>
                     </div>
-                    <Button asChild variant="outline">
+                    <Button
+                        asChild
+                        variant="outline"
+                        className="border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70"
+                    >
                         <Link href="/applications">Applications</Link>
                     </Button>
+                </div>
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
                     <form
                         onSubmit={submitApplication}
-                        className="space-y-4 rounded-md border p-4"
+                        className="space-y-4 rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]"
                     >
                         <div className="space-y-2">
                             <Label htmlFor="job_post_url">Job post URL</Label>
@@ -180,6 +186,7 @@ export default function ApplicationImport({ importData }: Props) {
                                 id="job_post_url"
                                 type="url"
                                 value={form.data.job_post_url}
+                                className="bg-white/80 dark:bg-[#0f1713]/40"
                                 onChange={(event) =>
                                     form.setData(
                                         'job_post_url',
@@ -200,6 +207,7 @@ export default function ApplicationImport({ importData }: Props) {
                                 <Input
                                     id="location"
                                     value={form.data.location}
+                                    className="bg-white/80 dark:bg-[#0f1713]/40"
                                     onChange={(event) =>
                                         form.setData(
                                             'location',
@@ -213,6 +221,7 @@ export default function ApplicationImport({ importData }: Props) {
                                 <Input
                                     id="job_type"
                                     value={form.data.job_type}
+                                    className="bg-white/80 dark:bg-[#0f1713]/40"
                                     onChange={(event) =>
                                         form.setData(
                                             'job_type',
@@ -226,6 +235,7 @@ export default function ApplicationImport({ importData }: Props) {
                                 <Input
                                     id="work_setup"
                                     value={form.data.work_setup}
+                                    className="bg-white/80 dark:bg-[#0f1713]/40"
                                     onChange={(event) =>
                                         form.setData(
                                             'work_setup',
@@ -237,14 +247,18 @@ export default function ApplicationImport({ importData }: Props) {
                         </div>
 
                         <div className="flex justify-end">
-                            <Button type="submit" disabled={form.processing}>
+                            <Button
+                                type="submit"
+                                disabled={form.processing}
+                                className="bg-[#17201b] text-[#f4f8f2] hover:bg-[#2d3b31] dark:bg-[#f3c76a] dark:text-[#17201b] dark:hover:bg-[#e0b657]"
+                            >
                                 {form.processing ? <Spinner /> : <Check />}
                                 Save application
                             </Button>
                         </div>
                     </form>
 
-                    <div className="space-y-4 rounded-md border p-4">
+                    <div className="space-y-4 rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
                         <div className="space-y-2">
                             <h2 className="font-medium">
                                 Download extension
@@ -255,7 +269,7 @@ export default function ApplicationImport({ importData }: Props) {
                                 this import screen.
                             </p>
                         </div>
-                        <div className="space-y-2 rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+                        <div className="space-y-2 rounded-md border border-[#cbd8cf] bg-[#eef3ef] p-3 text-sm text-muted-foreground dark:border-[#33463a] dark:bg-[#213128]">
                             <p>
                                 Use it while viewing a job listing to open
                                 JobTrackr with the posting URL ready to review
@@ -267,7 +281,10 @@ export default function ApplicationImport({ importData }: Props) {
                             </p>
                         </div>
                         {extensionInstallUrl ? (
-                            <Button asChild className="w-full">
+                            <Button
+                                asChild
+                                className="w-full bg-[#17201b] text-[#f4f8f2] hover:bg-[#2d3b31] dark:bg-[#f3c76a] dark:text-[#17201b] dark:hover:bg-[#e0b657]"
+                            >
                                 <a
                                     href={extensionInstallUrl}
                                     target="_blank"
@@ -278,7 +295,11 @@ export default function ApplicationImport({ importData }: Props) {
                                 </a>
                             </Button>
                         ) : (
-                            <Button type="button" className="w-full" disabled>
+                            <Button
+                                type="button"
+                                className="w-full bg-[#17201b] text-[#f4f8f2] dark:bg-[#f3c76a] dark:text-[#17201b]"
+                                disabled
+                            >
                                 <ExternalLink />
                                 Extension download unavailable
                             </Button>
