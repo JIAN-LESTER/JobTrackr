@@ -95,6 +95,10 @@ type ReminderForm = {
     remind_at: string;
 };
 
+type ApplicationValidationErrors = Partial<
+    Record<keyof ApplicationForm, string>
+>;
+
 const statusLabel = (status: string) =>
     status
         .split('_')
@@ -260,6 +264,65 @@ const defaultReminderAt = () => {
     return toDateTimeLocal(date);
 };
 
+const validateApplicationForm = (data: ApplicationForm) => {
+    const errors: ApplicationValidationErrors = {};
+    const salaryMin = data.salary_min.trim();
+    const salaryMax = data.salary_max.trim();
+    const jobPostUrl = data.job_post_url.trim();
+    const appliedDate = data.applied_date.trim();
+
+    if (!data.company.trim()) {
+        errors.company = 'Company is required.';
+    }
+
+    if (!data.job_title.trim()) {
+        errors.job_title = 'Job title is required.';
+    }
+
+    if (
+        salaryMin &&
+        (Number.isNaN(Number(salaryMin)) || Number(salaryMin) < 0)
+    ) {
+        errors.salary_min = 'Salary min must be a nonnegative number.';
+    }
+
+    if (
+        salaryMax &&
+        (Number.isNaN(Number(salaryMax)) || Number(salaryMax) < 0)
+    ) {
+        errors.salary_max = 'Salary max must be a nonnegative number.';
+    }
+
+    if (
+        salaryMin &&
+        salaryMax &&
+        !errors.salary_min &&
+        !errors.salary_max &&
+        Number(salaryMax) < Number(salaryMin)
+    ) {
+        errors.salary_max =
+            'Salary max must be greater than or equal to salary min.';
+    }
+
+    if (jobPostUrl) {
+        try {
+            new URL(jobPostUrl);
+        } catch {
+            errors.job_post_url = 'Enter a valid URL, including http:// or https://.';
+        }
+
+        if (jobPostUrl.length > 255) {
+            errors.job_post_url = 'Job post URL must be 255 characters or fewer.';
+        }
+    }
+
+    if (appliedDate && Number.isNaN(Date.parse(appliedDate))) {
+        errors.applied_date = 'Enter a valid date.';
+    }
+
+    return errors;
+};
+
 export default function Applications({
     applications,
     stats,
@@ -277,6 +340,8 @@ export default function Applications({
     const [deletingApplication, setDeletingApplication] =
         useState<Application | null>(null);
     const [search, setSearch] = useState(filters.search || '');
+    const [addFormErrors, setAddFormErrors] =
+        useState<ApplicationValidationErrors>({});
     const selectedStatus = filters.status || 'all';
     const visibleStatuses = filterButtonStatuses.filter((status) =>
         statuses.includes(status),
@@ -366,14 +431,45 @@ export default function Applications({
     const submitApplication = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
+        const validationErrors = validateApplicationForm(form.data);
+
+        setAddFormErrors(validationErrors);
+
+        if (Object.keys(validationErrors).length > 0) {
+            return;
+        }
+
         form.post('/applications', {
             preserveScroll: true,
             onSuccess: () => {
                 form.reset();
                 form.setData('status', 'applied');
+                setAddFormErrors({});
                 setIsAddOpen(false);
             },
         });
+    };
+
+    const setAddFormData = (field: keyof ApplicationForm, value: string) => {
+        const nextData = { ...form.data, [field]: value };
+
+        form.setData(field, value);
+        form.clearErrors(field);
+
+        if (Object.keys(addFormErrors).length > 0) {
+            setAddFormErrors(validateApplicationForm(nextData));
+        }
+    };
+
+    const addFormError = (field: keyof ApplicationForm) =>
+        addFormErrors[field] || form.errors[field];
+
+    const setAddDialogOpen = (open: boolean) => {
+        setIsAddOpen(open);
+
+        if (!open) {
+            setAddFormErrors({});
+        }
     };
 
     const openEditApplication = (application: Application) => {
@@ -553,7 +649,10 @@ export default function Applications({
                             </Link>
                         </Button>
 
-                        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                        <Dialog
+                            open={isAddOpen}
+                            onOpenChange={setAddDialogOpen}
+                        >
                             <DialogTrigger asChild>
                                 <Button type="button">
                                     <Plus className="size-4" />
@@ -571,6 +670,7 @@ export default function Applications({
                                 <form
                                     onSubmit={submitApplication}
                                     className="space-y-4"
+                                    noValidate
                                 >
                                     <div className="space-y-2">
                                         <Label htmlFor="company">
@@ -580,16 +680,16 @@ export default function Applications({
                                             id="company"
                                             value={form.data.company}
                                             onChange={(event) =>
-                                                form.setData(
+                                                setAddFormData(
                                                     'company',
                                                     event.target.value,
                                                 )
                                             }
                                             required
                                         />
-                                        {form.errors.company ? (
+                                        {addFormError('company') ? (
                                             <p className="text-sm text-destructive">
-                                                {form.errors.company}
+                                                {addFormError('company')}
                                             </p>
                                         ) : null}
                                     </div>
@@ -604,7 +704,7 @@ export default function Applications({
                                                     optionalSelectNone
                                                 }
                                                 onValueChange={(value) =>
-                                                    form.setData(
+                                                    setAddFormData(
                                                         'company_industry',
                                                         value ===
                                                             optionalSelectNone
@@ -638,12 +738,9 @@ export default function Applications({
                                                     )}
                                                 </SelectContent>
                                             </Select>
-                                            {form.errors.company_industry ? (
+                                            {addFormError('company_industry') ? (
                                                 <p className="text-sm text-destructive">
-                                                    {
-                                                        form.errors
-                                                            .company_industry
-                                                    }
+                                                    {addFormError('company_industry')}
                                                 </p>
                                             ) : null}
                                         </div>
@@ -657,16 +754,16 @@ export default function Applications({
                                             id="job_title"
                                             value={form.data.job_title}
                                             onChange={(event) =>
-                                                form.setData(
+                                                setAddFormData(
                                                     'job_title',
                                                     event.target.value,
                                                 )
                                             }
                                             required
                                         />
-                                        {form.errors.job_title ? (
+                                        {addFormError('job_title') ? (
                                             <p className="text-sm text-destructive">
-                                                {form.errors.job_title}
+                                                {addFormError('job_title')}
                                             </p>
                                         ) : null}
                                     </div>
@@ -680,7 +777,7 @@ export default function Applications({
                                                     optionalSelectNone
                                                 }
                                                 onValueChange={(value) =>
-                                                    form.setData(
+                                                    setAddFormData(
                                                         'job_type',
                                                         value ===
                                                             optionalSelectNone
@@ -710,9 +807,9 @@ export default function Applications({
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            {form.errors.job_type ? (
+                                            {addFormError('job_type') ? (
                                                 <p className="text-sm text-destructive">
-                                                    {form.errors.job_type}
+                                                    {addFormError('job_type')}
                                                 </p>
                                             ) : null}
                                         </div>
@@ -725,7 +822,7 @@ export default function Applications({
                                                     optionalSelectNone
                                                 }
                                                 onValueChange={(value) =>
-                                                    form.setData(
+                                                    setAddFormData(
                                                         'work_setup',
                                                         value ===
                                                             optionalSelectNone
@@ -759,9 +856,9 @@ export default function Applications({
                                                     )}
                                                 </SelectContent>
                                             </Select>
-                                            {form.errors.work_setup ? (
+                                            {addFormError('work_setup') ? (
                                                 <p className="text-sm text-destructive">
-                                                    {form.errors.work_setup}
+                                                    {addFormError('work_setup')}
                                                 </p>
                                             ) : null}
                                         </div>
@@ -775,15 +872,15 @@ export default function Applications({
                                             id="location"
                                             value={form.data.location}
                                             onChange={(event) =>
-                                                form.setData(
+                                                setAddFormData(
                                                     'location',
                                                     event.target.value,
                                                 )
                                             }
                                         />
-                                        {form.errors.location ? (
+                                        {addFormError('location') ? (
                                             <p className="text-sm text-destructive">
-                                                {form.errors.location}
+                                                {addFormError('location')}
                                             </p>
                                         ) : null}
                                     </div>
@@ -800,15 +897,15 @@ export default function Applications({
                                                 step="0.01"
                                                 value={form.data.salary_min}
                                                 onChange={(event) =>
-                                                    form.setData(
+                                                    setAddFormData(
                                                         'salary_min',
                                                         event.target.value,
                                                     )
                                                 }
                                             />
-                                            {form.errors.salary_min ? (
+                                            {addFormError('salary_min') ? (
                                                 <p className="text-sm text-destructive">
-                                                    {form.errors.salary_min}
+                                                    {addFormError('salary_min')}
                                                 </p>
                                             ) : null}
                                         </div>
@@ -824,15 +921,15 @@ export default function Applications({
                                                 step="0.01"
                                                 value={form.data.salary_max}
                                                 onChange={(event) =>
-                                                    form.setData(
+                                                    setAddFormData(
                                                         'salary_max',
                                                         event.target.value,
                                                     )
                                                 }
                                             />
-                                            {form.errors.salary_max ? (
+                                            {addFormError('salary_max') ? (
                                                 <p className="text-sm text-destructive">
-                                                    {form.errors.salary_max}
+                                                    {addFormError('salary_max')}
                                                 </p>
                                             ) : null}
                                         </div>
@@ -847,15 +944,15 @@ export default function Applications({
                                             type="url"
                                             value={form.data.job_post_url}
                                             onChange={(event) =>
-                                                form.setData(
+                                                setAddFormData(
                                                     'job_post_url',
                                                     event.target.value,
                                                 )
                                             }
                                         />
-                                        {form.errors.job_post_url ? (
+                                        {addFormError('job_post_url') ? (
                                             <p className="text-sm text-destructive">
-                                                {form.errors.job_post_url}
+                                                {addFormError('job_post_url')}
                                             </p>
                                         ) : null}
                                     </div>
@@ -866,7 +963,7 @@ export default function Applications({
                                             <Select
                                                 value={form.data.status}
                                                 onValueChange={(value) =>
-                                                    form.setData(
+                                                    setAddFormData(
                                                         'status',
                                                         value,
                                                     )
@@ -888,9 +985,9 @@ export default function Applications({
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            {form.errors.status ? (
+                                            {addFormError('status') ? (
                                                 <p className="text-sm text-destructive">
-                                                    {form.errors.status}
+                                                    {addFormError('status')}
                                                 </p>
                                             ) : null}
                                         </div>
@@ -904,15 +1001,15 @@ export default function Applications({
                                                 type="date"
                                                 value={form.data.applied_date}
                                                 onChange={(event) =>
-                                                    form.setData(
+                                                    setAddFormData(
                                                         'applied_date',
                                                         event.target.value,
                                                     )
                                                 }
                                             />
-                                            {form.errors.applied_date ? (
+                                            {addFormError('applied_date') ? (
                                                 <p className="text-sm text-destructive">
-                                                    {form.errors.applied_date}
+                                                    {addFormError('applied_date')}
                                                 </p>
                                             ) : null}
                                         </div>
