@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DegreeSelect from '@/components/degree-select';
 import InputError from '@/components/input-error';
@@ -53,6 +53,7 @@ const industries = [
 
 export default function Onboarding({ user }: Props) {
     const [step, setStep] = useState(0);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const photoInputRef = useRef<HTMLInputElement>(null);
     const [firstName = '', ...otherNames] = user.name.split(' ');
     const form = useForm<OnboardingForm>({
@@ -73,6 +74,14 @@ export default function Onboarding({ user }: Props) {
     const industryOptions = industries.includes(form.data.industry)
         ? industries
         : [form.data.industry, ...industries].filter(Boolean);
+
+    useEffect(() => {
+        return () => {
+            if (photoPreview) {
+                URL.revokeObjectURL(photoPreview);
+            }
+        };
+    }, [photoPreview]);
 
     const canContinue =
         step === 0
@@ -331,11 +340,12 @@ export default function Onboarding({ user }: Props) {
                                     onChange={(value) => {
                                         form.setData('avatar_preset', value);
                                         form.setData('photo', null);
+                                        setPhotoPreview(null);
                                         if (photoInputRef.current) {
                                             photoInputRef.current.value = '';
                                         }
                                     }}
-                                    currentAvatar={user.avatar}
+                                    currentAvatar={photoPreview || user.avatar}
                                     fallback={avatarFallback}
                                 />
 
@@ -350,6 +360,11 @@ export default function Onboarding({ user }: Props) {
                                             const file =
                                                 event.target.files?.[0] ?? null;
                                             form.setData('photo', file);
+                                            setPhotoPreview(
+                                                file
+                                                    ? URL.createObjectURL(file)
+                                                    : null,
+                                            );
                                             if (file) {
                                                 form.setData(
                                                     'avatar_preset',

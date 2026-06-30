@@ -7,6 +7,7 @@ use App\Support\AvatarPresets;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,8 +40,14 @@ class OnboardingController extends Controller
         ]);
 
         $user = $request->user();
-        $user->fill(collect($validated)->except('photo', 'first_name', 'last_name')->all());
-        if ($request->hasFile('photo')) {
+        $data = collect($validated)->except('photo', 'first_name', 'last_name');
+
+        if (! Schema::hasColumn('users', 'avatar_preset')) {
+            $data->forget('avatar_preset');
+        }
+
+        $user->fill($data->all());
+        if ($request->hasFile('photo') && Schema::hasColumn('users', 'avatar_preset')) {
             $user->avatar_preset = null;
         }
         $user->name = trim($validated['first_name'].' '.$validated['last_name']);

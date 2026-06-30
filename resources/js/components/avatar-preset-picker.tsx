@@ -26,7 +26,11 @@ export default function AvatarPresetPicker({
 
             <div className="flex items-center gap-4">
                 <Avatar className="size-16 border">
-                    <AvatarImage src={preview} alt="Profile avatar" />
+                    <AvatarImage
+                        src={preview}
+                        alt="Profile avatar"
+                        className="object-cover"
+                    />
                     <AvatarFallback>{fallback}</AvatarFallback>
                 </Avatar>
                 <div className="grid gap-1">

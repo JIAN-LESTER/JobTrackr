@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -50,9 +51,14 @@ class ProfileController extends Controller
     {
         $validated = $request->validated();
         $user = $request->user();
+        $data = collect($validated)->except('photo');
 
-        $user->fill(collect($validated)->except('photo')->all());
-        if ($request->hasFile('photo')) {
+        if (! Schema::hasColumn('users', 'avatar_preset')) {
+            $data->forget('avatar_preset');
+        }
+
+        $user->fill($data->all());
+        if ($request->hasFile('photo') && Schema::hasColumn('users', 'avatar_preset')) {
             $user->avatar_preset = null;
         }
 

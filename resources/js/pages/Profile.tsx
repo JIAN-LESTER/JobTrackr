@@ -1,5 +1,5 @@
 import { Form, Head, usePage } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import AppearanceTabs from '@/components/appearance-tabs';
@@ -39,6 +39,7 @@ export default function Profile() {
     const [avatarPreset, setAvatarPreset] = useState(
         typeof user?.avatar_preset === 'string' ? user.avatar_preset : '',
     );
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [location, setLocation] = useState(user?.location || '');
     const [degree, setDegree] = useState(user?.education_degree || '');
     const passwordInput = useRef<HTMLInputElement>(null);
@@ -48,6 +49,14 @@ export default function Profile() {
     const latestPhoto = profileDocuments.find(
         (document) => document.document_type === 'photo',
     );
+
+    useEffect(() => {
+        return () => {
+            if (photoPreview) {
+                URL.revokeObjectURL(photoPreview);
+            }
+        };
+    }, [photoPreview]);
 
     if (!user) {
         return null;
@@ -90,12 +99,15 @@ export default function Profile() {
                                             value={avatarPreset}
                                             onChange={(value) => {
                                                 setAvatarPreset(value);
+                                                setPhotoPreview(null);
                                                 if (photoInput.current) {
                                                     photoInput.current.value =
                                                         '';
                                                 }
                                             }}
-                                            currentAvatar={user.avatar}
+                                            currentAvatar={
+                                                photoPreview || user.avatar
+                                            }
                                             fallback={getInitials(user.name)}
                                         />
 
@@ -263,9 +275,17 @@ export default function Profile() {
                                             name="photo"
                                             accept="image/*"
                                             onChange={(event) => {
-                                                if (
-                                                    event.target.files?.[0]
-                                                ) {
+                                                const file =
+                                                    event.target.files?.[0] ??
+                                                    null;
+                                                setPhotoPreview(
+                                                    file
+                                                        ? URL.createObjectURL(
+                                                              file,
+                                                          )
+                                                        : null,
+                                                );
+                                                if (file) {
                                                     setAvatarPreset('');
                                                 }
                                             }}
