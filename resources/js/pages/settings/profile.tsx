@@ -1,8 +1,9 @@
 import { Form, Head, usePage } from '@inertiajs/react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import AppearanceTabs from '@/components/appearance-tabs';
+import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -10,6 +11,7 @@ import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useInitials } from '@/hooks/use-initials';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
 import type { Auth } from '@/types';
@@ -32,8 +34,13 @@ export default function Profile() {
         profileDocuments = [],
     } = usePage<PageProps>().props;
     const user = auth?.user ?? profileUser;
+    const [avatarPreset, setAvatarPreset] = useState(
+        typeof user?.avatar_preset === 'string' ? user.avatar_preset : '',
+    );
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
+    const photoInput = useRef<HTMLInputElement>(null);
+    const getInitials = useInitials();
     const latestPhoto = profileDocuments.find(
         (document) => document.document_type === 'photo',
     );
@@ -73,6 +80,26 @@ export default function Profile() {
                         >
                             {({ processing, errors }) => (
                                 <>
+                                    <div className="grid gap-2 sm:col-span-2">
+                                        <AvatarPresetPicker
+                                            name="avatar_preset"
+                                            value={avatarPreset}
+                                            onChange={(value) => {
+                                                setAvatarPreset(value);
+                                                if (photoInput.current) {
+                                                    photoInput.current.value =
+                                                        '';
+                                                }
+                                            }}
+                                            currentAvatar={user.avatar}
+                                            fallback={getInitials(user.name)}
+                                        />
+
+                                        <InputError
+                                            message={errors.avatar_preset}
+                                        />
+                                    </div>
+
                                     <div className="grid gap-2">
                                         <Label htmlFor="name">Name</Label>
 
@@ -229,10 +256,18 @@ export default function Profile() {
 
                                         <Input
                                             id="photo"
+                                            ref={photoInput}
                                             type="file"
                                             className="block w-full"
                                             name="photo"
                                             accept="image/*"
+                                            onChange={(event) => {
+                                                if (
+                                                    event.target.files?.[0]
+                                                ) {
+                                                    setAvatarPreset('');
+                                                }
+                                            }}
                                         />
 
                                         {latestPhoto ? (
