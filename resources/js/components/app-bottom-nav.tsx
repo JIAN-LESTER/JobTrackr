@@ -29,7 +29,7 @@ export function AppBottomNav() {
     const profileActive = isCurrentUrl(profileHref);
 
     return (
-        <nav className="fixed inset-x-0 bottom-4 z-40 px-3 pb-[env(safe-area-inset-bottom)]">
+        <nav className="fixed inset-x-0 bottom-4 z-40 px-3 pb-[env(safe-area-inset-bottom)] md:hidden">
             <div className="mx-auto grid max-w-2xl grid-cols-4 gap-1 rounded-xl border bg-card/95 p-2 shadow-lg shadow-[#17201b]/10 backdrop-blur dark:shadow-black/30">
                 {navItems.map((item) => {
                     const Icon = item.icon;
