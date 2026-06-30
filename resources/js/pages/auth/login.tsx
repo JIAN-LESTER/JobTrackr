@@ -1,9 +1,9 @@
 import { Form, Head } from '@inertiajs/react';
+import { Bell, BriefcaseBusiness, History } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -39,7 +39,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                     autoFocus
                                     tabIndex={1}
                                     autoComplete="email"
-                                    placeholder="email@example.com"
+                                    placeholder="Enter email address"
                                 />
                                 <InputError message={errors.email} />
                             </div>
@@ -63,18 +63,9 @@ export default function Login({ status, canResetPassword }: Props) {
                                     required
                                     tabIndex={2}
                                     autoComplete="current-password"
-                                    placeholder="Password"
+                                    placeholder="Enter Password"
                                 />
                                 <InputError message={errors.password} />
-                            </div>
-
-                            <div className="flex items-center space-x-3">
-                                <Checkbox
-                                    id="remember"
-                                    name="remember"
-                                    tabIndex={3}
-                                />
-                                <Label htmlFor="remember">Remember me</Label>
                             </div>
 
                             <Button
@@ -109,6 +100,53 @@ export default function Login({ status, canResetPassword }: Props) {
 }
 
 Login.layout = {
-    title: 'Log in to your account',
-    description: 'Enter your email and password below to log in',
+    title: 'JobTrackr',
+    description: 'Sign in to continue managing your job search.',
+    sidePosition: 'left',
+    side: (
+        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 sm:p-8 lg:min-h-[500px]">
+            <div className="space-y-3">
+                <p className="text-sm font-medium text-[#f3c76a]">
+                    JobTrackr workspace
+                </p>
+                <h2 className="text-3xl font-semibold">
+                    Pick up exactly where your job search left off.
+                </h2>
+                <p className="text-white/70">
+                    Review saved roles, upcoming interviews, follow-ups, and
+                    notes from one organized dashboard.
+                </p>
+            </div>
+
+            <div className="grid gap-4 text-sm">
+                <div className="flex gap-3">
+                    <BriefcaseBusiness className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Applications in order</p>
+                        <p className="text-white/65">
+                            Keep every role grouped by status and priority.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <History className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Progress you can trace</p>
+                        <p className="text-white/65">
+                            Follow each update from application to decision.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <Bell className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Follow-ups remembered</p>
+                        <p className="text-white/65">
+                            See what needs attention before it slips away.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    ),
 };
