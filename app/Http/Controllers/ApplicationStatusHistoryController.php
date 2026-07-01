@@ -15,6 +15,7 @@ class ApplicationStatusHistoryController extends Controller
 
         $statusHistories = ApplicationStatusHistory::query()
             ->with('jobApplication.company')
+            ->whereHas('jobApplication', fn ($query) => $query->where('user_id', $request->user()->user_id))
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('old_status', 'like', "%{$search}%")
@@ -43,6 +44,8 @@ class ApplicationStatusHistoryController extends Controller
 
     public function show(ApplicationStatusHistory $statusHistory)
     {
+        $this->authorizeStatusHistory($statusHistory);
+
         return response()->json($statusHistory->load('jobApplication.company'));
     }
 
@@ -58,6 +61,8 @@ class ApplicationStatusHistoryController extends Controller
 
     public function update(Request $request, ApplicationStatusHistory $statusHistory)
     {
+        $this->authorizeStatusHistory($statusHistory);
+
         $statusHistory->update($this->validatedData($request, true));
 
         return response()->json([
@@ -68,9 +73,33 @@ class ApplicationStatusHistoryController extends Controller
 
     public function destroy(ApplicationStatusHistory $statusHistory)
     {
+        $this->authorizeStatusHistory($statusHistory);
+
         $statusHistory->delete();
 
+        if (request()->header('X-Inertia')) {
+            return back();
+        }
+
         return response()->noContent();
+    }
+
+    public function clear(Request $request)
+    {
+        ApplicationStatusHistory::query()
+            ->whereHas('jobApplication', fn ($query) => $query->where('user_id', $request->user()->user_id))
+            ->delete();
+
+        if ($request->header('X-Inertia')) {
+            return back();
+        }
+
+        return response()->noContent();
+    }
+
+    private function authorizeStatusHistory(ApplicationStatusHistory $statusHistory): void
+    {
+        abort_unless($statusHistory->jobApplication?->user_id === request()->user()->user_id, 403);
     }
 
     private function validatedData(Request $request, bool $partial = false): array

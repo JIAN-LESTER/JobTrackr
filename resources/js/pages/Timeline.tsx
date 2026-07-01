@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Search } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { PreferredView } from '@/components/preferred-view';
@@ -140,6 +140,37 @@ export default function StatusHistoriesIndex({
         );
     };
 
+    const deleteTimelineItem = (history: ApplicationStatusHistory) => {
+        router.delete(`/status-histories/${history.id}`, {
+            preserveScroll: true,
+        });
+    };
+
+    const clearTimeline = () => {
+        if (!window.confirm('Clear all timeline updates?')) {
+            return;
+        }
+
+        router.delete('/status-histories', {
+            preserveScroll: true,
+        });
+    };
+
+    const timelineActions = (history: ApplicationStatusHistory) => (
+        <div className="flex flex-wrap items-center gap-2">
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-red-100 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300"
+                onClick={() => deleteTimelineItem(history)}
+            >
+                <Trash2 className="size-4" />
+                Delete
+            </Button>
+        </div>
+    );
+
     return (
         <>
             <Head title="Timeline" />
@@ -156,22 +187,35 @@ export default function StatusHistoriesIndex({
                         </p>
                     </div>
 
-                    <form
-                        onSubmit={submitSearch}
-                        className="flex w-full gap-2 sm:w-80"
-                    >
-                        <Input
-                            value={search}
-                            onChange={(event) =>
-                                setSearch(event.target.value)
-                            }
-                            placeholder="Search timeline"
-                            className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
-                        />
-                        <Button type="submit" size="icon" aria-label="Search">
-                            <Search className="size-4" />
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-red-100 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300"
+                            disabled={statusHistories.total === 0}
+                            onClick={clearTimeline}
+                        >
+                            <Trash2 className="size-4" />
+                            Clear all
                         </Button>
-                    </form>
+                        <form
+                            onSubmit={submitSearch}
+                            className="flex w-full gap-2 sm:w-80"
+                        >
+                            <Input
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                placeholder="Search timeline"
+                                className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
+                            />
+                            <Button type="submit" size="icon" aria-label="Search">
+                                <Search className="size-4" />
+                            </Button>
+                        </form>
+                    </div>
                 </div>
                 </div>
 
@@ -205,6 +249,11 @@ export default function StatusHistoriesIndex({
                             label: 'Date',
                             render: (history) => formatDate(history.created_at),
                         },
+                        {
+                            key: 'actions',
+                            label: 'Actions',
+                            render: (history) => timelineActions(history),
+                        },
                     ]}
                     renderCard={(history) => (
                         <div className="space-y-3">
@@ -223,6 +272,7 @@ export default function StatusHistoriesIndex({
                             <p className="text-xs text-muted-foreground">
                                 {formatDate(history.created_at)}
                             </p>
+                            {timelineActions(history)}
                         </div>
                     )}
                     renderListItem={(history) => (
@@ -238,9 +288,12 @@ export default function StatusHistoriesIndex({
                                     <TimelineChange history={history} />
                                 </div>
                             </div>
-                            <p className="text-xs text-muted-foreground sm:text-right">
-                                {formatDate(history.created_at)}
-                            </p>
+                            <div className="flex flex-col gap-2 sm:items-end">
+                                <p className="text-xs text-muted-foreground sm:text-right">
+                                    {formatDate(history.created_at)}
+                                </p>
+                                {timelineActions(history)}
+                            </div>
                         </div>
                     )}
                     viewSwitcherClassName="border-[#cbd8cf] bg-[#f8faf7] shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]"

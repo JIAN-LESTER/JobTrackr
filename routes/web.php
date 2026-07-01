@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingIsComplete::class])->grou
     Route::resource('applications', ApplicationController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
     Route::resource('contacts', ApplicationContactController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+    Route::delete('status-histories', [ApplicationStatusHistoryController::class, 'clear'])->name('status-histories.clear');
     Route::resource('status-histories', ApplicationStatusHistoryController::class)
         ->parameters(['status-histories' => 'statusHistory'])
         ->only(['index', 'show', 'store', 'update', 'destroy']);
