@@ -34,7 +34,7 @@ export default function AppBottomNavLayout({
 
     return (
         <AppShell variant="header">
-            <header className="hidden border-b bg-white px-6 md:block">
+            <header className="hidden border-b border-[#cbd8cf] bg-white px-6 dark:border-[#33463a] dark:bg-[#16231c] md:block">
                 <div className="mx-auto flex h-[74px] max-w-screen-2xl items-center gap-10">
                     <Link
                         href="/applications"
@@ -44,7 +44,7 @@ export default function AppBottomNavLayout({
                         <AppLogo />
                     </Link>
 
-                    <nav className="flex h-full items-center gap-8 text-[15px] font-medium text-[#253154]">
+                    <nav className="flex h-full items-center gap-8 text-[15px] font-medium text-[#253154] dark:text-[#afbeb4]">
                         {navItems.map((item) => {
                             const active = isCurrentUrl(item.href);
 
@@ -54,9 +54,9 @@ export default function AppBottomNavLayout({
                                     href={item.href}
                                     prefetch
                                     className={cn(
-                                        'relative flex h-full items-center whitespace-nowrap pt-1 hover:text-[#17201b]',
+                                        'relative flex h-full items-center whitespace-nowrap pt-1 hover:text-[#17201b] dark:hover:text-[#f4f8f2]',
                                         active &&
-                                            'font-semibold text-[#17201b] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-[#17201b]',
+                                            'font-semibold text-[#17201b] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-[#17201b] dark:text-[#f4f8f2] dark:after:bg-[#f3c76a]',
                                     )}
                                 >
                                     {item.title}
