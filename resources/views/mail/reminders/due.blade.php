@@ -1,7 +1,9 @@
 @component('mail::message')
-# {{ $reminder->title }}
+# {{ $reminder->jobApplication->company->name }}
 
-Your reminder is due for {{ $reminder->jobApplication->job_title }} at {{ $reminder->jobApplication->company->name }}.
+{{ $reminder->title }}
+
+Your reminder is due for {{ $reminder->jobApplication->job_title }}.
 
 @if ($reminder->description)
 {{ $reminder->description }}

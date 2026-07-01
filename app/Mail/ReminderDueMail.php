@@ -21,7 +21,7 @@ class ReminderDueMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Reminder: '.$this->reminder->title,
+            subject: $this->reminder->jobApplication->company->name,
         );
     }
 
