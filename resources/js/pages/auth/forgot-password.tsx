@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { KeyRound, MailCheck, ShieldCheck } from 'lucide-react';
-import type { FormEvent } from 'react';
+import { useEffect, type FormEvent } from 'react';
+import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,12 @@ export default function ForgotPassword({ status }: { status?: string }) {
         email: '',
     });
 
+    useEffect(() => {
+        if (status) {
+            toast.success(status);
+        }
+    }, [status]);
+
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.clearErrors();
@@ -37,6 +44,10 @@ export default function ForgotPassword({ status }: { status?: string }) {
             return;
         }
 
+        form.transform((data) => ({
+            ...data,
+            email: emailAddress,
+        }));
         form.post(email.url());
     };
 
@@ -89,11 +100,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </div>
             </form>
 
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600 dark:text-green-300">
-                    {status}
-                </div>
-            )}
         </>
     );
 }
