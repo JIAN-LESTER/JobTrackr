@@ -71,7 +71,10 @@ export default function Register({ passwordRules }: Props) {
             return;
         }
 
-        form.post(store.url(), {
+        form.transform((data) => ({
+            ...data,
+            email,
+        })).post(store.url(), {
             onSuccess: () =>
                 form.reset('password', 'password_confirmation'),
         });
