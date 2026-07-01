@@ -16,10 +16,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('industry')->nullable();
             $table->string('website')->nullable();
-            $table->string('url')->nullable();
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
-            $table->text('address')->nullable();
             $table->timestamps();
         });
     }

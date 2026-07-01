@@ -362,6 +362,8 @@ export default function Applications({
     const [search, setSearch] = useState(filters.search || '');
     const [addFormErrors, setAddFormErrors] =
         useState<ApplicationValidationErrors>({});
+    const [editFormErrors, setEditFormErrors] =
+        useState<ApplicationValidationErrors>({});
     const selectedStatus = filters.status || 'all';
     const visibleStatuses = filterButtonStatuses.filter((status) =>
         statuses.includes(status),
@@ -503,6 +505,7 @@ export default function Applications({
     const openEditApplication = (application: Application) => {
         setEditingApplication(application);
         editForm.clearErrors();
+        setEditFormErrors({});
         editForm.setData({
             company: companyName(application),
             company_industry: application.company?.industry || '',
@@ -525,11 +528,36 @@ export default function Applications({
             return;
         }
 
+        const validationErrors = validateApplicationForm(editForm.data);
+
+        setEditFormErrors(validationErrors);
+
+        if (Object.keys(validationErrors).length > 0) {
+            return;
+        }
+
         editForm.put(`/applications/${editingApplication.application_id}`, {
             preserveScroll: true,
-            onSuccess: () => setEditingApplication(null),
+            onSuccess: () => {
+                setEditFormErrors({});
+                setEditingApplication(null);
+            },
         });
     };
+
+    const setEditFormData = (field: keyof ApplicationForm, value: string) => {
+        const nextData = { ...editForm.data, [field]: value };
+
+        editForm.setData(field, value);
+        editForm.clearErrors(field);
+
+        if (Object.keys(editFormErrors).length > 0) {
+            setEditFormErrors(validateApplicationForm(nextData));
+        }
+    };
+
+    const editFormError = (field: keyof ApplicationForm) =>
+        editFormErrors[field] || editForm.errors[field];
 
     const openReminder = (application: Application) => {
         setReminderApplication(application);
@@ -1070,6 +1098,7 @@ export default function Applications({
                             open={Boolean(editingApplication)}
                             onOpenChange={(open) => {
                                 if (!open) {
+                                    setEditFormErrors({});
                                     setEditingApplication(null);
                                 }
                             }}
@@ -1085,6 +1114,7 @@ export default function Applications({
                                 <form
                                     onSubmit={submitEditApplication}
                                     className="space-y-4"
+                                    noValidate
                                 >
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="space-y-2">
@@ -1095,13 +1125,18 @@ export default function Applications({
                                                 id="edit_company"
                                                 value={editForm.data.company}
                                                 onChange={(event) =>
-                                                    editForm.setData(
+                                                    setEditFormData(
                                                         'company',
                                                         event.target.value,
                                                     )
                                                 }
                                                 required
                                             />
+                                            {editFormError('company') ? (
+                                                <p className="text-sm text-destructive">
+                                                    {editFormError('company')}
+                                                </p>
+                                            ) : null}
                                         </div>
                                         <div className="space-y-2">
                                             <Label>Industry</Label>
@@ -1157,13 +1192,18 @@ export default function Applications({
                                             id="edit_job_title"
                                             value={editForm.data.job_title}
                                             onChange={(event) =>
-                                                editForm.setData(
+                                                setEditFormData(
                                                     'job_title',
                                                     event.target.value,
                                                 )
                                             }
                                             required
                                         />
+                                        {editFormError('job_title') ? (
+                                            <p className="text-sm text-destructive">
+                                                {editFormError('job_title')}
+                                            </p>
+                                        ) : null}
                                     </div>
 
                                     <div className="grid gap-4 sm:grid-cols-2">
@@ -1279,12 +1319,19 @@ export default function Applications({
                                                     editForm.data.job_post_url
                                                 }
                                                 onChange={(event) =>
-                                                    editForm.setData(
+                                                    setEditFormData(
                                                         'job_post_url',
                                                         event.target.value,
                                                     )
                                                 }
                                             />
+                                            {editFormError('job_post_url') ? (
+                                                <p className="text-sm text-destructive">
+                                                    {editFormError(
+                                                        'job_post_url',
+                                                    )}
+                                                </p>
+                                            ) : null}
                                         </div>
                                     </div>
 
@@ -1302,12 +1349,19 @@ export default function Applications({
                                                     editForm.data.salary_min
                                                 }
                                                 onChange={(event) =>
-                                                    editForm.setData(
+                                                    setEditFormData(
                                                         'salary_min',
                                                         event.target.value,
                                                     )
                                                 }
                                             />
+                                            {editFormError('salary_min') ? (
+                                                <p className="text-sm text-destructive">
+                                                    {editFormError(
+                                                        'salary_min',
+                                                    )}
+                                                </p>
+                                            ) : null}
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="edit_salary_max">
@@ -1322,12 +1376,19 @@ export default function Applications({
                                                     editForm.data.salary_max
                                                 }
                                                 onChange={(event) =>
-                                                    editForm.setData(
+                                                    setEditFormData(
                                                         'salary_max',
                                                         event.target.value,
                                                     )
                                                 }
                                             />
+                                            {editFormError('salary_max') ? (
+                                                <p className="text-sm text-destructive">
+                                                    {editFormError(
+                                                        'salary_max',
+                                                    )}
+                                                </p>
+                                            ) : null}
                                         </div>
                                     </div>
 
@@ -1371,12 +1432,19 @@ export default function Applications({
                                                     editForm.data.applied_date
                                                 }
                                                 onChange={(event) =>
-                                                    editForm.setData(
+                                                    setEditFormData(
                                                         'applied_date',
                                                         event.target.value,
                                                     )
                                                 }
                                             />
+                                            {editFormError('applied_date') ? (
+                                                <p className="text-sm text-destructive">
+                                                    {editFormError(
+                                                        'applied_date',
+                                                    )}
+                                                </p>
+                                            ) : null}
                                         </div>
                                     </div>
 

@@ -16,13 +16,11 @@ export type Application = {
     location: string | null;
     salary_min: string | null;
     salary_max: string | null;
-    currency: string;
     status: string;
     applied_date: string | null;
-    deadline: string | null;
     job_post_url: string | null;
     job_description: string | null;
-    notes: string | null | Note[];
+    notes?: Note[];
     created_at: string;
     updated_at: string;
     deleted_at?: string | null;

@@ -20,18 +20,14 @@ class Application extends Model
         'location',
         'salary_min',
         'salary_max',
-        'currency',
         'status',
         'applied_date',
-        'deadline',
         'job_post_url',
         'job_description',
-        'notes',
     ];
 
     protected $casts = [
         'applied_date' => 'date',
-        'deadline' => 'date',
         'salary_min' => 'decimal:2',
         'salary_max' => 'decimal:2',
     ];
