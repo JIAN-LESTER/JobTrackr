@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('job_application_id')->references('application_id')->on('applications')->cascadeOnDelete();
 
             $table->string('document_type');
-            // resume, cover_letter, transcript, certificate, portfolio
 
             $table->string('file_name');
             $table->string('file_path');
@@ -24,7 +23,7 @@ return new class extends Migration
             $table->integer('file_size')->nullable();
 
             $table->timestamps();
-                    });
+        });
     }
 
     /**

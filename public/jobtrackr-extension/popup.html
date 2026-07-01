@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Save to JobTrackr</title>
+    <style>
+      body {
+        width: 280px;
+        margin: 0;
+        padding: 14px;
+        font: 14px system-ui, sans-serif;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      input {
+        box-sizing: border-box;
+        width: 100%;
+        margin-bottom: 12px;
+        padding: 8px;
+      }
+
+      button {
+        width: 100%;
+        padding: 9px;
+        cursor: pointer;
+      }
+
+      p {
+        margin: 10px 0 0;
+        color: #555;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="baseUrl">JobTrackr URL</label>
+    <input id="baseUrl" placeholder="http://localhost:8000">
+    <button id="save" type="button">Save to JobTrackr</button>
+    <p id="status"></p>
+    <script src="popup.js"></script>
+  </body>
+</html>

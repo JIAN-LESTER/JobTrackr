@@ -3,6 +3,7 @@
 namespace App\Concerns;
 
 use App\Models\User;
+use App\Support\AvatarPresets;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
@@ -18,6 +19,14 @@ trait ProfileValidationRules
         return [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
+            'industry' => ['nullable', 'string', 'max:255'],
+            'job_title' => ['nullable', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'education_school' => ['nullable', 'string', 'max:255'],
+            'education_degree' => ['nullable', 'string', 'max:255'],
+            'education_program' => ['nullable', 'string', 'max:255'],
+            'avatar_preset' => ['nullable', 'string', 'in:' . implode(',', AvatarPresets::keys())],
+            'photo' => ['nullable', 'image', 'max:2048'],
         ];
     }
 
@@ -45,7 +54,7 @@ trait ProfileValidationRules
             'max:255',
             $userId === null
                 ? Rule::unique(User::class)
-                : Rule::unique(User::class)->ignore($userId),
+                : Rule::unique(User::class)->ignore($userId, (new User)->getKeyName()),
         ];
     }
 }

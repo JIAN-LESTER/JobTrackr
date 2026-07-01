@@ -6,5 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Company extends Model
 {
-    //
+    protected $primaryKey = 'company_id';
+
+    protected $fillable = [
+        'name',
+        'industry',
+        'website',
+    ];
+
+    public function applications()
+    {
+        return $this->hasMany(Application::class, 'company_id', 'company_id');
+    }
 }

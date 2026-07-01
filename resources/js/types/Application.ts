@@ -1,0 +1,33 @@
+import type { ApplicationStatusHistory } from './ApplicationStatusHistory';
+import type { Company } from './Company';
+import type { Contact } from './Contact';
+import type { Interview } from './Interview';
+import type { Note } from './Note';
+import type { Reminder } from './Reminder';
+import type { User } from './User';
+
+export type Application = {
+    application_id: number;
+    user_id: number;
+    company_id: number;
+    job_title: string;
+    job_type: string | null;
+    work_setup: string | null;
+    location: string | null;
+    salary_min: string | null;
+    salary_max: string | null;
+    status: string;
+    applied_date: string | null;
+    job_post_url: string | null;
+    job_description: string | null;
+    notes?: Note[];
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string | null;
+    company?: Company;
+    user?: User;
+    contacts?: Contact[];
+    interviews?: Interview[];
+    status_histories?: ApplicationStatusHistory[];
+    reminders?: Reminder[];
+};

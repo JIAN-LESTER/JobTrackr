@@ -13,6 +13,7 @@
 /vendor
 .DS_Store
 .env
+.env.example
 .env.backup
 .env.production
 .env.docker
@@ -28,3 +29,4 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+.env.example

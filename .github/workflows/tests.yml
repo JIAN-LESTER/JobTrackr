@@ -13,6 +13,9 @@ on:
       - main
       - master
       - workos
+  workflow_dispatch:
+  schedule:
+    - cron: '0 16 * * *'
 
 permissions:
   contents: read
@@ -34,6 +37,7 @@ jobs:
         uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: pdo_sqlite, sqlite3
           tools: composer:v2
           coverage: xdebug
 
