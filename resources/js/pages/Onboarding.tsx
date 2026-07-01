@@ -1,9 +1,10 @@
 import { Head, useForm } from '@inertiajs/react';
-from 'react';
+import { BriefcaseBusiness, Camera, GraduationCap } from 'lucide-react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DegreeSelect from '@/components/degree-select';
+import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-
 import LocationSelect from '@/components/location-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,8 +18,6 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import type { Auth } from '@/types';
-import Heading from '@/components/heading';
-import { FormEvent, useEffect, useRef, useState } from 'react';
 
 type Props = {
     user: Auth['user'];
@@ -37,6 +36,17 @@ type OnboardingForm = {
     photo: File | null;
 };
 
+type OnboardingValidationErrors = Partial<
+    Record<keyof OnboardingForm, string>
+>;
+
+type OnboardingStep = {
+    label: string;
+    icon: typeof BriefcaseBusiness;
+};
+
+const maxPhotoSize = 2048 * 1024;
+
 const industries = [
     'Accounting',
     'Advertising',
@@ -53,9 +63,89 @@ const industries = [
     'Transportation',
 ];
 
+const onboardingSteps: OnboardingStep[] = [
+    {
+        label: 'Career',
+        icon: BriefcaseBusiness,
+    },
+    {
+        label: 'Education',
+        icon: GraduationCap,
+    },
+    {
+        label: 'Picture',
+        icon: Camera,
+    },
+];
+
+const requiredMessage = (label: string) => `${label} is required.`;
+
+const validateOnboardingForm = (
+    data: OnboardingForm,
+    step: number,
+): OnboardingValidationErrors => {
+    const errors: OnboardingValidationErrors = {};
+
+    if (step === 0) {
+        (
+            [
+                ['first_name', 'First name'],
+                ['last_name', 'Last name'],
+                ['industry', 'Industry'],
+                ['job_title', 'Job title'],
+                ['location', 'Location'],
+            ] as [keyof OnboardingForm, string][]
+        ).forEach(([field, label]) => {
+            const value = data[field];
+
+            if (typeof value === 'string' && !value.trim()) {
+                errors[field] = requiredMessage(label);
+            }
+
+            if (typeof value === 'string' && value.length > 255) {
+                errors[field] = `${label} must be 255 characters or fewer.`;
+            }
+        });
+    }
+
+    if (step === 1) {
+        (
+            [
+                ['education_school', 'School'],
+                ['education_degree', 'Degree'],
+                ['education_program', 'Program'],
+            ] as [keyof OnboardingForm, string][]
+        ).forEach(([field, label]) => {
+            const value = data[field];
+
+            if (typeof value === 'string' && !value.trim()) {
+                errors[field] = requiredMessage(label);
+            }
+
+            if (typeof value === 'string' && value.length > 255) {
+                errors[field] = `${label} must be 255 characters or fewer.`;
+            }
+        });
+    }
+
+    if (step === 2 && data.photo) {
+        if (!data.photo.type.startsWith('image/')) {
+            errors.photo = 'Picture must be an image file.';
+        }
+
+        if (data.photo.size > maxPhotoSize) {
+            errors.photo = 'Picture must be 2 MB or smaller.';
+        }
+    }
+
+    return errors;
+};
+
 export default function Onboarding({ user }: Props) {
     const [step, setStep] = useState(0);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [validationErrors, setValidationErrors] =
+        useState<OnboardingValidationErrors>({});
     const photoInputRef = useRef<HTMLInputElement>(null);
     const [firstName = '', ...otherNames] = user.name.split(' ');
     const form = useForm<OnboardingForm>({
@@ -76,6 +166,8 @@ export default function Onboarding({ user }: Props) {
     const industryOptions = industries.includes(form.data.industry)
         ? industries
         : [form.data.industry, ...industries].filter(Boolean);
+    const stepErrors = validateOnboardingForm(form.data, step);
+    const canContinue = Object.keys(stepErrors).length === 0;
 
     useEffect(() => {
         return () => {
@@ -85,28 +177,37 @@ export default function Onboarding({ user }: Props) {
         };
     }, [photoPreview]);
 
-    const canContinue =
-        step === 0
-            ? Boolean(
-                  form.data.first_name.trim() &&
-                      form.data.last_name.trim() &&
-                      form.data.industry.trim() &&
-                      form.data.job_title.trim() &&
-                      form.data.location.trim(),
-              )
-            : Boolean(
-                  form.data.education_school.trim() &&
-                      form.data.education_degree.trim() &&
-                      form.data.education_program.trim(),
-              );
+    const setFormData = (
+        field: keyof OnboardingForm,
+        value: string | File | null,
+    ) => {
+        const nextData = { ...form.data, [field]: value };
+
+        form.setData(field, value);
+        form.clearErrors(field);
+
+        if (Object.keys(validationErrors).length > 0) {
+            setValidationErrors(validateOnboardingForm(nextData, step));
+        }
+    };
+
+    const fieldError = (field: keyof OnboardingForm) =>
+        validationErrors[field] || form.errors[field];
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
+        const errors = validateOnboardingForm(form.data, step);
+
+        setValidationErrors(errors);
+
+        if (Object.keys(errors).length > 0) {
+            return;
+        }
+
         if (step < 2) {
-            if (canContinue) {
-                setStep((currentStep) => currentStep + 1);
-            }
+            setValidationErrors({});
+            setStep((currentStep) => currentStep + 1);
 
             return;
         }
@@ -120,31 +221,35 @@ export default function Onboarding({ user }: Props) {
         <>
             <Head title="Onboarding" />
 
-            <div className="mx-auto w-full max-w-3xl px-4 py-6">
-                <Heading
-                    title="Set up your profile"
-                    description="Add your job search details before continuing."
-                />
+            <div className="min-h-screen bg-[#eef3ef] px-4 py-6 dark:bg-background">
+                <div className="mx-auto w-full max-w-4xl">
+                    <Heading
+                        title="Set up your profile"
+                        description="Add your job search details before continuing."
+                    />
 
-                <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
-                    <div className="mb-5 grid grid-cols-3 gap-2 text-xs font-medium text-muted-foreground">
-                        {['Career', 'Education', 'Picture'].map(
-                            (label, index) => (
+                    <section className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-5 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c] sm:p-6">
+                        <div className="mb-6 grid grid-cols-3 gap-2 text-xs font-medium text-muted-foreground">
+                            {onboardingSteps.map(({ label, icon: Icon }, index) => (
                                 <div
                                     key={label}
                                     className={
                                         index <= step
-                                            ? 'rounded-md bg-primary px-3 py-2 text-center text-primary-foreground'
-                                            : 'rounded-md bg-muted px-3 py-2 text-center'
+                                            ? 'flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#17201b] px-3 py-2 text-center text-[#f4f8f2] dark:bg-[#f3c76a] dark:text-[#17201b]'
+                                            : 'flex min-h-12 items-center justify-center gap-2 rounded-md border border-[#dce6df] bg-white/70 px-3 py-2 text-center dark:border-[#33463a] dark:bg-[#213128]/70'
                                     }
                                 >
+                                    <Icon className="size-4 shrink-0" />
                                     {label}
                                 </div>
-                            ),
-                        )}
-                    </div>
+                            ))}
+                        </div>
 
-                    <form onSubmit={submit} className="grid gap-5">
+                        <form
+                            onSubmit={submit}
+                            className="grid gap-5"
+                            noValidate
+                        >
                         {step === 0 ? (
                             <div className="grid gap-5 sm:grid-cols-2">
                                 <div className="grid gap-2">
@@ -155,7 +260,7 @@ export default function Onboarding({ user }: Props) {
                                         id="first_name"
                                         value={form.data.first_name}
                                         onChange={(event) =>
-                                            form.setData(
+                                            setFormData(
                                                 'first_name',
                                                 event.target.value,
                                             )
@@ -166,7 +271,7 @@ export default function Onboarding({ user }: Props) {
                                         placeholder="First name"
                                     />
                                     <InputError
-                                        message={form.errors.first_name}
+                                        message={fieldError('first_name')}
                                     />
                                 </div>
 
@@ -178,7 +283,7 @@ export default function Onboarding({ user }: Props) {
                                         id="last_name"
                                         value={form.data.last_name}
                                         onChange={(event) =>
-                                            form.setData(
+                                            setFormData(
                                                 'last_name',
                                                 event.target.value,
                                             )
@@ -188,7 +293,7 @@ export default function Onboarding({ user }: Props) {
                                         placeholder="Last name"
                                     />
                                     <InputError
-                                        message={form.errors.last_name}
+                                        message={fieldError('last_name')}
                                     />
                                 </div>
 
@@ -197,7 +302,7 @@ export default function Onboarding({ user }: Props) {
                                     <Select
                                         value={form.data.industry}
                                         onValueChange={(value) =>
-                                            form.setData('industry', value)
+                                            setFormData('industry', value)
                                         }
                                         required
                                     >
@@ -221,7 +326,7 @@ export default function Onboarding({ user }: Props) {
                                         </SelectContent>
                                     </Select>
                                     <InputError
-                                        message={form.errors.industry}
+                                        message={fieldError('industry')}
                                     />
                                 </div>
 
@@ -231,7 +336,7 @@ export default function Onboarding({ user }: Props) {
                                         id="job_title"
                                         value={form.data.job_title}
                                         onChange={(event) =>
-                                            form.setData(
+                                            setFormData(
                                                 'job_title',
                                                 event.target.value,
                                             )
@@ -241,7 +346,7 @@ export default function Onboarding({ user }: Props) {
                                         placeholder="Job title"
                                     />
                                     <InputError
-                                        message={form.errors.job_title}
+                                        message={fieldError('job_title')}
                                     />
                                 </div>
 
@@ -251,12 +356,12 @@ export default function Onboarding({ user }: Props) {
                                         id="location"
                                         value={form.data.location}
                                         onChange={(value) =>
-                                            form.setData('location', value)
+                                            setFormData('location', value)
                                         }
                                         placeholder="Select location"
                                     />
                                     <InputError
-                                        message={form.errors.location}
+                                        message={fieldError('location')}
                                     />
                                 </div>
                             </div>
@@ -272,7 +377,7 @@ export default function Onboarding({ user }: Props) {
                                         id="education_school"
                                         value={form.data.education_school}
                                         onChange={(event) =>
-                                            form.setData(
+                                            setFormData(
                                                 'education_school',
                                                 event.target.value,
                                             )
@@ -282,9 +387,9 @@ export default function Onboarding({ user }: Props) {
                                         placeholder="School"
                                     />
                                     <InputError
-                                        message={
-                                            form.errors.education_school
-                                        }
+                                        message={fieldError(
+                                            'education_school',
+                                        )}
                                     />
                                 </div>
 
@@ -296,7 +401,7 @@ export default function Onboarding({ user }: Props) {
                                         id="education_degree"
                                         value={form.data.education_degree}
                                         onChange={(value) =>
-                                            form.setData(
+                                            setFormData(
                                                 'education_degree',
                                                 value,
                                             )
@@ -304,9 +409,9 @@ export default function Onboarding({ user }: Props) {
                                         placeholder="Select degree"
                                     />
                                     <InputError
-                                        message={
-                                            form.errors.education_degree
-                                        }
+                                        message={fieldError(
+                                            'education_degree',
+                                        )}
                                     />
                                 </div>
 
@@ -318,7 +423,7 @@ export default function Onboarding({ user }: Props) {
                                         id="education_program"
                                         value={form.data.education_program}
                                         onChange={(event) =>
-                                            form.setData(
+                                            setFormData(
                                                 'education_program',
                                                 event.target.value,
                                             )
@@ -327,9 +432,9 @@ export default function Onboarding({ user }: Props) {
                                         placeholder="Program"
                                     />
                                     <InputError
-                                        message={
-                                            form.errors.education_program
-                                        }
+                                        message={fieldError(
+                                            'education_program',
+                                        )}
                                     />
                                 </div>
                             </div>
@@ -340,8 +445,21 @@ export default function Onboarding({ user }: Props) {
                                 <AvatarPresetPicker
                                     value={form.data.avatar_preset}
                                     onChange={(value) => {
-                                        form.setData('avatar_preset', value);
-                                        form.setData('photo', null);
+                                        const nextData = {
+                                            ...form.data,
+                                            avatar_preset: value,
+                                            photo: null,
+                                        };
+
+                                        form.setData(nextData);
+                                        form.clearErrors('avatar_preset');
+                                        form.clearErrors('photo');
+                                        setValidationErrors(
+                                            validateOnboardingForm(
+                                                nextData,
+                                                step,
+                                            ),
+                                        );
                                         setPhotoPreview(null);
                                         if (photoInputRef.current) {
                                             photoInputRef.current.value = '';
@@ -361,24 +479,36 @@ export default function Onboarding({ user }: Props) {
                                         onChange={(event) => {
                                             const file =
                                                 event.target.files?.[0] ?? null;
-                                            form.setData('photo', file);
+                                            const nextData = {
+                                                ...form.data,
+                                                avatar_preset: file
+                                                    ? ''
+                                                    : form.data.avatar_preset,
+                                                photo: file,
+                                            };
+
+                                            form.setData(nextData);
+                                            form.clearErrors('avatar_preset');
+                                            form.clearErrors('photo');
+                                            setValidationErrors(
+                                                validateOnboardingForm(
+                                                    nextData,
+                                                    step,
+                                                ),
+                                            );
                                             setPhotoPreview(
                                                 file
                                                     ? URL.createObjectURL(file)
                                                     : null,
                                             );
-                                            if (file) {
-                                                form.setData(
-                                                    'avatar_preset',
-                                                    '',
-                                                );
-                                            }
                                         }}
                                         autoFocus
                                     />
-                                    <InputError message={form.errors.photo} />
                                     <InputError
-                                        message={form.errors.avatar_preset}
+                                        message={fieldError('photo')}
+                                    />
+                                    <InputError
+                                        message={fieldError('avatar_preset')}
                                     />
                                 </div>
                             </div>
@@ -389,9 +519,12 @@ export default function Onboarding({ user }: Props) {
                                 type="button"
                                 variant="outline"
                                 disabled={step === 0 || form.processing}
-                                onClick={() =>
-                                    setStep((currentStep) => currentStep - 1)
-                                }
+                                onClick={() => {
+                                    setValidationErrors({});
+                                    setStep(
+                                        (currentStep) => currentStep - 1,
+                                    );
+                                }}
                             >
                                 Back
                             </Button>
@@ -400,7 +533,7 @@ export default function Onboarding({ user }: Props) {
                                 type="submit"
                                 disabled={
                                     form.processing ||
-                                    (step < 2 && !canContinue)
+                                    !canContinue
                                 }
                                 data-test="complete-onboarding-button"
                             >
@@ -410,6 +543,7 @@ export default function Onboarding({ user }: Props) {
                         </div>
                     </form>
                 </section>
+                </div>
             </div>
         </>
     );

@@ -213,7 +213,6 @@ private function importDataFromExtension(Request $request): array
         Log::create([
             'user_id' => $request->user()->getKey(),
             'action' => 'Created application for job title: ' . $application->job_title,
-            'type' => 'application',
         ]);
 
         if ($data['from_import'] ?? false) {
@@ -252,13 +251,10 @@ private function importDataFromExtension(Request $request): array
             'location' => ['nullable', 'string', 'max:255'],
             'salary_min' => ['nullable', 'numeric', 'min:0'],
             'salary_max' => ['nullable', 'numeric', 'min:0'],
-            'currency' => ['sometimes', 'string', 'max:10'],
             'status' => ['sometimes', 'string', 'max:255'],
             'applied_date' => ['nullable', 'date'],
-            'deadline' => ['nullable', 'date'],
             'job_post_url' => ['nullable', 'url', 'max:255'],
             'job_description' => ['nullable', 'string'],
-            'notes' => ['nullable', 'string'],
         ]);
 
         if (array_key_exists('company', $data)) {
@@ -297,7 +293,6 @@ private function importDataFromExtension(Request $request): array
         Log::create([
             'user_id' => $request->user()->getKey(),
             'action' => 'Updated application for job title: ' . $application->job_title,
-            'type' => 'application',
         ]);
 
         if ($request->header('X-Inertia')) {
@@ -323,29 +318,6 @@ private function importDataFromExtension(Request $request): array
         }
 
         return response()->noContent();
-    }
-
-    private function validatedData(Request $request, bool $partial = false): array
-    {
-        $required = $partial ? 'sometimes' : 'required';
-
-        return $request->validate([
-            'user_id' => [$required, 'integer', 'exists:users,user_id'],
-            'company_id' => [$required, 'integer', 'exists:companies,company_id'],
-            'job_title' => [$required, 'string', 'max:255'],
-            'job_type' => ['nullable', 'string', 'max:255'],
-            'work_setup' => ['nullable', 'string', 'max:255'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'salary_min' => ['nullable', 'numeric', 'min:0'],
-            'salary_max' => ['nullable', 'numeric', 'min:0'],
-            'currency' => ['sometimes', 'string', 'max:10'],
-            'status' => ['sometimes', 'string', 'max:255'],
-            'applied_date' => ['nullable', 'date'],
-            'deadline' => ['nullable', 'date'],
-            'job_post_url' => ['nullable', 'url', 'max:255'],
-            'job_description' => ['nullable', 'string'],
-            'notes' => ['nullable', 'string'],
-        ]);
     }
 
     private function statuses(): array
