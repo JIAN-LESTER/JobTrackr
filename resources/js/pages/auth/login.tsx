@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Bell, BriefcaseBusiness, History } from 'lucide-react';
-import type { FormEvent } from 'react';
+import { useEffect, type FormEvent } from 'react';
+import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -29,6 +30,12 @@ export default function Login({ status, canResetPassword }: Props) {
         email: '',
         password: '',
     });
+
+    useEffect(() => {
+        if (status) {
+            toast.success(status);
+        }
+    }, [status]);
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -136,11 +143,6 @@ export default function Login({ status, canResetPassword }: Props) {
                 </div>
             </form>
 
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600 dark:text-green-300">
-                    {status}
-                </div>
-            )}
         </>
     );
 }
