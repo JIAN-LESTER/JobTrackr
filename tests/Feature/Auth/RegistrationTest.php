@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Features;
 use Tests\TestCase;
@@ -34,6 +35,23 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect('/applications');
+    }
+
+    public function test_users_cannot_register_with_a_taken_email()
+    {
+        User::factory()->create([
+            'email' => 'test@example.com',
+        ]);
+
+        $response = $this->post(route('register.store'), [
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('email');
+        $this->assertDatabaseCount('users', 1);
     }
 }
