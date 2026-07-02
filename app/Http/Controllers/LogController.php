@@ -61,17 +61,6 @@ class LogController extends Controller
         return response()->noContent();
     }
 
-    /** @return array<string, mixed> */
-    private function validatedData(Request $request, bool $partial = false): array
-    {
-        $required = $partial ? 'sometimes' : 'required';
-
-        return $request->validate([
-            'user_id' => [$required, 'integer', 'exists:users,user_id'],
-            'action' => [$required, 'string', 'max:255'],
-        ]);
-    }
-
     private function authorizeLog(Log $log): void
     {
         abort_unless((string) $log->user_id === (string) request()->user()->getKey(), 404);
