@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Application;
 use App\Models\Reminder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -21,8 +22,11 @@ class ReminderDueMail extends Mailable
 
     public function envelope(): Envelope
     {
+        /** @var Application $application */
+        $application = $this->reminder->jobApplication;
+
         return new Envelope(
-            subject: $this->reminder->jobApplication->company->name,
+            subject: $application->company->name,
         );
     }
 

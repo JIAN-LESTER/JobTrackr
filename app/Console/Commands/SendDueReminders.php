@@ -3,7 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Mail\ReminderDueMail;
+use App\Models\Application;
 use App\Models\Reminder;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 
@@ -22,10 +24,18 @@ class SendDueReminders extends Command
             ->where('is_completed', false)
             ->whereNull('email_sent_at')
             ->where('remind_at', '<=', now())
-            ->whereHas('jobApplication.user')
+            ->whereHas('jobApplication', function ($query): void {
+                $query->whereHas('user');
+            })
             ->chunkById(100, function ($reminders) use (&$sent) {
                 foreach ($reminders as $reminder) {
-                    Mail::to($reminder->jobApplication->user)->send(new ReminderDueMail($reminder));
+                    /** @var Application $application */
+                    $application = $reminder->jobApplication;
+
+                    /** @var User $user */
+                    $user = $application->user;
+
+                    Mail::to($user)->send(new ReminderDueMail($reminder));
 
                     $reminder->forceFill([
                         'email_sent_at' => now(),
