@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Models\Document;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,6 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Database\Eloquent\Collection;
 
 class ProfileController extends Controller
 {
@@ -29,7 +29,9 @@ class ProfileController extends Controller
             ->documents()
             ->where('document_type', 'photo')
             ->latest()
-            ->get()
+            ->get();
+
+        $documents = $documents
             ->unique('document_type')
             ->values()
             ->map(fn (Document $document) => [

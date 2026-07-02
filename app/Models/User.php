@@ -57,6 +57,7 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    /** @return HasMany<Document, $this> */
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class, 'user_id', 'user_id');
