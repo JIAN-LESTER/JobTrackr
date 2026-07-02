@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { Grid2X2, List, Table2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';

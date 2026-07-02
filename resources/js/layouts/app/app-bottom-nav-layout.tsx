@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppContent } from '@/components/app-content';
-import { AppShell } from '@/components/app-shell';
 import AppLogo from '@/components/app-logo';
+import { AppShell } from '@/components/app-shell';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
 import { edit } from '@/routes/profile';
