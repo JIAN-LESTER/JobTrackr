@@ -73,6 +73,7 @@ class NoteController extends Controller
         return response()->noContent();
     }
 
+    /** @return array<string, mixed> */
     private function validatedData(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';

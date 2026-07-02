@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Document extends Model
 {
+    /**
+     * @property string|null $file_path
+     */
     protected $primaryKey = 'document_id';
 
     protected $fillable = [

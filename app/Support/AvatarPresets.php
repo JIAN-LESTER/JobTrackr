@@ -13,6 +13,7 @@ class AvatarPresets
         'focus-mark',
     ];
 
+    /** @return array<int, string> */
     public static function keys(): array
     {
         return self::KEYS;

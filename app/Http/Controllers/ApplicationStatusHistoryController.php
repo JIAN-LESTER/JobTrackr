@@ -106,6 +106,7 @@ class ApplicationStatusHistoryController extends Controller
         abort_unless($statusHistory->jobApplication?->user_id === request()->user()->user_id, 403);
     }
 
+    /** @return array<string, mixed> */
     private function validatedData(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';

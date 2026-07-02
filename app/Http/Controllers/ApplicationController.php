@@ -116,6 +116,7 @@ class ApplicationController extends Controller
         ])->contains(fn ($field) => $request->filled($field));
     }
 
+    /** @return array<string, mixed> */
     private function importDataFromExtension(Request $request): array
     {
         $url = $this->cleanJobPostUrl($request->input('url'));
@@ -324,6 +325,7 @@ class ApplicationController extends Controller
         return response()->noContent();
     }
 
+    /** @return array<int, string> */
     private function statuses(): array
     {
         return [
@@ -349,6 +351,7 @@ class ApplicationController extends Controller
         ];
     }
 
+    /** @return array<string, mixed> */
     private function extractImportedJobData(?string $url): array
     {
         $data = [
@@ -420,6 +423,7 @@ class ApplicationController extends Controller
         ]);
     }
 
+    /** @return array<string, string> */
     private function cleanApplicationImport(string $title, string $company, ?string $url): array
     {
         $website = $this->websiteLabel($url);
@@ -478,6 +482,7 @@ class ApplicationController extends Controller
         return preg_replace('/^www\./i', '', $host) ?: 'Website';
     }
 
+    /** @return array<string, mixed> */
     private function jobPostingFromJsonLd(\DOMXPath $xpath): array
     {
         foreach ($xpath->query('//script[@type="application/ld+json"]') as $script) {
@@ -496,6 +501,7 @@ class ApplicationController extends Controller
         return [];
     }
 
+    /** @return array<int, array<string, mixed>> */
     private function jsonLdItems(mixed $value): array
     {
         if (! is_array($value)) {
@@ -513,6 +519,7 @@ class ApplicationController extends Controller
         return array_filter($items, fn ($item) => is_array($item));
     }
 
+    /** @param array<string, mixed> $jobPosting */
     private function locationFromJobPosting(array $jobPosting): ?string
     {
         $location = $jobPosting['jobLocation'] ?? null;
@@ -539,6 +546,7 @@ class ApplicationController extends Controller
         return null;
     }
 
+    /** @param array<int, string> $values */
     private function firstTextMatch(string $text, array $values): ?string
     {
         foreach ($values as $value) {

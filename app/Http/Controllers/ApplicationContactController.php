@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ApplicationContact;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -74,6 +74,7 @@ class ApplicationContactController extends Controller
         return response()->noContent();
     }
 
+    /** @return array<string, mixed> */
     private function validatedData(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';
