@@ -1,7 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Bell, BriefcaseBusiness, History } from 'lucide-react';
-import { useEffect  } from 'react';
-import type {FormEvent} from 'react';
+import { useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';

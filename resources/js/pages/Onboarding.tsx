@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import { BriefcaseBusiness, Camera, GraduationCap } from 'lucide-react';
-import type { FormEvent} from 'react';
+import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DegreeSelect from '@/components/degree-select';
