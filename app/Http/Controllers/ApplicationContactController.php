@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\ApplicationContact;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class ApplicationContactController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
         $perPage = max(1, min((int) $request->input('per_page', 10), 100));
@@ -39,12 +42,12 @@ class ApplicationContactController extends Controller
         ]);
     }
 
-    public function show(ApplicationContact $contact)
+    public function show(ApplicationContact $contact): JsonResponse
     {
         return response()->json($contact->load('jobApplication.company'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $contact = ApplicationContact::create($this->validatedData($request));
 
@@ -54,7 +57,7 @@ class ApplicationContactController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, ApplicationContact $contact)
+    public function update(Request $request, ApplicationContact $contact): JsonResponse
     {
         $contact->update($this->validatedData($request, true));
 
@@ -64,7 +67,7 @@ class ApplicationContactController extends Controller
         ]);
     }
 
-    public function destroy(ApplicationContact $contact)
+    public function destroy(ApplicationContact $contact): Response
     {
         $contact->delete();
 

@@ -3,12 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\ApplicationStatusHistory;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class ApplicationStatusHistoryController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
         $perPage = max(1, min((int) $request->input('per_page', 10), 100));
@@ -42,14 +46,14 @@ class ApplicationStatusHistoryController extends Controller
         ]);
     }
 
-    public function show(ApplicationStatusHistory $statusHistory)
+    public function show(ApplicationStatusHistory $statusHistory): JsonResponse
     {
         $this->authorizeStatusHistory($statusHistory);
 
         return response()->json($statusHistory->load('jobApplication.company'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $statusHistory = ApplicationStatusHistory::create($this->validatedData($request));
 
@@ -59,7 +63,7 @@ class ApplicationStatusHistoryController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, ApplicationStatusHistory $statusHistory)
+    public function update(Request $request, ApplicationStatusHistory $statusHistory): JsonResponse
     {
         $this->authorizeStatusHistory($statusHistory);
 
@@ -71,7 +75,7 @@ class ApplicationStatusHistoryController extends Controller
         ]);
     }
 
-    public function destroy(ApplicationStatusHistory $statusHistory)
+    public function destroy(ApplicationStatusHistory $statusHistory): RedirectResponse|Response
     {
         $this->authorizeStatusHistory($statusHistory);
 
@@ -84,7 +88,7 @@ class ApplicationStatusHistoryController extends Controller
         return response()->noContent();
     }
 
-    public function clear(Request $request)
+    public function clear(Request $request): RedirectResponse|Response
     {
         ApplicationStatusHistory::query()
             ->whereHas('jobApplication', fn ($query) => $query->where('user_id', $request->user()->user_id))

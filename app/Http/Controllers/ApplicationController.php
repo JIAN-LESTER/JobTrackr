@@ -6,13 +6,17 @@ use App\Models\Application;
 use App\Models\ApplicationStatusHistory;
 use App\Models\Company;
 use App\Models\Log;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class ApplicationController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
         $perPage = max(1, min((int) $request->input('per_page', 10), 100));
@@ -76,14 +80,14 @@ class ApplicationController extends Controller
         ]);
     }
 
-    public function show(Application $application)
+    public function show(Application $application): JsonResponse
     {
         $this->authorizeApplication($application);
 
         return response()->json($application->load(['company', 'user', 'contacts', 'interviews', 'statusHistories', 'notes', 'reminders']));
     }
 
-    public function import(Request $request)
+    public function import(Request $request): InertiaResponse
     {
         if ($this->hasExtensionImportData($request)) {
             return Inertia::render('ApplicationImport', [
@@ -132,7 +136,7 @@ class ApplicationController extends Controller
         ];
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $request->merge([
             'job_post_url' => $this->cleanJobPostUrl($request->input('job_post_url')),
@@ -231,7 +235,7 @@ class ApplicationController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, Application $application)
+    public function update(Request $request, Application $application): JsonResponse|RedirectResponse
     {
         $this->authorizeApplication($application);
 
@@ -305,7 +309,7 @@ class ApplicationController extends Controller
         ]);
     }
 
-    public function destroy(Application $application)
+    public function destroy(Application $application): JsonResponse|RedirectResponse|Response
     {
         $this->authorizeApplication($application);
 

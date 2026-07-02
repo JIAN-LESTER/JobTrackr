@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Note;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class NoteController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
         $perPage = max(1, min((int) $request->input('per_page', 10), 100));
@@ -35,12 +38,12 @@ class NoteController extends Controller
         ]);
     }
 
-    public function show(Note $note)
+    public function show(Note $note): JsonResponse
     {
         return response()->json($note->load(['jobApplication.company', 'user']));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $data = $this->validatedData($request);
         $data['user_id'] = $data['user_id'] ?? $request->user()->getKey();
@@ -53,7 +56,7 @@ class NoteController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, Note $note)
+    public function update(Request $request, Note $note): JsonResponse
     {
         $note->update($this->validatedData($request, true));
 
@@ -63,7 +66,7 @@ class NoteController extends Controller
         ]);
     }
 
-    public function destroy(Note $note)
+    public function destroy(Note $note): Response
     {
         $note->delete();
 
