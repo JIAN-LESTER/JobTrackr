@@ -68,6 +68,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return $preset;
         }
 
+        /** @var Document|null $photo */
         $photo = $this->documents()
             ->where('document_type', 'photo')
             ->latest()

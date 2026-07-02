@@ -485,7 +485,13 @@ class ApplicationController extends Controller
     /** @return array<string, mixed> */
     private function jobPostingFromJsonLd(\DOMXPath $xpath): array
     {
-        foreach ($xpath->query('//script[@type="application/ld+json"]') as $script) {
+        $scripts = $xpath->query('//script[@type="application/ld+json"]');
+
+        if (! $scripts) {
+            return [];
+        }
+
+        foreach ($scripts as $script) {
             $decoded = json_decode($script->textContent, true);
 
             foreach ($this->jsonLdItems($decoded) as $item) {
@@ -562,21 +568,21 @@ class ApplicationController extends Controller
     {
         $nodes = $xpath->query("//meta[@{$attribute}='{$value}']/@content");
 
-        return $nodes->length ? $nodes->item(0)->nodeValue : null;
+        return $nodes && $nodes->length ? $nodes->item(0)->nodeValue : null;
     }
 
     private function pageTitle(\DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query('//title');
 
-        return $nodes->length ? $nodes->item(0)->textContent : null;
+        return $nodes && $nodes->length ? $nodes->item(0)->textContent : null;
     }
 
     private function pageText(\DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query('//body');
 
-        return $nodes->length ? $nodes->item(0)->textContent : null;
+        return $nodes && $nodes->length ? $nodes->item(0)->textContent : null;
     }
 
     private function cleanText(mixed $value): ?string
