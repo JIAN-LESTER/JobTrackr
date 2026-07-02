@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Application;
-use App\Models\ApplicationStatusHistory;
 use App\Models\Company;
 use App\Models\Log;
 use App\Models\User;

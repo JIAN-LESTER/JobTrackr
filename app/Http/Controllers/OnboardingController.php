@@ -35,7 +35,7 @@ class OnboardingController extends Controller
             'education_school' => ['required', 'string', 'max:255'],
             'education_degree' => ['required', 'string', 'max:255'],
             'education_program' => ['required', 'string', 'max:255'],
-            'avatar_preset' => ['nullable', 'string', 'in:' . implode(',', AvatarPresets::keys())],
+            'avatar_preset' => ['nullable', 'string', 'in:'.implode(',', AvatarPresets::keys())],
             'photo' => ['nullable', 'image', 'max:2048'],
         ]);
 

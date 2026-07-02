@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reminder;
-use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
 class ReminderController extends Controller

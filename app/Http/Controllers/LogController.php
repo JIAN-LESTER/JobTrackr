@@ -49,7 +49,6 @@ class LogController extends Controller
         return response()->json($log->load('user'));
     }
 
-
     public function destroy(Log $log)
     {
         $this->authorizeLog($log);

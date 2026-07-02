@@ -83,54 +83,54 @@ class ApplicationController extends Controller
         return response()->json($application->load(['company', 'user', 'contacts', 'interviews', 'statusHistories', 'notes', 'reminders']));
     }
 
-  public function import(Request $request)
-{
-    if ($this->hasExtensionImportData($request)) {
+    public function import(Request $request)
+    {
+        if ($this->hasExtensionImportData($request)) {
+            return Inertia::render('ApplicationImport', [
+                'importData' => $this->importDataFromExtension($request),
+            ]);
+        }
+
+        $url = $request->input('url');
+
         return Inertia::render('ApplicationImport', [
-            'importData' => $this->importDataFromExtension($request),
+            'importData' => $this->extractImportedJobData(is_string($url) ? $url : null),
         ]);
     }
 
-    $url = $request->input('url');
+    private function hasExtensionImportData(Request $request): bool
+    {
+        return collect([
+            'company',
+            'job_title',
+            'location',
+            'job_type',
+            'work_setup',
+            'salary_min',
+            'salary_max',
+            'job_description',
+        ])->contains(fn ($field) => $request->filled($field));
+    }
 
-    return Inertia::render('ApplicationImport', [
-        'importData' => $this->extractImportedJobData(is_string($url) ? $url : null),
-    ]);
-}
+    private function importDataFromExtension(Request $request): array
+    {
+        $url = $this->cleanJobPostUrl($request->input('url'));
+        $company = $this->cleanText($request->input('company')) ?: $this->websiteLabel($url);
+        $application = $this->cleanApplicationImport($this->cleanText($request->input('job_title')) ?: 'Application', $company, $url);
 
-private function hasExtensionImportData(Request $request): bool
-{
-    return collect([
-        'company',
-        'job_title',
-        'location',
-        'job_type',
-        'work_setup',
-        'salary_min',
-        'salary_max',
-        'job_description',
-    ])->contains(fn ($field) => $request->filled($field));
-}
-
-private function importDataFromExtension(Request $request): array
-{
-    $url = $this->cleanJobPostUrl($request->input('url'));
-    $company = $this->cleanText($request->input('company')) ?: $this->websiteLabel($url);
-    $application = $this->cleanApplicationImport($this->cleanText($request->input('job_title')) ?: 'Application', $company, $url);
-
-    return [
-        'extracted' => true,
-        'url' => $url,
-        'company' => $application['company'],
-        'job_title' => $application['title'],
-        'location' => $this->cleanText($request->input('location')),
-        'job_type' => $this->cleanText($request->input('job_type')),
-        'work_setup' => $this->cleanText($request->input('work_setup')),
-        'salary_min' => $this->cleanSalary($request->input('salary_min')),
-        'salary_max' => $this->cleanSalary($request->input('salary_max')),
-        'job_description' => $this->cleanText($request->input('job_description')),
-    ];
-}
+        return [
+            'extracted' => true,
+            'url' => $url,
+            'company' => $application['company'],
+            'job_title' => $application['title'],
+            'location' => $this->cleanText($request->input('location')),
+            'job_type' => $this->cleanText($request->input('job_type')),
+            'work_setup' => $this->cleanText($request->input('work_setup')),
+            'salary_min' => $this->cleanSalary($request->input('salary_min')),
+            'salary_max' => $this->cleanSalary($request->input('salary_max')),
+            'job_description' => $this->cleanText($request->input('job_description')),
+        ];
+    }
 
     public function store(Request $request)
     {
@@ -212,7 +212,7 @@ private function importDataFromExtension(Request $request): array
 
         Log::create([
             'user_id' => $request->user()->getKey(),
-            'action' => 'Created application for job title: ' . $application->job_title,
+            'action' => 'Created application for job title: '.$application->job_title,
         ]);
 
         if ($data['from_import'] ?? false) {
@@ -292,7 +292,7 @@ private function importDataFromExtension(Request $request): array
 
         Log::create([
             'user_id' => $request->user()->getKey(),
-            'action' => 'Updated application for job title: ' . $application->job_title,
+            'action' => 'Updated application for job title: '.$application->job_title,
         ]);
 
         if ($request->header('X-Inertia')) {
@@ -377,7 +377,7 @@ private function importDataFromExtension(Request $request): array
         }
 
         $html = $response->body();
-        $document = new \DOMDocument();
+        $document = new \DOMDocument;
         libxml_use_internal_errors(true);
         $document->loadHTML($html);
         libxml_clear_errors();
@@ -441,7 +441,7 @@ private function importDataFromExtension(Request $request): array
                 continue;
             }
 
-            $cleanTitle = trim(preg_replace('/\s*(?:\||-| at )\s*' . preg_quote($label, '/') . '\s*$/i', '', $cleanTitle) ?? $cleanTitle);
+            $cleanTitle = trim(preg_replace('/\s*(?:\||-| at )\s*'.preg_quote($label, '/').'\s*$/i', '', $cleanTitle) ?? $cleanTitle);
         }
 
         return [

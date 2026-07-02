@@ -37,6 +37,6 @@ class AvatarPresets
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="64" fill="{$background}"/><circle cx="38" cy="38" r="12" fill="{$foreground}" fill-opacity=".22"/><circle cx="92" cy="86" r="18" fill="{$foreground}" fill-opacity=".16"/><g transform="translate(32 32) scale(2.6667)" fill="none" stroke="{$foreground}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{$icon}</g></svg>
 SVG;
 
-        return 'data:image/svg+xml,' . rawurlencode($svg);
+        return 'data:image/svg+xml,'.rawurlencode($svg);
     }
 }
