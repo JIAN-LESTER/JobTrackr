@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\Document;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class ProfileController extends Controller
             ->get()
             ->unique('document_type')
             ->values()
-            ->map(fn (\App\Models\Document $document) => [
+            ->map(fn (Document $document) => [
                 'document_type' => $document->document_type,
                 'file_name' => $document->file_name,
             ]);

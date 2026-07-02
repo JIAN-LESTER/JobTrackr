@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Application;
 use App\Models\ApplicationStatusHistory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -103,7 +104,10 @@ class ApplicationStatusHistoryController extends Controller
 
     private function authorizeStatusHistory(ApplicationStatusHistory $statusHistory): void
     {
-        abort_unless($statusHistory->jobApplication?->user_id === request()->user()->user_id, 403);
+        /** @var Application $application */
+        $application = $statusHistory->jobApplication;
+
+        abort_unless($application->user_id === request()->user()->user_id, 403);
     }
 
     /** @return array<string, mixed> */

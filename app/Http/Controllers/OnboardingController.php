@@ -26,6 +26,19 @@ class OnboardingController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        /** @var array{
+         *     first_name: string,
+         *     last_name: string,
+         *     industry: string,
+         *     job_title: string,
+         *     location: string,
+         *     education_school: string,
+         *     education_degree: string,
+         *     education_program: string,
+         *     avatar_preset?: string|null,
+         *     photo?: \Illuminate\Http\UploadedFile|null
+         * } $validated
+         */
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
