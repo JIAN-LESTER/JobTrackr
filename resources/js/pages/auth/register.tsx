@@ -49,15 +49,15 @@ export default function Register({ passwordRules }: Props) {
             form.setError('password', 'Password is required.');
             hasErrors = true;
         } else if (form.data.password.length < 8) {
-            form.setError('password', 'Password must be at least 8 characters.');
+            form.setError(
+                'password',
+                'Password must be at least 8 characters.',
+            );
             hasErrors = true;
         }
 
         if (!form.data.password_confirmation) {
-            form.setError(
-                'password_confirmation',
-                'Confirm your password.',
-            );
+            form.setError('password_confirmation', 'Confirm your password.');
             hasErrors = true;
         } else if (form.data.password_confirmation !== form.data.password) {
             form.setError(
@@ -75,19 +75,14 @@ export default function Register({ passwordRules }: Props) {
             ...data,
             email,
         })).post(store.url(), {
-            onSuccess: () =>
-                form.reset('password', 'password_confirmation'),
+            onSuccess: () => form.reset('password', 'password_confirmation'),
         });
     };
 
     return (
         <>
             <Head title="Register" />
-            <form
-                onSubmit={submit}
-                noValidate
-                className="flex flex-col gap-6"
-            >
+            <form onSubmit={submit} noValidate className="flex flex-col gap-6">
                 <div className="grid gap-6">
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email address</Label>
@@ -182,7 +177,7 @@ Register.layout = {
     description: 'Create your account to start tracking applications.',
     sidePosition: 'right',
     side: (
-        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 sm:p-8 lg:min-h-[500px]">
+        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl ring-1 shadow-black/20 ring-white/10 sm:p-8 lg:min-h-[500px]">
             <div className="space-y-3">
                 <p className="text-sm font-medium text-[#f3c76a]">
                     Account setup

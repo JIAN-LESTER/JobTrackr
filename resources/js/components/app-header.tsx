@@ -1,11 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import {
-    Bell,
-    BriefcaseBusiness,
-    History,
-    Menu,
-    Search,
-} from 'lucide-react';
+import { Bell, BriefcaseBusiness, History, Menu, Search } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -58,9 +52,7 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-
-const activeItemStyles =
-    'bg-accent text-accent-foreground';
+const activeItemStyles = 'bg-accent text-accent-foreground';
 
 export function AppHeader({ breadcrumbs = [] }: Props) {
     const page = usePage();
@@ -167,7 +159,6 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                             >
                                 <Search className="!size-5 opacity-80 group-hover:opacity-100" />
                             </Button>
-                        
                         </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

@@ -99,6 +99,7 @@ export default function Profile() {
                                             onChange={(value) => {
                                                 setAvatarPreset(value);
                                                 setPhotoPreview(null);
+
                                                 if (photoInput.current) {
                                                     photoInput.current.value =
                                                         '';
@@ -163,9 +164,7 @@ export default function Profile() {
                                             placeholder="Industry"
                                         />
 
-                                        <InputError
-                                            message={errors.industry}
-                                        />
+                                        <InputError message={errors.industry} />
                                     </div>
 
                                     <div className="grid gap-2">
@@ -200,9 +199,7 @@ export default function Profile() {
                                             placeholder="Select country"
                                         />
 
-                                        <InputError
-                                            message={errors.location}
-                                        />
+                                        <InputError message={errors.location} />
                                     </div>
 
                                     <div className="grid gap-2">
@@ -284,6 +281,7 @@ export default function Profile() {
                                                           )
                                                         : null,
                                                 );
+
                                                 if (file) {
                                                     setAvatarPreset('');
                                                 }
@@ -313,145 +311,149 @@ export default function Profile() {
                     </section>
 
                     <div className="grid gap-4">
-                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
-                        <Heading
-                            variant="small"
-                            title="Update password"
-                            description="Ensure your account is using a long, random password to stay secure"
-                        />
+                        <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                            <Heading
+                                variant="small"
+                                title="Update password"
+                                description="Ensure your account is using a long, random password to stay secure"
+                            />
 
-                        <Form
-                            {...SecurityController.update.form()}
-                            options={{
-                                preserveScroll: true,
-                            }}
-                            resetOnError={[
-                                'password',
-                                'password_confirmation',
-                                'current_password',
-                            ]}
-                            resetOnSuccess
-                            onError={(errors) => {
-                                if (errors.password) {
-                                    passwordInput.current?.focus();
-                                }
+                            <Form
+                                {...SecurityController.update.form()}
+                                options={{
+                                    preserveScroll: true,
+                                }}
+                                resetOnError={[
+                                    'password',
+                                    'password_confirmation',
+                                    'current_password',
+                                ]}
+                                resetOnSuccess
+                                onError={(errors) => {
+                                    if (errors.password) {
+                                        passwordInput.current?.focus();
+                                    }
 
-                                if (errors.current_password) {
-                                    currentPasswordInput.current?.focus();
-                                }
-                            }}
-                            className="mt-5 space-y-4"
-                        >
-                            {({ errors, processing }) => (
-                                <>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="current_password">
-                                            Current password
-                                        </Label>
+                                    if (errors.current_password) {
+                                        currentPasswordInput.current?.focus();
+                                    }
+                                }}
+                                className="mt-5 space-y-4"
+                            >
+                                {({ errors, processing }) => (
+                                    <>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="current_password">
+                                                Current password
+                                            </Label>
 
-                                        <PasswordInput
-                                            id="current_password"
-                                            ref={currentPasswordInput}
-                                            name="current_password"
-                                            className="block w-full"
-                                            autoComplete="current-password"
-                                            placeholder="Current password"
-                                        />
+                                            <PasswordInput
+                                                id="current_password"
+                                                ref={currentPasswordInput}
+                                                name="current_password"
+                                                className="block w-full"
+                                                autoComplete="current-password"
+                                                placeholder="Current password"
+                                            />
 
-                                        <InputError
-                                            message={errors.current_password}
-                                        />
-                                    </div>
+                                            <InputError
+                                                message={
+                                                    errors.current_password
+                                                }
+                                            />
+                                        </div>
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="password">
-                                            New password
-                                        </Label>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="password">
+                                                New password
+                                            </Label>
 
-                                        <PasswordInput
-                                            id="password"
-                                            ref={passwordInput}
-                                            name="password"
-                                            className="block w-full"
-                                            autoComplete="new-password"
-                                            placeholder="New password"
-                                            passwordrules={passwordRules}
-                                        />
+                                            <PasswordInput
+                                                id="password"
+                                                ref={passwordInput}
+                                                name="password"
+                                                className="block w-full"
+                                                autoComplete="new-password"
+                                                placeholder="New password"
+                                                passwordrules={passwordRules}
+                                            />
 
-                                        <InputError message={errors.password} />
-                                    </div>
+                                            <InputError
+                                                message={errors.password}
+                                            />
+                                        </div>
 
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="password_confirmation">
-                                            Confirm password
-                                        </Label>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="password_confirmation">
+                                                Confirm password
+                                            </Label>
 
-                                        <PasswordInput
-                                            id="password_confirmation"
-                                            name="password_confirmation"
-                                            className="block w-full"
-                                            autoComplete="new-password"
-                                            placeholder="Confirm password"
-                                            passwordrules={passwordRules}
-                                        />
+                                            <PasswordInput
+                                                id="password_confirmation"
+                                                name="password_confirmation"
+                                                className="block w-full"
+                                                autoComplete="new-password"
+                                                placeholder="Confirm password"
+                                                passwordrules={passwordRules}
+                                            />
 
-                                        <InputError
-                                            message={
-                                                errors.password_confirmation
-                                            }
-                                        />
-                                    </div>
+                                            <InputError
+                                                message={
+                                                    errors.password_confirmation
+                                                }
+                                            />
+                                        </div>
 
-                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-4">
+                                            <Button
+                                                disabled={processing}
+                                                data-test="update-password-button"
+                                            >
+                                                Save password
+                                            </Button>
+                                        </div>
+                                    </>
+                                )}
+                            </Form>
+                        </section>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                                <Heading
+                                    variant="small"
+                                    title="Appearance settings"
+                                    description="Update the appearance settings for your account"
+                                />
+                                <div className="mt-5">
+                                    <AppearanceTabs />
+                                </div>
+                            </section>
+
+                            <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                                <Heading
+                                    variant="small"
+                                    title="Account actions"
+                                    description="Manage sign out and account deletion"
+                                />
+
+                                <Form {...logout.form()} className="mt-5">
+                                    {({ processing }) => (
                                         <Button
+                                            type="submit"
+                                            variant="outline"
                                             disabled={processing}
-                                            data-test="update-password-button"
+                                            data-test="logout-button"
                                         >
-                                            Save password
+                                            Log out
                                         </Button>
-                                    </div>
-                                </>
-                            )}
-                        </Form>
-                    </section>
+                                    )}
+                                </Form>
+                            </section>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
-                        <Heading
-                            variant="small"
-                            title="Appearance settings"
-                            description="Update the appearance settings for your account"
-                        />
-                        <div className="mt-5">
-                            <AppearanceTabs />
+                            <section className="rounded-lg border bg-card p-5 shadow-xs sm:col-span-2 sm:p-6">
+                                <DeleteUser />
+                            </section>
                         </div>
-                    </section>
-
-                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
-                        <Heading
-                            variant="small"
-                            title="Account actions"
-                            description="Manage sign out and account deletion"
-                        />
-
-                        <Form {...logout.form()} className="mt-5">
-                            {({ processing }) => (
-                                <Button
-                                    type="submit"
-                                    variant="outline"
-                                    disabled={processing}
-                                    data-test="logout-button"
-                                >
-                                    Log out
-                                </Button>
-                            )}
-                        </Form>
-                    </section>
-
-                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:col-span-2 sm:p-6">
-                        <DeleteUser />
-                    </section>
-                    </div>
                     </div>
                 </div>
             </div>

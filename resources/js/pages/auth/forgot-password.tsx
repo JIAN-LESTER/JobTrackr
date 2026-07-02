@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { KeyRound, MailCheck, ShieldCheck } from 'lucide-react';
-import { useEffect, type FormEvent } from 'react';
+import { useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -36,11 +37,13 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
         if (!emailAddress) {
             form.setError('email', 'Email address is required.');
+
             return;
         }
 
         if (!emailPattern.test(emailAddress)) {
             form.setError('email', 'Enter a valid email address.');
+
             return;
         }
 
@@ -55,11 +58,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
         <>
             <Head title="Forgot password" />
 
-            <form
-                onSubmit={submit}
-                noValidate
-                className="flex flex-col gap-6"
-            >
+            <form onSubmit={submit} noValidate className="flex flex-col gap-6">
                 <div className="grid gap-6">
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email address</Label>
@@ -99,7 +98,6 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     </TextLink>
                 </div>
             </form>
-
         </>
     );
 }
@@ -109,7 +107,7 @@ ForgotPassword.layout = {
     description: 'Enter your email to receive a password reset link.',
     sidePosition: 'left',
     side: (
-        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 sm:p-8 lg:min-h-[500px]">
+        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl ring-1 shadow-black/20 ring-white/10 sm:p-8 lg:min-h-[500px]">
             <div className="space-y-3">
                 <p className="text-sm font-medium text-[#f3c76a]">
                     Account recovery

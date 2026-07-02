@@ -177,46 +177,50 @@ export default function StatusHistoriesIndex({
 
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-[#eef3ef] p-4 dark:bg-background">
                 <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-xl font-semibold tracking-tight">
-                            Timeline
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            {statusHistories.total} application updates
-                        </p>
-                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h1 className="text-xl font-semibold tracking-tight">
+                                Timeline
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                {statusHistories.total} application updates
+                            </p>
+                        </div>
 
-                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="border-red-100 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300"
-                            disabled={statusHistories.total === 0}
-                            onClick={clearTimeline}
-                        >
-                            <Trash2 className="size-4" />
-                            Clear all
-                        </Button>
-                        <form
-                            onSubmit={submitSearch}
-                            className="flex w-full gap-2 sm:w-80"
-                        >
-                            <Input
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                placeholder="Search timeline"
-                                className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
-                            />
-                            <Button type="submit" size="icon" aria-label="Search">
-                                <Search className="size-4" />
+                        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="border-red-100 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300"
+                                disabled={statusHistories.total === 0}
+                                onClick={clearTimeline}
+                            >
+                                <Trash2 className="size-4" />
+                                Clear all
                             </Button>
-                        </form>
+                            <form
+                                onSubmit={submitSearch}
+                                className="flex w-full gap-2 sm:w-80"
+                            >
+                                <Input
+                                    value={search}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
+                                    placeholder="Search timeline"
+                                    className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
+                                />
+                                <Button
+                                    type="submit"
+                                    size="icon"
+                                    aria-label="Search"
+                                >
+                                    <Search className="size-4" />
+                                </Button>
+                            </form>
+                        </div>
                     </div>
-                </div>
                 </div>
 
                 <PreferredView
@@ -242,7 +246,9 @@ export default function StatusHistoriesIndex({
                         {
                             key: 'status',
                             label: 'Update',
-                            render: (history) => <TimelineChange history={history} />,
+                            render: (history) => (
+                                <TimelineChange history={history} />
+                            ),
                         },
                         {
                             key: 'created_at',
@@ -309,8 +315,7 @@ export default function StatusHistoriesIndex({
                     <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                         <p className="text-muted-foreground">
                             Showing {statusHistories.from || 0} to{' '}
-                            {statusHistories.to || 0} of{' '}
-                            {statusHistories.total}
+                            {statusHistories.to || 0} of {statusHistories.total}
                         </p>
                         <div className="flex flex-wrap gap-1">
                             {statusHistories.links.map((link, index) =>
