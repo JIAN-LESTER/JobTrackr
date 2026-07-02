@@ -15,6 +15,7 @@ class Company extends Model
         'website',
     ];
 
+    /** @return HasMany<Application, $this> */
     public function applications(): HasMany
     {
         return $this->hasMany(Application::class, 'company_id', 'company_id');

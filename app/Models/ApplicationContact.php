@@ -19,6 +19,7 @@ class ApplicationContact extends Model
         'linkedin_url',
     ];
 
+    /** @return BelongsTo<Application, $this> */
     public function jobApplication(): BelongsTo
     {
         return $this->belongsTo(Application::class, 'job_application_id', 'application_id');

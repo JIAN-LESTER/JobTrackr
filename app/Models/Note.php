@@ -18,11 +18,13 @@ class Note extends Model
         'content',
     ];
 
+    /** @return BelongsTo<Application, $this> */
     public function jobApplication(): BelongsTo
     {
         return $this->belongsTo(Application::class, 'job_application_id', 'application_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');

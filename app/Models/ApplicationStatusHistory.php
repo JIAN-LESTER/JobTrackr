@@ -17,6 +17,7 @@ class ApplicationStatusHistory extends Model
         'remarks',
     ];
 
+    /** @return BelongsTo<Application, $this> */
     public function jobApplication(): BelongsTo
     {
         return $this->belongsTo(Application::class, 'job_application_id', 'application_id')->withTrashed();

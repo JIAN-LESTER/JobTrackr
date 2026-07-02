@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Database\Eloquent\Collection;
 
 class ProfileController extends Controller
 {
@@ -23,6 +24,7 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        /** @var Collection<int, Document> $documents */
         $documents = $request->user()
             ->documents()
             ->where('document_type', 'photo')

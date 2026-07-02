@@ -492,6 +492,7 @@ class ApplicationController extends Controller
         }
 
         foreach ($scripts as $script) {
+            /** @var \DOMElement $script */
             $decoded = json_decode($script->textContent, true);
 
             foreach ($this->jsonLdItems($decoded) as $item) {
@@ -568,21 +569,39 @@ class ApplicationController extends Controller
     {
         $nodes = $xpath->query("//meta[@{$attribute}='{$value}']/@content");
 
-        return $nodes && $nodes->length ? $nodes->item(0)->nodeValue : null;
+        if (! $nodes || ! $nodes->length) {
+            return null;
+        }
+
+        $node = $nodes->item(0);
+
+        return $node instanceof \DOMNode ? $node->nodeValue : null;
     }
 
     private function pageTitle(\DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query('//title');
 
-        return $nodes && $nodes->length ? $nodes->item(0)->textContent : null;
+        if (! $nodes || ! $nodes->length) {
+            return null;
+        }
+
+        $node = $nodes->item(0);
+
+        return $node instanceof \DOMNode ? $node->textContent : null;
     }
 
     private function pageText(\DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query('//body');
 
-        return $nodes && $nodes->length ? $nodes->item(0)->textContent : null;
+        if (! $nodes || ! $nodes->length) {
+            return null;
+        }
+
+        $node = $nodes->item(0);
+
+        return $node instanceof \DOMNode ? $node->textContent : null;
     }
 
     private function cleanText(mixed $value): ?string

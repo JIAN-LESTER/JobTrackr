@@ -27,6 +27,7 @@ class Interview extends Model
         'scheduled_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Application, $this> */
     public function jobApplication(): BelongsTo
     {
         return $this->belongsTo(Application::class, 'job_application_id', 'application_id');

@@ -27,6 +27,7 @@ class Reminder extends Model
         'is_completed' => 'boolean',
     ];
 
+    /** @return BelongsTo<Application, $this> */
     public function jobApplication(): BelongsTo
     {
         return $this->belongsTo(Application::class, 'job_application_id', 'application_id');
