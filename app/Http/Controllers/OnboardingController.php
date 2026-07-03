@@ -36,7 +36,7 @@ class OnboardingController extends Controller
          *     education_degree: string,
          *     education_program: string,
          *     avatar_preset?: string|null,
-         *     photo?: \Illuminate\Http\UploadedFile|null
+         *     photo?: UploadedFile|null
          * } $validated
          */
         $validated = $request->validate([
