@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { BriefcaseBusiness, Camera, GraduationCap } from 'lucide-react';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DegreeSelect from '@/components/degree-select';
 import Heading from '@/components/heading';
@@ -36,9 +37,7 @@ type OnboardingForm = {
     photo: File | null;
 };
 
-type OnboardingValidationErrors = Partial<
-    Record<keyof OnboardingForm, string>
->;
+type OnboardingValidationErrors = Partial<Record<keyof OnboardingForm, string>>;
 
 type OnboardingStep = {
     label: string;
@@ -228,21 +227,23 @@ export default function Onboarding({ user }: Props) {
                         description="Add your job search details before continuing."
                     />
 
-                    <section className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-5 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c] sm:p-6">
+                    <section className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-5 shadow-sm shadow-[#17201b]/5 sm:p-6 dark:border-[#33463a] dark:bg-[#16231c]">
                         <div className="mb-6 grid grid-cols-3 gap-2 text-xs font-medium text-muted-foreground">
-                            {onboardingSteps.map(({ label, icon: Icon }, index) => (
-                                <div
-                                    key={label}
-                                    className={
-                                        index <= step
-                                            ? 'flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#17201b] px-3 py-2 text-center text-[#f4f8f2] dark:bg-[#f3c76a] dark:text-[#17201b]'
-                                            : 'flex min-h-12 items-center justify-center gap-2 rounded-md border border-[#dce6df] bg-white/70 px-3 py-2 text-center dark:border-[#33463a] dark:bg-[#213128]/70'
-                                    }
-                                >
-                                    <Icon className="size-4 shrink-0" />
-                                    {label}
-                                </div>
-                            ))}
+                            {onboardingSteps.map(
+                                ({ label, icon: Icon }, index) => (
+                                    <div
+                                        key={label}
+                                        className={
+                                            index <= step
+                                                ? 'flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#17201b] px-3 py-2 text-center text-[#f4f8f2] dark:bg-[#f3c76a] dark:text-[#17201b]'
+                                                : 'flex min-h-12 items-center justify-center gap-2 rounded-md border border-[#dce6df] bg-white/70 px-3 py-2 text-center dark:border-[#33463a] dark:bg-[#213128]/70'
+                                        }
+                                    >
+                                        <Icon className="size-4 shrink-0" />
+                                        {label}
+                                    </div>
+                                ),
+                            )}
                         </div>
 
                         <form
@@ -250,241 +251,211 @@ export default function Onboarding({ user }: Props) {
                             className="grid gap-5"
                             noValidate
                         >
-                        {step === 0 ? (
-                            <div className="grid gap-5 sm:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="first_name">
-                                        First name
-                                    </Label>
-                                    <Input
-                                        id="first_name"
-                                        value={form.data.first_name}
-                                        onChange={(event) =>
-                                            setFormData(
-                                                'first_name',
-                                                event.target.value,
-                                            )
-                                        }
-                                        required
-                                        autoFocus
-                                        autoComplete="given-name"
-                                        placeholder="First name"
-                                    />
-                                    <InputError
-                                        message={fieldError('first_name')}
-                                    />
-                                </div>
+                            {step === 0 ? (
+                                <div className="grid gap-5 sm:grid-cols-2">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="first_name">
+                                            First name
+                                        </Label>
+                                        <Input
+                                            id="first_name"
+                                            value={form.data.first_name}
+                                            onChange={(event) =>
+                                                setFormData(
+                                                    'first_name',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            required
+                                            autoFocus
+                                            autoComplete="given-name"
+                                            placeholder="First name"
+                                        />
+                                        <InputError
+                                            message={fieldError('first_name')}
+                                        />
+                                    </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="last_name">
-                                        Last name
-                                    </Label>
-                                    <Input
-                                        id="last_name"
-                                        value={form.data.last_name}
-                                        onChange={(event) =>
-                                            setFormData(
-                                                'last_name',
-                                                event.target.value,
-                                            )
-                                        }
-                                        required
-                                        autoComplete="family-name"
-                                        placeholder="Last name"
-                                    />
-                                    <InputError
-                                        message={fieldError('last_name')}
-                                    />
-                                </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="last_name">
+                                            Last name
+                                        </Label>
+                                        <Input
+                                            id="last_name"
+                                            value={form.data.last_name}
+                                            onChange={(event) =>
+                                                setFormData(
+                                                    'last_name',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            required
+                                            autoComplete="family-name"
+                                            placeholder="Last name"
+                                        />
+                                        <InputError
+                                            message={fieldError('last_name')}
+                                        />
+                                    </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="industry">Industry</Label>
-                                    <Select
-                                        value={form.data.industry}
-                                        onValueChange={(value) =>
-                                            setFormData('industry', value)
-                                        }
-                                        required
-                                    >
-                                        <SelectTrigger
-                                            id="industry"
-                                            className="w-full"
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="industry">
+                                            Industry
+                                        </Label>
+                                        <Select
+                                            value={form.data.industry}
+                                            onValueChange={(value) =>
+                                                setFormData('industry', value)
+                                            }
+                                            required
                                         >
-                                            <SelectValue placeholder="Select industry" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {industryOptions.map(
-                                                (industry) => (
-                                                    <SelectItem
-                                                        key={industry}
-                                                        value={industry}
-                                                    >
-                                                        {industry}
-                                                    </SelectItem>
-                                                ),
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError
-                                        message={fieldError('industry')}
-                                    />
-                                </div>
+                                            <SelectTrigger
+                                                id="industry"
+                                                className="w-full"
+                                            >
+                                                <SelectValue placeholder="Select industry" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {industryOptions.map(
+                                                    (industry) => (
+                                                        <SelectItem
+                                                            key={industry}
+                                                            value={industry}
+                                                        >
+                                                            {industry}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError
+                                            message={fieldError('industry')}
+                                        />
+                                    </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="job_title">Job title</Label>
-                                    <Input
-                                        id="job_title"
-                                        value={form.data.job_title}
-                                        onChange={(event) =>
-                                            setFormData(
-                                                'job_title',
-                                                event.target.value,
-                                            )
-                                        }
-                                        required
-                                        autoComplete="organization-title"
-                                        placeholder="Job title"
-                                    />
-                                    <InputError
-                                        message={fieldError('job_title')}
-                                    />
-                                </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="job_title">
+                                            Job title
+                                        </Label>
+                                        <Input
+                                            id="job_title"
+                                            value={form.data.job_title}
+                                            onChange={(event) =>
+                                                setFormData(
+                                                    'job_title',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            required
+                                            autoComplete="organization-title"
+                                            placeholder="Job title"
+                                        />
+                                        <InputError
+                                            message={fieldError('job_title')}
+                                        />
+                                    </div>
 
-                                <div className="grid gap-2 sm:col-span-2">
-                                    <Label htmlFor="location">Location</Label>
-                                    <LocationSelect
-                                        id="location"
-                                        value={form.data.location}
-                                        onChange={(value) =>
-                                            setFormData('location', value)
-                                        }
-                                        placeholder="Select location"
-                                    />
-                                    <InputError
-                                        message={fieldError('location')}
-                                    />
+                                    <div className="grid gap-2 sm:col-span-2">
+                                        <Label htmlFor="location">
+                                            Location
+                                        </Label>
+                                        <LocationSelect
+                                            id="location"
+                                            value={form.data.location}
+                                            onChange={(value) =>
+                                                setFormData('location', value)
+                                            }
+                                            placeholder="Select location"
+                                        />
+                                        <InputError
+                                            message={fieldError('location')}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        ) : null}
+                            ) : null}
 
-                        {step === 1 ? (
-                            <div className="grid gap-5 sm:grid-cols-2">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="education_school">
-                                        School
-                                    </Label>
-                                    <Input
-                                        id="education_school"
-                                        value={form.data.education_school}
-                                        onChange={(event) =>
-                                            setFormData(
+                            {step === 1 ? (
+                                <div className="grid gap-5 sm:grid-cols-2">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="education_school">
+                                            School
+                                        </Label>
+                                        <Input
+                                            id="education_school"
+                                            value={form.data.education_school}
+                                            onChange={(event) =>
+                                                setFormData(
+                                                    'education_school',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            required
+                                            autoFocus
+                                            placeholder="School"
+                                        />
+                                        <InputError
+                                            message={fieldError(
                                                 'education_school',
-                                                event.target.value,
-                                            )
-                                        }
-                                        required
-                                        autoFocus
-                                        placeholder="School"
-                                    />
-                                    <InputError
-                                        message={fieldError(
-                                            'education_school',
-                                        )}
-                                    />
-                                </div>
+                                            )}
+                                        />
+                                    </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="education_degree">
-                                        Degree
-                                    </Label>
-                                    <DegreeSelect
-                                        id="education_degree"
-                                        value={form.data.education_degree}
-                                        onChange={(value) =>
-                                            setFormData(
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="education_degree">
+                                            Degree
+                                        </Label>
+                                        <DegreeSelect
+                                            id="education_degree"
+                                            value={form.data.education_degree}
+                                            onChange={(value) =>
+                                                setFormData(
+                                                    'education_degree',
+                                                    value,
+                                                )
+                                            }
+                                            placeholder="Select degree"
+                                        />
+                                        <InputError
+                                            message={fieldError(
                                                 'education_degree',
-                                                value,
-                                            )
-                                        }
-                                        placeholder="Select degree"
-                                    />
-                                    <InputError
-                                        message={fieldError(
-                                            'education_degree',
-                                        )}
-                                    />
-                                </div>
+                                            )}
+                                        />
+                                    </div>
 
-                                <div className="grid gap-2 sm:col-span-2">
-                                    <Label htmlFor="education_program">
-                                        Program
-                                    </Label>
-                                    <Input
-                                        id="education_program"
-                                        value={form.data.education_program}
-                                        onChange={(event) =>
-                                            setFormData(
+                                    <div className="grid gap-2 sm:col-span-2">
+                                        <Label htmlFor="education_program">
+                                            Program
+                                        </Label>
+                                        <Input
+                                            id="education_program"
+                                            value={form.data.education_program}
+                                            onChange={(event) =>
+                                                setFormData(
+                                                    'education_program',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            required
+                                            placeholder="Program"
+                                        />
+                                        <InputError
+                                            message={fieldError(
                                                 'education_program',
-                                                event.target.value,
-                                            )
-                                        }
-                                        required
-                                        placeholder="Program"
-                                    />
-                                    <InputError
-                                        message={fieldError(
-                                            'education_program',
-                                        )}
-                                    />
+                                            )}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        ) : null}
+                            ) : null}
 
-                        {step === 2 ? (
-                            <div className="grid gap-4">
-                                <AvatarPresetPicker
-                                    value={form.data.avatar_preset}
-                                    onChange={(value) => {
-                                        const nextData = {
-                                            ...form.data,
-                                            avatar_preset: value,
-                                            photo: null,
-                                        };
-
-                                        form.setData(nextData);
-                                        form.clearErrors('avatar_preset');
-                                        form.clearErrors('photo');
-                                        setValidationErrors(
-                                            validateOnboardingForm(
-                                                nextData,
-                                                step,
-                                            ),
-                                        );
-                                        setPhotoPreview(null);
-                                        if (photoInputRef.current) {
-                                            photoInputRef.current.value = '';
-                                        }
-                                    }}
-                                    currentAvatar={photoPreview || user.avatar}
-                                    fallback={avatarFallback}
-                                />
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="photo">Picture</Label>
-                                    <Input
-                                        id="photo"
-                                        ref={photoInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(event) => {
-                                            const file =
-                                                event.target.files?.[0] ?? null;
+                            {step === 2 ? (
+                                <div className="grid gap-4">
+                                    <AvatarPresetPicker
+                                        value={form.data.avatar_preset}
+                                        onChange={(value) => {
                                             const nextData = {
                                                 ...form.data,
-                                                avatar_preset: file
-                                                    ? ''
-                                                    : form.data.avatar_preset,
-                                                photo: file,
+                                                avatar_preset: value,
+                                                photo: null,
                                             };
 
                                             form.setData(nextData);
@@ -496,53 +467,98 @@ export default function Onboarding({ user }: Props) {
                                                     step,
                                                 ),
                                             );
-                                            setPhotoPreview(
-                                                file
-                                                    ? URL.createObjectURL(file)
-                                                    : null,
-                                            );
+                                            setPhotoPreview(null);
+
+                                            if (photoInputRef.current) {
+                                                photoInputRef.current.value =
+                                                    '';
+                                            }
                                         }}
-                                        autoFocus
+                                        currentAvatar={
+                                            photoPreview || user.avatar
+                                        }
+                                        fallback={avatarFallback}
                                     />
-                                    <InputError
-                                        message={fieldError('photo')}
-                                    />
-                                    <InputError
-                                        message={fieldError('avatar_preset')}
-                                    />
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="photo">Picture</Label>
+                                        <Input
+                                            id="photo"
+                                            ref={photoInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(event) => {
+                                                const file =
+                                                    event.target.files?.[0] ??
+                                                    null;
+                                                const nextData = {
+                                                    ...form.data,
+                                                    avatar_preset: file
+                                                        ? ''
+                                                        : form.data
+                                                              .avatar_preset,
+                                                    photo: file,
+                                                };
+
+                                                form.setData(nextData);
+                                                form.clearErrors(
+                                                    'avatar_preset',
+                                                );
+                                                form.clearErrors('photo');
+                                                setValidationErrors(
+                                                    validateOnboardingForm(
+                                                        nextData,
+                                                        step,
+                                                    ),
+                                                );
+                                                setPhotoPreview(
+                                                    file
+                                                        ? URL.createObjectURL(
+                                                              file,
+                                                          )
+                                                        : null,
+                                                );
+                                            }}
+                                            autoFocus
+                                        />
+                                        <InputError
+                                            message={fieldError('photo')}
+                                        />
+                                        <InputError
+                                            message={fieldError(
+                                                'avatar_preset',
+                                            )}
+                                        />
+                                    </div>
                                 </div>
+                            ) : null}
+
+                            <div className="flex items-center justify-between gap-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={step === 0 || form.processing}
+                                    onClick={() => {
+                                        setValidationErrors({});
+                                        setStep(
+                                            (currentStep) => currentStep - 1,
+                                        );
+                                    }}
+                                >
+                                    Back
+                                </Button>
+
+                                <Button
+                                    type="submit"
+                                    disabled={form.processing || !canContinue}
+                                    data-test="complete-onboarding-button"
+                                >
+                                    {form.processing && <Spinner />}
+                                    {step === 2 ? 'Complete setup' : 'Continue'}
+                                </Button>
                             </div>
-                        ) : null}
-
-                        <div className="flex items-center justify-between gap-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                disabled={step === 0 || form.processing}
-                                onClick={() => {
-                                    setValidationErrors({});
-                                    setStep(
-                                        (currentStep) => currentStep - 1,
-                                    );
-                                }}
-                            >
-                                Back
-                            </Button>
-
-                            <Button
-                                type="submit"
-                                disabled={
-                                    form.processing ||
-                                    !canContinue
-                                }
-                                data-test="complete-onboarding-button"
-                            >
-                                {form.processing && <Spinner />}
-                                {step === 2 ? 'Complete setup' : 'Continue'}
-                            </Button>
-                        </div>
-                    </form>
-                </section>
+                        </form>
+                    </section>
                 </div>
             </div>
         </>

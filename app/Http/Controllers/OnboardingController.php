@@ -26,6 +26,19 @@ class OnboardingController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        /** @var array{
+         *     first_name: string,
+         *     last_name: string,
+         *     industry: string,
+         *     job_title: string,
+         *     location: string,
+         *     education_school: string,
+         *     education_degree: string,
+         *     education_program: string,
+         *     avatar_preset?: string|null,
+         *     photo?: \Illuminate\Http\UploadedFile|null
+         * } $validated
+         */
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -35,7 +48,7 @@ class OnboardingController extends Controller
             'education_school' => ['required', 'string', 'max:255'],
             'education_degree' => ['required', 'string', 'max:255'],
             'education_program' => ['required', 'string', 'max:255'],
-            'avatar_preset' => ['nullable', 'string', 'in:' . implode(',', AvatarPresets::keys())],
+            'avatar_preset' => ['nullable', 'string', 'in:'.implode(',', AvatarPresets::keys())],
             'photo' => ['nullable', 'image', 'max:2048'],
         ]);
 

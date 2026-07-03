@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends Model
 {
@@ -14,7 +15,8 @@ class Company extends Model
         'website',
     ];
 
-    public function applications()
+    /** @return HasMany<Application, $this> */
+    public function applications(): HasMany
     {
         return $this->hasMany(Application::class, 'company_id', 'company_id');
     }

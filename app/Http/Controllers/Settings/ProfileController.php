@@ -6,10 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Models\Document;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
@@ -23,11 +24,14 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        /** @var Collection<int, Document> $documents */
         $documents = $request->user()
             ->documents()
             ->where('document_type', 'photo')
             ->latest()
-            ->get()
+            ->get();
+
+        $documents = $documents
             ->unique('document_type')
             ->values()
             ->map(fn (Document $document) => [

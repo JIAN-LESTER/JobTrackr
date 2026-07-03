@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppContent } from '@/components/app-content';
-import { AppShell } from '@/components/app-shell';
 import AppLogo from '@/components/app-logo';
+import { AppShell } from '@/components/app-shell';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
 import { edit } from '@/routes/profile';
@@ -27,14 +27,12 @@ const navItems = [
     },
 ];
 
-export default function AppBottomNavLayout({
-    children,
-}: AppLayoutProps) {
+export default function AppBottomNavLayout({ children }: AppLayoutProps) {
     const { isCurrentUrl } = useCurrentUrl();
 
     return (
         <AppShell variant="header">
-            <header className="hidden border-b border-[#cbd8cf] bg-white px-6 dark:border-[#33463a] dark:bg-[#16231c] md:block">
+            <header className="hidden border-b border-[#cbd8cf] bg-white px-6 md:block dark:border-[#33463a] dark:bg-[#16231c]">
                 <div className="mx-auto flex h-[74px] max-w-screen-2xl items-center gap-10">
                     <Link
                         href="/applications"
@@ -54,7 +52,7 @@ export default function AppBottomNavLayout({
                                     href={item.href}
                                     prefetch
                                     className={cn(
-                                        'relative flex h-full items-center whitespace-nowrap pt-1 hover:text-[#17201b] dark:hover:text-[#f4f8f2]',
+                                        'relative flex h-full items-center pt-1 whitespace-nowrap hover:text-[#17201b] dark:hover:text-[#f4f8f2]',
                                         active &&
                                             'font-semibold text-[#17201b] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-[#17201b] dark:text-[#f4f8f2] dark:after:bg-[#f3c76a]',
                                     )}

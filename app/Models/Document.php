@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Document extends Model
 {
+    /**
+     * @property string|null $file_path
+     */
     protected $primaryKey = 'document_id';
 
     protected $fillable = [
@@ -18,12 +22,14 @@ class Document extends Model
         'file_size',
     ];
 
-    public function jobApplication()
+    /** @return BelongsTo<Application, $this> */
+    public function jobApplication(): BelongsTo
     {
         return $this->belongsTo(Application::class, 'job_application_id', 'application_id');
     }
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }

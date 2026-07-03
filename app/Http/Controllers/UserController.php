@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
         $perPage = max(1, min((int) $request->input('per_page', 10), 100));
@@ -44,12 +47,12 @@ class UserController extends Controller
         ]);
     }
 
-    public function show(User $user)
+    public function show(User $user): JsonResponse
     {
         return response()->json($user);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $user = User::create($request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -63,7 +66,7 @@ class UserController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $user): JsonResponse
     {
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
@@ -84,7 +87,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function destroy(User $user)
+    public function destroy(User $user): Response
     {
         $user->delete();
 

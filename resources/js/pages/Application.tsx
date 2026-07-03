@@ -141,11 +141,9 @@ const applicationDisplay = (application: Application) => {
         ? websiteLabel(application.job_post_url)
         : '';
     const storedCompany = companyName(application);
-    const hasRealCompany = ![
-        'Imported',
-        'Unknown company',
-        'Website',
-    ].includes(storedCompany) && !isSiteLabel(storedCompany, website);
+    const hasRealCompany =
+        !['Imported', 'Unknown company', 'Website'].includes(storedCompany) &&
+        !isSiteLabel(storedCompany, website);
     const parts = application.job_title
         .split('|')
         .map((part) => part.trim())
@@ -163,7 +161,10 @@ const applicationDisplay = (application: Application) => {
     if (parts.length > 1) {
         const lastPart = parts[parts.length - 1] || '';
 
-        if (!hasRealCompany || lastPart.toLowerCase() === storedCompany.toLowerCase()) {
+        if (
+            !hasRealCompany ||
+            lastPart.toLowerCase() === storedCompany.toLowerCase()
+        ) {
             company = lastPart;
             parts.pop();
         }
@@ -187,7 +188,13 @@ const applicationDisplay = (application: Application) => {
         .filter((label) => label && !isSiteLabel(label, website))
         .forEach((label) => {
             title = title
-                .replace(new RegExp(`\\s*(?:\\||-| at )\\s*${escapeRegExp(label)}\\s*$`, 'i'), '')
+                .replace(
+                    new RegExp(
+                        `\\s*(?:\\||-| at )\\s*${escapeRegExp(label)}\\s*$`,
+                        'i',
+                    ),
+                    '',
+                )
                 .trim();
         });
 
@@ -328,11 +335,13 @@ const validateApplicationForm = (data: ApplicationForm) => {
         try {
             new URL(jobPostUrl);
         } catch {
-            errors.job_post_url = 'Enter a valid URL, including http:// or https://.';
+            errors.job_post_url =
+                'Enter a valid URL, including http:// or https://.';
         }
 
         if (jobPostUrl.length > 255) {
-            errors.job_post_url = 'Job post URL must be 255 characters or fewer.';
+            errors.job_post_url =
+                'Job post URL must be 255 characters or fewer.';
         }
     }
 
@@ -667,1058 +676,1127 @@ export default function Applications({
 
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-[#eef3ef] p-4 dark:bg-background">
                 <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <h1 className="text-xl font-semibold tracking-tight">
-                            Applications
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            {applications.total} tracked applications
-                        </p>
-                    </div>
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <h1 className="text-xl font-semibold tracking-tight">
+                                Applications
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                {applications.total} tracked applications
+                            </p>
+                        </div>
 
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                        <form
-                            onSubmit={submitSearch}
-                            className="flex w-full gap-2 sm:w-80"
-                        >
-                            <Input
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                placeholder="Search applications"
-                                className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
-                            />
-                            <Button
-                                type="submit"
-                                size="icon"
-                                aria-label="Search"
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                            <form
+                                onSubmit={submitSearch}
+                                className="flex w-full gap-2 sm:w-80"
                             >
-                                <Search className="size-4" />
-                            </Button>
-                        </form>
-
-                        <Button
-                            asChild
-                            variant="outline"
-                            className="border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70"
-                        >
-                            <Link href="/applications/import">
-                                <Bookmark className="size-4" />
-                                Import
-                            </Link>
-                        </Button>
-
-                        <Dialog
-                            open={isAddOpen}
-                            onOpenChange={setAddDialogOpen}
-                        >
-                            <DialogTrigger asChild>
+                                <Input
+                                    value={search}
+                                    onChange={(event) =>
+                                        setSearch(event.target.value)
+                                    }
+                                    placeholder="Search applications"
+                                    className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
+                                />
                                 <Button
-                                    type="button"
-                                    className="bg-[#17201b] text-[#f4f8f2] hover:bg-[#2d3b31] dark:bg-[#f3c76a] dark:text-[#17201b] dark:hover:bg-[#e0b657]"
+                                    type="submit"
+                                    size="icon"
+                                    aria-label="Search"
                                 >
-                                    <Plus className="size-4" />
-                                    Add
+                                    <Search className="size-4" />
                                 </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-                                <DialogHeader>
-                                    <DialogTitle>Add application</DialogTitle>
-                                    <DialogDescription>
-                                        Track a new company and role.
-                                    </DialogDescription>
-                                </DialogHeader>
+                            </form>
 
-                                <form
-                                    onSubmit={submitApplication}
-                                    className="space-y-4"
-                                    noValidate
-                                >
-                                    <div className="space-y-2">
-                                        <Label htmlFor="company">
-                                            Company
-                                        </Label>
-                                        <Input
-                                            id="company"
-                                            value={form.data.company}
-                                            onChange={(event) =>
-                                                setAddFormData(
-                                                    'company',
-                                                    event.target.value,
-                                                )
-                                            }
-                                            required
-                                        />
-                                        {addFormError('company') ? (
-                                            <p className="text-sm text-destructive">
-                                                {addFormError('company')}
-                                            </p>
-                                        ) : null}
-                                    </div>
+                            <Button
+                                asChild
+                                variant="outline"
+                                className="border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70"
+                            >
+                                <Link href="/applications/import">
+                                    <Bookmark className="size-4" />
+                                    Import
+                                </Link>
+                            </Button>
 
-                                    <div className="grid gap-4 sm:grid-cols-2">
+                            <Dialog
+                                open={isAddOpen}
+                                onOpenChange={setAddDialogOpen}
+                            >
+                                <DialogTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        className="bg-[#17201b] text-[#f4f8f2] hover:bg-[#2d3b31] dark:bg-[#f3c76a] dark:text-[#17201b] dark:hover:bg-[#e0b657]"
+                                    >
+                                        <Plus className="size-4" />
+                                        Add
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle>
+                                            Add application
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                            Track a new company and role.
+                                        </DialogDescription>
+                                    </DialogHeader>
+
+                                    <form
+                                        onSubmit={submitApplication}
+                                        className="space-y-4"
+                                        noValidate
+                                    >
                                         <div className="space-y-2">
-                                            <Label>Industry</Label>
-                                            <Select
-                                                value={
-                                                    form.data
-                                                        .company_industry ||
-                                                    optionalSelectNone
-                                                }
-                                                onValueChange={(value) =>
-                                                    setAddFormData(
-                                                        'company_industry',
-                                                        value ===
-                                                            optionalSelectNone
-                                                            ? ''
-                                                            : value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select industry" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem
-                                                        value={
-                                                            optionalSelectNone
-                                                        }
-                                                    >
-                                                        Not specified
-                                                    </SelectItem>
-                                                    {industries.map(
-                                                        (industry) => (
-                                                            <SelectItem
-                                                                key={industry}
-                                                                value={
-                                                                    industry
-                                                                }
-                                                            >
-                                                                {industry}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            {addFormError('company_industry') ? (
-                                                <p className="text-sm text-destructive">
-                                                    {addFormError('company_industry')}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="job_title">
-                                            Job title
-                                        </Label>
-                                        <Input
-                                            id="job_title"
-                                            value={form.data.job_title}
-                                            onChange={(event) =>
-                                                setAddFormData(
-                                                    'job_title',
-                                                    event.target.value,
-                                                )
-                                            }
-                                            required
-                                        />
-                                        {addFormError('job_title') ? (
-                                            <p className="text-sm text-destructive">
-                                                {addFormError('job_title')}
-                                            </p>
-                                        ) : null}
-                                    </div>
-
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label>Job type</Label>
-                                            <Select
-                                                value={
-                                                    form.data.job_type ||
-                                                    optionalSelectNone
-                                                }
-                                                onValueChange={(value) =>
-                                                    setAddFormData(
-                                                        'job_type',
-                                                        value ===
-                                                            optionalSelectNone
-                                                            ? ''
-                                                            : value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select job type" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem
-                                                        value={
-                                                            optionalSelectNone
-                                                        }
-                                                    >
-                                                        Not specified
-                                                    </SelectItem>
-                                                    {jobTypes.map((jobType) => (
-                                                        <SelectItem
-                                                            key={jobType}
-                                                            value={jobType}
-                                                        >
-                                                            {jobType}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            {addFormError('job_type') ? (
-                                                <p className="text-sm text-destructive">
-                                                    {addFormError('job_type')}
-                                                </p>
-                                            ) : null}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label>Work setup</Label>
-                                            <Select
-                                                value={
-                                                    form.data.work_setup ||
-                                                    optionalSelectNone
-                                                }
-                                                onValueChange={(value) =>
-                                                    setAddFormData(
-                                                        'work_setup',
-                                                        value ===
-                                                            optionalSelectNone
-                                                            ? ''
-                                                            : value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select work setup" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem
-                                                        value={
-                                                            optionalSelectNone
-                                                        }
-                                                    >
-                                                        Not specified
-                                                    </SelectItem>
-                                                    {workSetups.map(
-                                                        (workSetup) => (
-                                                            <SelectItem
-                                                                key={workSetup}
-                                                                value={
-                                                                    workSetup
-                                                                }
-                                                            >
-                                                                {workSetup}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            {addFormError('work_setup') ? (
-                                                <p className="text-sm text-destructive">
-                                                    {addFormError('work_setup')}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="location">
-                                            Location
-                                        </Label>
-                                        <Input
-                                            id="location"
-                                            value={form.data.location}
-                                            onChange={(event) =>
-                                                setAddFormData(
-                                                    'location',
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                        {addFormError('location') ? (
-                                            <p className="text-sm text-destructive">
-                                                {addFormError('location')}
-                                            </p>
-                                        ) : null}
-                                    </div>
-
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="salary_min">
-                                                Salary min
-                                            </Label>
-                                            <Input
-                                                id="salary_min"
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                value={form.data.salary_min}
-                                                onChange={(event) =>
-                                                    setAddFormData(
-                                                        'salary_min',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            {addFormError('salary_min') ? (
-                                                <p className="text-sm text-destructive">
-                                                    {addFormError('salary_min')}
-                                                </p>
-                                            ) : null}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="salary_max">
-                                                Salary max
-                                            </Label>
-                                            <Input
-                                                id="salary_max"
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                value={form.data.salary_max}
-                                                onChange={(event) =>
-                                                    setAddFormData(
-                                                        'salary_max',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            {addFormError('salary_max') ? (
-                                                <p className="text-sm text-destructive">
-                                                    {addFormError('salary_max')}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="job_post_url">
-                                            Job post URL
-                                        </Label>
-                                        <Input
-                                            id="job_post_url"
-                                            type="url"
-                                            value={form.data.job_post_url}
-                                            onChange={(event) =>
-                                                setAddFormData(
-                                                    'job_post_url',
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                        {addFormError('job_post_url') ? (
-                                            <p className="text-sm text-destructive">
-                                                {addFormError('job_post_url')}
-                                            </p>
-                                        ) : null}
-                                    </div>
-
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label>Status</Label>
-                                            <Select
-                                                value={form.data.status}
-                                                onValueChange={(value) =>
-                                                    setAddFormData(
-                                                        'status',
-                                                        value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {statuses.map((status) => (
-                                                        <SelectItem
-                                                            key={status}
-                                                            value={status}
-                                                        >
-                                                            {statusLabel(
-                                                                status,
-                                                            )}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            {addFormError('status') ? (
-                                                <p className="text-sm text-destructive">
-                                                    {addFormError('status')}
-                                                </p>
-                                            ) : null}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="applied_date">
-                                                Date
-                                            </Label>
-                                            <Input
-                                                id="applied_date"
-                                                type="date"
-                                                value={form.data.applied_date}
-                                                onChange={(event) =>
-                                                    setAddFormData(
-                                                        'applied_date',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            {addFormError('applied_date') ? (
-                                                <p className="text-sm text-destructive">
-                                                    {addFormError('applied_date')}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-
-                                    <DialogFooter>
-                                        <Button
-                                            type="submit"
-                                            disabled={form.processing}
-                                        >
-                                            {form.processing ? (
-                                                <Spinner />
-                                            ) : null}
-                                            Save
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-
-                        <Dialog
-                            open={Boolean(editingApplication)}
-                            onOpenChange={(open) => {
-                                if (!open) {
-                                    setEditFormErrors({});
-                                    setEditingApplication(null);
-                                }
-                            }}
-                        >
-                            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-                                <DialogHeader>
-                                    <DialogTitle>Edit application</DialogTitle>
-                                    <DialogDescription>
-                                        Update the tracked role.
-                                    </DialogDescription>
-                                </DialogHeader>
-
-                                <form
-                                    onSubmit={submitEditApplication}
-                                    className="space-y-4"
-                                    noValidate
-                                >
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit_company">
+                                            <Label htmlFor="company">
                                                 Company
                                             </Label>
                                             <Input
-                                                id="edit_company"
-                                                value={editForm.data.company}
+                                                id="company"
+                                                value={form.data.company}
                                                 onChange={(event) =>
-                                                    setEditFormData(
+                                                    setAddFormData(
                                                         'company',
                                                         event.target.value,
                                                     )
                                                 }
                                                 required
                                             />
-                                            {editFormError('company') ? (
+                                            {addFormError('company') ? (
                                                 <p className="text-sm text-destructive">
-                                                    {editFormError('company')}
+                                                    {addFormError('company')}
                                                 </p>
                                             ) : null}
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label>Industry</Label>
-                                            <Select
-                                                value={
-                                                    editForm.data
-                                                        .company_industry ||
-                                                    optionalSelectNone
-                                                }
-                                                onValueChange={(value) =>
-                                                    editForm.setData(
-                                                        'company_industry',
-                                                        value ===
-                                                            optionalSelectNone
-                                                            ? ''
-                                                            : value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem
-                                                        value={
-                                                            optionalSelectNone
-                                                        }
-                                                    >
-                                                        Not specified
-                                                    </SelectItem>
-                                                    {industries.map(
-                                                        (industry) => (
-                                                            <SelectItem
-                                                                key={industry}
-                                                                value={
-                                                                    industry
-                                                                }
-                                                            >
-                                                                {industry}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="edit_job_title">
-                                            Job title
-                                        </Label>
-                                        <Input
-                                            id="edit_job_title"
-                                            value={editForm.data.job_title}
-                                            onChange={(event) =>
-                                                setEditFormData(
-                                                    'job_title',
-                                                    event.target.value,
-                                                )
-                                            }
-                                            required
-                                        />
-                                        {editFormError('job_title') ? (
-                                            <p className="text-sm text-destructive">
-                                                {editFormError('job_title')}
-                                            </p>
-                                        ) : null}
-                                    </div>
-
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label>Job type</Label>
-                                            <Select
-                                                value={
-                                                    editForm.data.job_type ||
-                                                    optionalSelectNone
-                                                }
-                                                onValueChange={(value) =>
-                                                    editForm.setData(
-                                                        'job_type',
-                                                        value ===
-                                                            optionalSelectNone
-                                                            ? ''
-                                                            : value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem
-                                                        value={
-                                                            optionalSelectNone
-                                                        }
-                                                    >
-                                                        Not specified
-                                                    </SelectItem>
-                                                    {jobTypes.map((jobType) => (
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label>Industry</Label>
+                                                <Select
+                                                    value={
+                                                        form.data
+                                                            .company_industry ||
+                                                        optionalSelectNone
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        setAddFormData(
+                                                            'company_industry',
+                                                            value ===
+                                                                optionalSelectNone
+                                                                ? ''
+                                                                : value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select industry" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
                                                         <SelectItem
-                                                            key={jobType}
-                                                            value={jobType}
+                                                            value={
+                                                                optionalSelectNone
+                                                            }
                                                         >
-                                                            {jobType}
+                                                            Not specified
                                                         </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                        {industries.map(
+                                                            (industry) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        industry
+                                                                    }
+                                                                    value={
+                                                                        industry
+                                                                    }
+                                                                >
+                                                                    {industry}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                {addFormError(
+                                                    'company_industry',
+                                                ) ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {addFormError(
+                                                            'company_industry',
+                                                        )}
+                                                    </p>
+                                                ) : null}
+                                            </div>
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label>Work setup</Label>
-                                            <Select
-                                                value={
-                                                    editForm.data.work_setup ||
-                                                    optionalSelectNone
-                                                }
-                                                onValueChange={(value) =>
-                                                    editForm.setData(
-                                                        'work_setup',
-                                                        value ===
-                                                            optionalSelectNone
-                                                            ? ''
-                                                            : value,
+                                            <Label htmlFor="job_title">
+                                                Job title
+                                            </Label>
+                                            <Input
+                                                id="job_title"
+                                                value={form.data.job_title}
+                                                onChange={(event) =>
+                                                    setAddFormData(
+                                                        'job_title',
+                                                        event.target.value,
                                                     )
                                                 }
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem
-                                                        value={
-                                                            optionalSelectNone
-                                                        }
-                                                    >
-                                                        Not specified
-                                                    </SelectItem>
-                                                    {workSetups.map(
-                                                        (workSetup) => (
-                                                            <SelectItem
-                                                                key={workSetup}
-                                                                value={
-                                                                    workSetup
-                                                                }
-                                                            >
-                                                                {workSetup}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
+                                                required
+                                            />
+                                            {addFormError('job_title') ? (
+                                                <p className="text-sm text-destructive">
+                                                    {addFormError('job_title')}
+                                                </p>
+                                            ) : null}
                                         </div>
-                                    </div>
 
-                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label>Job type</Label>
+                                                <Select
+                                                    value={
+                                                        form.data.job_type ||
+                                                        optionalSelectNone
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        setAddFormData(
+                                                            'job_type',
+                                                            value ===
+                                                                optionalSelectNone
+                                                                ? ''
+                                                                : value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select job type" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem
+                                                            value={
+                                                                optionalSelectNone
+                                                            }
+                                                        >
+                                                            Not specified
+                                                        </SelectItem>
+                                                        {jobTypes.map(
+                                                            (jobType) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        jobType
+                                                                    }
+                                                                    value={
+                                                                        jobType
+                                                                    }
+                                                                >
+                                                                    {jobType}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                {addFormError('job_type') ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {addFormError(
+                                                            'job_type',
+                                                        )}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Work setup</Label>
+                                                <Select
+                                                    value={
+                                                        form.data.work_setup ||
+                                                        optionalSelectNone
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        setAddFormData(
+                                                            'work_setup',
+                                                            value ===
+                                                                optionalSelectNone
+                                                                ? ''
+                                                                : value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select work setup" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem
+                                                            value={
+                                                                optionalSelectNone
+                                                            }
+                                                        >
+                                                            Not specified
+                                                        </SelectItem>
+                                                        {workSetups.map(
+                                                            (workSetup) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        workSetup
+                                                                    }
+                                                                    value={
+                                                                        workSetup
+                                                                    }
+                                                                >
+                                                                    {workSetup}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                {addFormError('work_setup') ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {addFormError(
+                                                            'work_setup',
+                                                        )}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-2">
-                                            <Label htmlFor="edit_location">
+                                            <Label htmlFor="location">
                                                 Location
                                             </Label>
                                             <Input
-                                                id="edit_location"
-                                                value={editForm.data.location}
+                                                id="location"
+                                                value={form.data.location}
                                                 onChange={(event) =>
-                                                    editForm.setData(
+                                                    setAddFormData(
                                                         'location',
                                                         event.target.value,
                                                     )
                                                 }
                                             />
+                                            {addFormError('location') ? (
+                                                <p className="text-sm text-destructive">
+                                                    {addFormError('location')}
+                                                </p>
+                                            ) : null}
                                         </div>
+
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="salary_min">
+                                                    Salary min
+                                                </Label>
+                                                <Input
+                                                    id="salary_min"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={form.data.salary_min}
+                                                    onChange={(event) =>
+                                                        setAddFormData(
+                                                            'salary_min',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                {addFormError('salary_min') ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {addFormError(
+                                                            'salary_min',
+                                                        )}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="salary_max">
+                                                    Salary max
+                                                </Label>
+                                                <Input
+                                                    id="salary_max"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={form.data.salary_max}
+                                                    onChange={(event) =>
+                                                        setAddFormData(
+                                                            'salary_max',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                {addFormError('salary_max') ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {addFormError(
+                                                            'salary_max',
+                                                        )}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-2">
-                                            <Label htmlFor="edit_job_post_url">
+                                            <Label htmlFor="job_post_url">
                                                 Job post URL
                                             </Label>
                                             <Input
-                                                id="edit_job_post_url"
+                                                id="job_post_url"
                                                 type="url"
-                                                value={
-                                                    editForm.data.job_post_url
-                                                }
+                                                value={form.data.job_post_url}
                                                 onChange={(event) =>
-                                                    setEditFormData(
+                                                    setAddFormData(
                                                         'job_post_url',
                                                         event.target.value,
                                                     )
                                                 }
                                             />
-                                            {editFormError('job_post_url') ? (
+                                            {addFormError('job_post_url') ? (
                                                 <p className="text-sm text-destructive">
-                                                    {editFormError(
+                                                    {addFormError(
                                                         'job_post_url',
                                                     )}
                                                 </p>
                                             ) : null}
                                         </div>
-                                    </div>
 
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit_salary_min">
-                                                Salary min
-                                            </Label>
-                                            <Input
-                                                id="edit_salary_min"
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                value={
-                                                    editForm.data.salary_min
-                                                }
-                                                onChange={(event) =>
-                                                    setEditFormData(
-                                                        'salary_min',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            {editFormError('salary_min') ? (
-                                                <p className="text-sm text-destructive">
-                                                    {editFormError(
-                                                        'salary_min',
-                                                    )}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit_salary_max">
-                                                Salary max
-                                            </Label>
-                                            <Input
-                                                id="edit_salary_max"
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                value={
-                                                    editForm.data.salary_max
-                                                }
-                                                onChange={(event) =>
-                                                    setEditFormData(
-                                                        'salary_max',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            {editFormError('salary_max') ? (
-                                                <p className="text-sm text-destructive">
-                                                    {editFormError(
-                                                        'salary_max',
-                                                    )}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label>Status</Label>
-                                            <Select
-                                                value={editForm.data.status}
-                                                onValueChange={(value) =>
-                                                    editForm.setData(
-                                                        'status',
-                                                        value,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {statuses.map((status) => (
-                                                        <SelectItem
-                                                            key={status}
-                                                            value={status}
-                                                        >
-                                                            {statusLabel(
-                                                                status,
-                                                            )}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit_applied_date">
-                                                Date
-                                            </Label>
-                                            <Input
-                                                id="edit_applied_date"
-                                                type="date"
-                                                value={
-                                                    editForm.data.applied_date
-                                                }
-                                                onChange={(event) =>
-                                                    setEditFormData(
-                                                        'applied_date',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            />
-                                            {editFormError('applied_date') ? (
-                                                <p className="text-sm text-destructive">
-                                                    {editFormError(
-                                                        'applied_date',
-                                                    )}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-
-                                    <DialogFooter>
-                                        <Button
-                                            type="submit"
-                                            disabled={editForm.processing}
-                                        >
-                                            {editForm.processing ? (
-                                                <Spinner />
-                                            ) : null}
-                                            Save
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-
-                        <Dialog
-                            open={Boolean(selectedApplication)}
-                            onOpenChange={(open) => {
-                                if (!open) {
-                                    setSelectedApplication(null);
-                                }
-                            }}
-                        >
-                            <DialogContent className="sm:max-w-xl">
-                                {selectedApplication ? (
-                                    <>
-                                        <DialogHeader>
-                                            <DialogTitle>
-                                                {applicationTitle(
-                                                    selectedApplication,
-                                                )}
-                                            </DialogTitle>
-                                            <DialogDescription>
-                                                {applicationCompanyName(
-                                                    selectedApplication,
-                                                )}
-                                            </DialogDescription>
-                                        </DialogHeader>
-
-                                        <div className="space-y-4 text-sm">
-                                            <div className="grid gap-3 sm:grid-cols-2">
-                                                <div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        Status
-                                                    </div>
-                                                    <div>
-                                                        {statusLabel(
-                                                            selectedApplication.status,
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label>Status</Label>
+                                                <Select
+                                                    value={form.data.status}
+                                                    onValueChange={(value) =>
+                                                        setAddFormData(
+                                                            'status',
+                                                            value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {statuses.map(
+                                                            (status) => (
+                                                                <SelectItem
+                                                                    key={status}
+                                                                    value={
+                                                                        status
+                                                                    }
+                                                                >
+                                                                    {statusLabel(
+                                                                        status,
+                                                                    )}
+                                                                </SelectItem>
+                                                            ),
                                                         )}
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        Date
-                                                    </div>
-                                                    <div>
-                                                        {formatDate(
-                                                            selectedApplication.applied_date,
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        Type
-                                                    </div>
-                                                    <div>
-                                                        {selectedApplication.job_type ||
-                                                            'Not specified'}
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        Work setup
-                                                    </div>
-                                                    <div>
-                                                        {selectedApplication.work_setup ||
-                                                            'Not specified'}
-                                                    </div>
-                                                </div>
-                                                <div className="sm:col-span-2">
-                                                    <div className="text-xs text-muted-foreground">
-                                                        Location
-                                                    </div>
-                                                    <div>
-                                                        {selectedApplication.location ||
-                                                            'Not specified'}
-                                                    </div>
-                                                </div>
+                                                    </SelectContent>
+                                                </Select>
+                                                {addFormError('status') ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {addFormError('status')}
+                                                    </p>
+                                                ) : null}
                                             </div>
 
-                                            {selectedApplication.job_description ? (
-                                                <div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        Description
-                                                    </div>
-                                                    <p className="mt-1 whitespace-pre-line">
-                                                        {
-                                                            selectedApplication.job_description
-                                                        }
-                                                    </p>
-                                                </div>
-                                            ) : null}
-
-                                            {selectedApplication.job_post_url ? (
-                                                <Button
-                                                    asChild
-                                                    variant="outline"
-                                                    className="w-full"
-                                                >
-                                                    <a
-                                                        href={
-                                                            selectedApplication.job_post_url
-                                                        }
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                    >
-                                                        <ExternalLink className="size-4" />
-                                                        {websiteLabel(
-                                                            selectedApplication.job_post_url,
+                                            <div className="space-y-2">
+                                                <Label htmlFor="applied_date">
+                                                    Date
+                                                </Label>
+                                                <Input
+                                                    id="applied_date"
+                                                    type="date"
+                                                    value={
+                                                        form.data.applied_date
+                                                    }
+                                                    onChange={(event) =>
+                                                        setAddFormData(
+                                                            'applied_date',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                {addFormError(
+                                                    'applied_date',
+                                                ) ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {addFormError(
+                                                            'applied_date',
                                                         )}
-                                                    </a>
-                                                </Button>
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                        </div>
+
+                                        <DialogFooter>
+                                            <Button
+                                                type="submit"
+                                                disabled={form.processing}
+                                            >
+                                                {form.processing ? (
+                                                    <Spinner />
+                                                ) : null}
+                                                Save
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+
+                            <Dialog
+                                open={Boolean(editingApplication)}
+                                onOpenChange={(open) => {
+                                    if (!open) {
+                                        setEditFormErrors({});
+                                        setEditingApplication(null);
+                                    }
+                                }}
+                            >
+                                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle>
+                                            Edit application
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                            Update the tracked role.
+                                        </DialogDescription>
+                                    </DialogHeader>
+
+                                    <form
+                                        onSubmit={submitEditApplication}
+                                        className="space-y-4"
+                                        noValidate
+                                    >
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit_company">
+                                                    Company
+                                                </Label>
+                                                <Input
+                                                    id="edit_company"
+                                                    value={
+                                                        editForm.data.company
+                                                    }
+                                                    onChange={(event) =>
+                                                        setEditFormData(
+                                                            'company',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                    required
+                                                />
+                                                {editFormError('company') ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {editFormError(
+                                                            'company',
+                                                        )}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Industry</Label>
+                                                <Select
+                                                    value={
+                                                        editForm.data
+                                                            .company_industry ||
+                                                        optionalSelectNone
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        editForm.setData(
+                                                            'company_industry',
+                                                            value ===
+                                                                optionalSelectNone
+                                                                ? ''
+                                                                : value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem
+                                                            value={
+                                                                optionalSelectNone
+                                                            }
+                                                        >
+                                                            Not specified
+                                                        </SelectItem>
+                                                        {industries.map(
+                                                            (industry) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        industry
+                                                                    }
+                                                                    value={
+                                                                        industry
+                                                                    }
+                                                                >
+                                                                    {industry}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_job_title">
+                                                Job title
+                                            </Label>
+                                            <Input
+                                                id="edit_job_title"
+                                                value={editForm.data.job_title}
+                                                onChange={(event) =>
+                                                    setEditFormData(
+                                                        'job_title',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                required
+                                            />
+                                            {editFormError('job_title') ? (
+                                                <p className="text-sm text-destructive">
+                                                    {editFormError('job_title')}
+                                                </p>
                                             ) : null}
                                         </div>
-                                    </>
-                                ) : null}
-                            </DialogContent>
-                        </Dialog>
 
-                        <Dialog
-                            open={Boolean(reminderApplication)}
-                            onOpenChange={(open) => {
-                                if (!open) {
-                                    setReminderApplication(null);
-                                }
-                            }}
-                        >
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add reminder</DialogTitle>
-                                    <DialogDescription>
-                                        {reminderApplication
-                                            ? applicationTitle(
-                                                  reminderApplication,
-                                              )
-                                            : 'Application reminder'}
-                                    </DialogDescription>
-                                </DialogHeader>
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label>Job type</Label>
+                                                <Select
+                                                    value={
+                                                        editForm.data
+                                                            .job_type ||
+                                                        optionalSelectNone
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        editForm.setData(
+                                                            'job_type',
+                                                            value ===
+                                                                optionalSelectNone
+                                                                ? ''
+                                                                : value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem
+                                                            value={
+                                                                optionalSelectNone
+                                                            }
+                                                        >
+                                                            Not specified
+                                                        </SelectItem>
+                                                        {jobTypes.map(
+                                                            (jobType) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        jobType
+                                                                    }
+                                                                    value={
+                                                                        jobType
+                                                                    }
+                                                                >
+                                                                    {jobType}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
 
-                                <form
-                                    onSubmit={submitReminder}
-                                    className="space-y-4"
-                                >
-                                    <div className="space-y-2">
-                                        <Label htmlFor="remind_at">
-                                            Reminder date
-                                        </Label>
-                                        <Input
-                                            id="remind_at"
-                                            type="datetime-local"
-                                            value={
-                                                reminderForm.data.remind_at
-                                            }
-                                            onChange={(event) =>
-                                                reminderForm.setData(
-                                                    'remind_at',
-                                                    event.target.value,
-                                                )
-                                            }
-                                            required
-                                        />
-                                        {reminderForm.errors.remind_at ? (
-                                            <p className="text-sm text-destructive">
-                                                {
-                                                    reminderForm.errors
-                                                        .remind_at
+                                            <div className="space-y-2">
+                                                <Label>Work setup</Label>
+                                                <Select
+                                                    value={
+                                                        editForm.data
+                                                            .work_setup ||
+                                                        optionalSelectNone
+                                                    }
+                                                    onValueChange={(value) =>
+                                                        editForm.setData(
+                                                            'work_setup',
+                                                            value ===
+                                                                optionalSelectNone
+                                                                ? ''
+                                                                : value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem
+                                                            value={
+                                                                optionalSelectNone
+                                                            }
+                                                        >
+                                                            Not specified
+                                                        </SelectItem>
+                                                        {workSetups.map(
+                                                            (workSetup) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        workSetup
+                                                                    }
+                                                                    value={
+                                                                        workSetup
+                                                                    }
+                                                                >
+                                                                    {workSetup}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit_location">
+                                                    Location
+                                                </Label>
+                                                <Input
+                                                    id="edit_location"
+                                                    value={
+                                                        editForm.data.location
+                                                    }
+                                                    onChange={(event) =>
+                                                        editForm.setData(
+                                                            'location',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit_job_post_url">
+                                                    Job post URL
+                                                </Label>
+                                                <Input
+                                                    id="edit_job_post_url"
+                                                    type="url"
+                                                    value={
+                                                        editForm.data
+                                                            .job_post_url
+                                                    }
+                                                    onChange={(event) =>
+                                                        setEditFormData(
+                                                            'job_post_url',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                {editFormError(
+                                                    'job_post_url',
+                                                ) ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {editFormError(
+                                                            'job_post_url',
+                                                        )}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit_salary_min">
+                                                    Salary min
+                                                </Label>
+                                                <Input
+                                                    id="edit_salary_min"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={
+                                                        editForm.data.salary_min
+                                                    }
+                                                    onChange={(event) =>
+                                                        setEditFormData(
+                                                            'salary_min',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                {editFormError('salary_min') ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {editFormError(
+                                                            'salary_min',
+                                                        )}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit_salary_max">
+                                                    Salary max
+                                                </Label>
+                                                <Input
+                                                    id="edit_salary_max"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={
+                                                        editForm.data.salary_max
+                                                    }
+                                                    onChange={(event) =>
+                                                        setEditFormData(
+                                                            'salary_max',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                {editFormError('salary_max') ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {editFormError(
+                                                            'salary_max',
+                                                        )}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label>Status</Label>
+                                                <Select
+                                                    value={editForm.data.status}
+                                                    onValueChange={(value) =>
+                                                        editForm.setData(
+                                                            'status',
+                                                            value,
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {statuses.map(
+                                                            (status) => (
+                                                                <SelectItem
+                                                                    key={status}
+                                                                    value={
+                                                                        status
+                                                                    }
+                                                                >
+                                                                    {statusLabel(
+                                                                        status,
+                                                                    )}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit_applied_date">
+                                                    Date
+                                                </Label>
+                                                <Input
+                                                    id="edit_applied_date"
+                                                    type="date"
+                                                    value={
+                                                        editForm.data
+                                                            .applied_date
+                                                    }
+                                                    onChange={(event) =>
+                                                        setEditFormData(
+                                                            'applied_date',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                {editFormError(
+                                                    'applied_date',
+                                                ) ? (
+                                                    <p className="text-sm text-destructive">
+                                                        {editFormError(
+                                                            'applied_date',
+                                                        )}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                        </div>
+
+                                        <DialogFooter>
+                                            <Button
+                                                type="submit"
+                                                disabled={editForm.processing}
+                                            >
+                                                {editForm.processing ? (
+                                                    <Spinner />
+                                                ) : null}
+                                                Save
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+
+                            <Dialog
+                                open={Boolean(selectedApplication)}
+                                onOpenChange={(open) => {
+                                    if (!open) {
+                                        setSelectedApplication(null);
+                                    }
+                                }}
+                            >
+                                <DialogContent className="sm:max-w-xl">
+                                    {selectedApplication ? (
+                                        <>
+                                            <DialogHeader>
+                                                <DialogTitle>
+                                                    {applicationTitle(
+                                                        selectedApplication,
+                                                    )}
+                                                </DialogTitle>
+                                                <DialogDescription>
+                                                    {applicationCompanyName(
+                                                        selectedApplication,
+                                                    )}
+                                                </DialogDescription>
+                                            </DialogHeader>
+
+                                            <div className="space-y-4 text-sm">
+                                                <div className="grid gap-3 sm:grid-cols-2">
+                                                    <div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            Status
+                                                        </div>
+                                                        <div>
+                                                            {statusLabel(
+                                                                selectedApplication.status,
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            Date
+                                                        </div>
+                                                        <div>
+                                                            {formatDate(
+                                                                selectedApplication.applied_date,
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            Type
+                                                        </div>
+                                                        <div>
+                                                            {selectedApplication.job_type ||
+                                                                'Not specified'}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            Work setup
+                                                        </div>
+                                                        <div>
+                                                            {selectedApplication.work_setup ||
+                                                                'Not specified'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="sm:col-span-2">
+                                                        <div className="text-xs text-muted-foreground">
+                                                            Location
+                                                        </div>
+                                                        <div>
+                                                            {selectedApplication.location ||
+                                                                'Not specified'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {selectedApplication.job_description ? (
+                                                    <div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            Description
+                                                        </div>
+                                                        <p className="mt-1 whitespace-pre-line">
+                                                            {
+                                                                selectedApplication.job_description
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                ) : null}
+
+                                                {selectedApplication.job_post_url ? (
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        className="w-full"
+                                                    >
+                                                        <a
+                                                            href={
+                                                                selectedApplication.job_post_url
+                                                            }
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                        >
+                                                            <ExternalLink className="size-4" />
+                                                            {websiteLabel(
+                                                                selectedApplication.job_post_url,
+                                                            )}
+                                                        </a>
+                                                    </Button>
+                                                ) : null}
+                                            </div>
+                                        </>
+                                    ) : null}
+                                </DialogContent>
+                            </Dialog>
+
+                            <Dialog
+                                open={Boolean(reminderApplication)}
+                                onOpenChange={(open) => {
+                                    if (!open) {
+                                        setReminderApplication(null);
+                                    }
+                                }}
+                            >
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Add reminder</DialogTitle>
+                                        <DialogDescription>
+                                            {reminderApplication
+                                                ? applicationTitle(
+                                                      reminderApplication,
+                                                  )
+                                                : 'Application reminder'}
+                                        </DialogDescription>
+                                    </DialogHeader>
+
+                                    <form
+                                        onSubmit={submitReminder}
+                                        className="space-y-4"
+                                    >
+                                        <div className="space-y-2">
+                                            <Label htmlFor="remind_at">
+                                                Reminder date
+                                            </Label>
+                                            <Input
+                                                id="remind_at"
+                                                type="datetime-local"
+                                                value={
+                                                    reminderForm.data.remind_at
                                                 }
-                                            </p>
-                                        ) : null}
-                                    </div>
+                                                onChange={(event) =>
+                                                    reminderForm.setData(
+                                                        'remind_at',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                required
+                                            />
+                                            {reminderForm.errors.remind_at ? (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        reminderForm.errors
+                                                            .remind_at
+                                                    }
+                                                </p>
+                                            ) : null}
+                                        </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="reminder_note">
-                                            Notes
-                                        </Label>
-                                        <textarea
-                                            id="reminder_note"
-                                            value={
-                                                reminderForm.data.description
-                                            }
-                                            onChange={(event) =>
-                                                reminderForm.setData(
-                                                    'description',
-                                                    event.target.value,
-                                                )
-                                            }
-                                            className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                                        />
-                                        {reminderForm.errors.description ? (
-                                            <p className="text-sm text-destructive">
-                                                {
-                                                    reminderForm.errors
+                                        <div className="space-y-2">
+                                            <Label htmlFor="reminder_note">
+                                                Notes
+                                            </Label>
+                                            <textarea
+                                                id="reminder_note"
+                                                value={
+                                                    reminderForm.data
                                                         .description
                                                 }
-                                            </p>
-                                        ) : null}
-                                    </div>
+                                                onChange={(event) =>
+                                                    reminderForm.setData(
+                                                        'description',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                            />
+                                            {reminderForm.errors.description ? (
+                                                <p className="text-sm text-destructive">
+                                                    {
+                                                        reminderForm.errors
+                                                            .description
+                                                    }
+                                                </p>
+                                            ) : null}
+                                        </div>
 
+                                        <DialogFooter>
+                                            <Button
+                                                type="submit"
+                                                disabled={
+                                                    reminderForm.processing
+                                                }
+                                            >
+                                                {reminderForm.processing ? (
+                                                    <Spinner />
+                                                ) : null}
+                                                Save
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+
+                            <Dialog
+                                open={Boolean(deletingApplication)}
+                                onOpenChange={(open) => {
+                                    if (!open) {
+                                        setDeletingApplication(null);
+                                    }
+                                }}
+                            >
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>
+                                            Delete application
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                            This will delete{' '}
+                                            {deletingApplication
+                                                ? applicationTitle(
+                                                      deletingApplication,
+                                                  )
+                                                : 'this application'}{' '}
+                                            from your tracked applications.
+                                        </DialogDescription>
+                                    </DialogHeader>
                                     <DialogFooter>
                                         <Button
-                                            type="submit"
-                                            disabled={
-                                                reminderForm.processing
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setDeletingApplication(null)
                                             }
                                         >
-                                            {reminderForm.processing ? (
-                                                <Spinner />
-                                            ) : null}
-                                            Save
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            onClick={deleteApplication}
+                                        >
+                                            Delete
                                         </Button>
                                     </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-
-                        <Dialog
-                            open={Boolean(deletingApplication)}
-                            onOpenChange={(open) => {
-                                if (!open) {
-                                    setDeletingApplication(null);
-                                }
-                            }}
-                        >
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Delete application</DialogTitle>
-                                    <DialogDescription>
-                                        This will delete{' '}
-                                        {deletingApplication
-                                            ? applicationTitle(
-                                                  deletingApplication,
-                                              )
-                                            : 'this application'}{' '}
-                                        from your tracked applications.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <DialogFooter>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() =>
-                                            setDeletingApplication(null)
-                                        }
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="destructive"
-                                        onClick={deleteApplication}
-                                    >
-                                        Delete
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                     </div>
                 </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2 rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-2 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c] sm:hidden">
+                <div className="grid grid-cols-2 gap-2 rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-2 shadow-sm shadow-[#17201b]/5 sm:hidden dark:border-[#33463a] dark:bg-[#16231c]">
                     {statCards.map((stat) => {
                         const Icon = stat.icon;
 
@@ -1763,7 +1841,9 @@ export default function Applications({
                 <div className="flex flex-wrap gap-2 rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-2 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
                     <Button
                         type="button"
-                        variant={selectedStatus === 'all' ? 'secondary' : 'outline'}
+                        variant={
+                            selectedStatus === 'all' ? 'secondary' : 'outline'
+                        }
                         size="sm"
                         className={
                             selectedStatus === 'all'
@@ -1807,9 +1887,7 @@ export default function Applications({
                     {moreStatuses.length > 0 ? (
                         <Select
                             value={
-                                isMoreStatusSelected
-                                    ? selectedStatus
-                                    : 'more'
+                                isMoreStatusSelected ? selectedStatus : 'more'
                             }
                             onValueChange={changeFilterStatus}
                         >

@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { Grid2X2, List, Table2 } from 'lucide-react';
-import { useEffect, useState  } from 'react';
+import { useEffect, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -77,10 +78,7 @@ export function PreferredView<T>({
         window.localStorage.setItem(storageKey, nextViewMode);
     };
 
-    const handleItemKeyDown = (
-        item: T,
-        event: KeyboardEvent<HTMLElement>,
-    ) => {
+    const handleItemKeyDown = (item: T, event: KeyboardEvent<HTMLElement>) => {
         if (!onItemClick) {
             return;
         }
@@ -147,7 +145,7 @@ export function PreferredView<T>({
                             className={cn(
                                 'rounded-lg border bg-card p-4 text-card-foreground shadow-sm',
                                 onItemClick
-                                    ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
+                                    ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none'
                                     : '',
                                 cardClassName,
                             )}
@@ -181,7 +179,7 @@ export function PreferredView<T>({
                             className={cn(
                                 'p-4',
                                 onItemClick
-                                    ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
+                                    ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none'
                                     : '',
                                 listItemClassName,
                             )}
@@ -211,7 +209,7 @@ export function PreferredView<T>({
                         <table className="w-full text-left text-sm">
                             <thead
                                 className={cn(
-                                    'bg-muted/50 text-xs uppercase text-muted-foreground',
+                                    'bg-muted/50 text-xs text-muted-foreground uppercase',
                                     tableHeadClassName,
                                 )}
                             >
@@ -240,7 +238,7 @@ export function PreferredView<T>({
                                         tabIndex={onItemClick ? 0 : undefined}
                                         className={cn(
                                             onItemClick
-                                                ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50'
+                                                ? 'cursor-pointer transition hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none'
                                                 : '',
                                         )}
                                         onClick={

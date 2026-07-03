@@ -10,11 +10,12 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -56,7 +57,8 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    public function documents()
+    /** @return HasMany<Document, $this> */
+    public function documents(): HasMany
     {
         return $this->hasMany(Document::class, 'user_id', 'user_id');
     }
@@ -67,6 +69,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return $preset;
         }
 
+        /** @var Document|null $photo */
         $photo = $this->documents()
             ->where('document_type', 'photo')
             ->latest()

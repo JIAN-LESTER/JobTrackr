@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Log;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class LogController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
         $perPage = max(1, min((int) $request->input('per_page', 10), 100));
@@ -42,31 +45,20 @@ class LogController extends Controller
         ]);
     }
 
-    public function show(Log $log)
+    public function show(Log $log): JsonResponse
     {
         $this->authorizeLog($log);
 
         return response()->json($log->load('user'));
     }
 
-
-    public function destroy(Log $log)
+    public function destroy(Log $log): Response
     {
         $this->authorizeLog($log);
 
         $log->delete();
 
         return response()->noContent();
-    }
-
-    private function validatedData(Request $request, bool $partial = false): array
-    {
-        $required = $partial ? 'sometimes' : 'required';
-
-        return $request->validate([
-            'user_id' => [$required, 'integer', 'exists:users,user_id'],
-            'action' => [$required, 'string', 'max:255'],
-        ]);
     }
 
     private function authorizeLog(Log $log): void

@@ -5,16 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class CompanyController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): InertiaResponse
     {
         $companies = Company::query()
             ->whereHas('applications', fn ($query) => $query->where('user_id', $request->user()->getKey()))
             ->with(['applications' => fn ($query) => $query
                 ->where('user_id', $request->user()->getKey())
-                ->latest()
+                ->latest(),
             ])
             ->withCount(['applications' => fn ($query) => $query->where('user_id', $request->user()->getKey())])
             ->orderBy('name')

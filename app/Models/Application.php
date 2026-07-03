@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Application extends Model
@@ -32,42 +34,50 @@ class Application extends Model
         'salary_max' => 'decimal:2',
     ];
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
-    public function company()
+    /** @return BelongsTo<Company, $this> */
+    public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'company_id', 'company_id');
     }
 
-    public function interviews()
+    /** @return HasMany<Interview, $this> */
+    public function interviews(): HasMany
     {
         return $this->hasMany(Interview::class, 'job_application_id', 'application_id');
     }
 
-    public function statusHistories()
+    /** @return HasMany<ApplicationStatusHistory, $this> */
+    public function statusHistories(): HasMany
     {
         return $this->hasMany(ApplicationStatusHistory::class, 'job_application_id', 'application_id');
     }
 
-    public function contacts()
+    /** @return HasMany<ApplicationContact, $this> */
+    public function contacts(): HasMany
     {
         return $this->hasMany(ApplicationContact::class, 'job_application_id', 'application_id');
     }
 
-    public function documents()
+    /** @return HasMany<Document, $this> */
+    public function documents(): HasMany
     {
         return $this->hasMany(Document::class, 'job_application_id', 'application_id');
     }
 
-    public function notes()
+    /** @return HasMany<Note, $this> */
+    public function notes(): HasMany
     {
         return $this->hasMany(Note::class, 'job_application_id', 'application_id');
     }
 
-    public function reminders()
+    /** @return HasMany<Reminder, $this> */
+    public function reminders(): HasMany
     {
         return $this->hasMany(Reminder::class, 'job_application_id', 'application_id');
     }

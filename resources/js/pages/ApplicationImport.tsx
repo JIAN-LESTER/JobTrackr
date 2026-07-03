@@ -80,7 +80,13 @@ const cleanApplicationImport = (
         .filter((label) => label && !isSiteLabel(label, website))
         .forEach((label) => {
             cleanTitle = cleanTitle
-                .replace(new RegExp(`\\s*(?:\\||-| at )\\s*${escapeRegExp(label)}\\s*$`, 'i'), '')
+                .replace(
+                    new RegExp(
+                        `\\s*(?:\\||-| at )\\s*${escapeRegExp(label)}\\s*$`,
+                        'i',
+                    ),
+                    '',
+                )
                 .trim();
         });
 
@@ -108,7 +114,8 @@ type ApplicationImportForm = {
 };
 
 export default function ApplicationImport({ importData }: Props) {
-    const extensionInstallUrl = import.meta.env.VITE_BROWSER_EXTENSION_URL?.trim();
+    const extensionInstallUrl =
+        import.meta.env.VITE_BROWSER_EXTENSION_URL?.trim();
     const importedWebsite = websiteLabel(importData.url);
     const importedCompany = importedValue(importData.company, importedWebsite);
     const importedApplication = cleanApplicationImport(
@@ -126,11 +133,13 @@ export default function ApplicationImport({ importData }: Props) {
         work_setup: importData.work_setup || '',
         location: importData.location || '',
         salary_min:
-            importData.salary_min === null || importData.salary_min === undefined
+            importData.salary_min === null ||
+            importData.salary_min === undefined
                 ? ''
                 : String(importData.salary_min),
         salary_max:
-            importData.salary_max === null || importData.salary_max === undefined
+            importData.salary_max === null ||
+            importData.salary_max === undefined
                 ? ''
                 : String(importData.salary_max),
         status: 'applied',
@@ -155,24 +164,24 @@ export default function ApplicationImport({ importData }: Props) {
 
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-[#eef3ef] p-4 dark:bg-background">
                 <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <h1 className="text-xl font-semibold tracking-tight">
-                            Job import
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Save a job post URL from LinkedIn, Indeed, and
-                            other job boards.
-                        </p>
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <h1 className="text-xl font-semibold tracking-tight">
+                                Job import
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                Save a job post URL from LinkedIn, Indeed, and
+                                other job boards.
+                            </p>
+                        </div>
+                        <Button
+                            asChild
+                            variant="outline"
+                            className="border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70"
+                        >
+                            <Link href="/applications">Applications</Link>
+                        </Button>
                     </div>
-                    <Button
-                        asChild
-                        variant="outline"
-                        className="border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70"
-                    >
-                        <Link href="/applications">Applications</Link>
-                    </Button>
-                </div>
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -260,9 +269,7 @@ export default function ApplicationImport({ importData }: Props) {
 
                     <div className="space-y-4 rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
                         <div className="space-y-2">
-                            <h2 className="font-medium">
-                                Download extension
-                            </h2>
+                            <h2 className="font-medium">Download extension</h2>
                             <p className="text-sm text-muted-foreground">
                                 Install the JobTrackr browser extension to send
                                 job post URLs from supported job boards into

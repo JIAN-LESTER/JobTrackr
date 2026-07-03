@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationContactController;
+use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationStatusHistoryController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\InterviewController;

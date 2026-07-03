@@ -25,7 +25,7 @@ trait ProfileValidationRules
             'education_school' => ['nullable', 'string', 'max:255'],
             'education_degree' => ['nullable', 'string', 'max:255'],
             'education_program' => ['nullable', 'string', 'max:255'],
-            'avatar_preset' => ['nullable', 'string', 'in:' . implode(',', AvatarPresets::keys())],
+            'avatar_preset' => ['nullable', 'string', 'in:'.implode(',', AvatarPresets::keys())],
             'photo' => ['nullable', 'image', 'max:2048'],
         ];
     }

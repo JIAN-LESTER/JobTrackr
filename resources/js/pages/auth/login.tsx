@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Bell, BriefcaseBusiness, History } from 'lucide-react';
-import { useEffect, type FormEvent } from 'react';
+import { useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -70,11 +71,7 @@ export default function Login({ status, canResetPassword }: Props) {
         <>
             <Head title="Log in" />
 
-            <form
-                onSubmit={submit}
-                noValidate
-                className="flex flex-col gap-6"
-            >
+            <form onSubmit={submit} noValidate className="flex flex-col gap-6">
                 <div className="grid gap-6">
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email address</Label>
@@ -142,7 +139,6 @@ export default function Login({ status, canResetPassword }: Props) {
                     </TextLink>
                 </div>
             </form>
-
         </>
     );
 }
@@ -152,7 +148,7 @@ Login.layout = {
     description: 'Sign in to continue managing your job search.',
     sidePosition: 'left',
     side: (
-        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl shadow-black/20 ring-1 ring-white/10 sm:p-8 lg:min-h-[500px]">
+        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl ring-1 shadow-black/20 ring-white/10 sm:p-8 lg:min-h-[500px]">
             <div className="space-y-3">
                 <p className="text-sm font-medium text-[#f3c76a]">
                     JobTrackr workspace

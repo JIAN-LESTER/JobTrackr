@@ -1,9 +1,5 @@
 import { Link } from '@inertiajs/react';
-import {
-    Bell,
-    BriefcaseBusiness,
-    History,
-} from 'lucide-react';
+import { Bell, BriefcaseBusiness, History } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {

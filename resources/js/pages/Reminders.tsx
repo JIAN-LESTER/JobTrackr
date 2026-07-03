@@ -143,33 +143,37 @@ export default function RemindersIndex({ reminders, filters }: Props) {
 
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-[#eef3ef] p-4 dark:bg-background">
                 <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-xl font-semibold tracking-tight">
-                            Reminders
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            {reminders.total} application reminders
-                        </p>
-                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h1 className="text-xl font-semibold tracking-tight">
+                                Reminders
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                {reminders.total} application reminders
+                            </p>
+                        </div>
 
-                    <form
-                        onSubmit={submitSearch}
-                        className="flex w-full gap-2 sm:w-80"
-                    >
-                        <Input
-                            value={search}
-                            onChange={(event) =>
-                                setSearch(event.target.value)
-                            }
-                            placeholder="Search reminders"
-                            className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
-                        />
-                        <Button type="submit" size="icon" aria-label="Search">
-                            <Search className="size-4" />
-                        </Button>
-                    </form>
-                </div>
+                        <form
+                            onSubmit={submitSearch}
+                            className="flex w-full gap-2 sm:w-80"
+                        >
+                            <Input
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                placeholder="Search reminders"
+                                className="h-9 bg-white/80 dark:bg-[#0f1713]/40"
+                            />
+                            <Button
+                                type="submit"
+                                size="icon"
+                                aria-label="Search"
+                            >
+                                <Search className="size-4" />
+                            </Button>
+                        </form>
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2 rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-2 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
@@ -247,9 +251,7 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                                         reminder.is_completed,
                                     )}
                                 >
-                                    {reminder.is_completed
-                                        ? 'Done'
-                                        : 'Pending'}
+                                    {reminder.is_completed ? 'Done' : 'Pending'}
                                 </Badge>
                             ),
                         },
@@ -286,9 +288,7 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                                         reminder.is_completed,
                                     )}
                                 >
-                                    {reminder.is_completed
-                                        ? 'Done'
-                                        : 'Pending'}
+                                    {reminder.is_completed ? 'Done' : 'Pending'}
                                 </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">
@@ -353,8 +353,8 @@ export default function RemindersIndex({ reminders, filters }: Props) {
                 {reminders.links.length > 3 ? (
                     <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                         <p className="text-muted-foreground">
-                            Showing {reminders.from || 0} to{' '}
-                            {reminders.to || 0} of {reminders.total}
+                            Showing {reminders.from || 0} to {reminders.to || 0}{' '}
+                            of {reminders.total}
                         </p>
                         <div className="flex flex-wrap gap-1">
                             {reminders.links.map((link, index) =>

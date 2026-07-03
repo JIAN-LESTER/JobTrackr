@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Interview;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class InterviewController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
         $perPage = max(1, min((int) $request->input('per_page', 10), 100));
@@ -48,12 +51,12 @@ class InterviewController extends Controller
         ]);
     }
 
-    public function show(Interview $interview)
+    public function show(Interview $interview): JsonResponse
     {
         return response()->json($interview->load('jobApplication.company'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $interview = Interview::create($this->validatedData($request));
 
@@ -63,7 +66,7 @@ class InterviewController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, Interview $interview)
+    public function update(Request $request, Interview $interview): JsonResponse
     {
         $interview->update($this->validatedData($request, true));
 
@@ -73,13 +76,14 @@ class InterviewController extends Controller
         ]);
     }
 
-    public function destroy(Interview $interview)
+    public function destroy(Interview $interview): Response
     {
         $interview->delete();
 
         return response()->noContent();
     }
 
+    /** @return array<string, mixed> */
     private function validatedData(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';

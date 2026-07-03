@@ -3,13 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reminder;
-use Illuminate\Support\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class ReminderController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
         $perPage = max(1, min((int) $request->input('per_page', 10), 100));
@@ -43,12 +47,12 @@ class ReminderController extends Controller
         ]);
     }
 
-    public function show(Reminder $reminder)
+    public function show(Reminder $reminder): JsonResponse
     {
         return response()->json($reminder->load('jobApplication.company'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $reminder = Reminder::create($this->validatedData($request));
 
@@ -62,7 +66,7 @@ class ReminderController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, Reminder $reminder)
+    public function update(Request $request, Reminder $reminder): JsonResponse|RedirectResponse
     {
         $data = $this->validatedData($request, true);
 
@@ -85,7 +89,7 @@ class ReminderController extends Controller
         ]);
     }
 
-    public function destroy(Reminder $reminder)
+    public function destroy(Reminder $reminder): JsonResponse|RedirectResponse|Response
     {
         if (! $reminder->is_completed) {
             $reminder->update(['is_completed' => true]);
@@ -109,6 +113,7 @@ class ReminderController extends Controller
         return response()->noContent();
     }
 
+    /** @return array<string, mixed> */
     private function validatedData(Request $request, bool $partial = false): array
     {
         $required = $partial ? 'sometimes' : 'required';

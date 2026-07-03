@@ -6,13 +6,17 @@ use App\Models\Application;
 use App\Models\ApplicationStatusHistory;
 use App\Models\Company;
 use App\Models\Log;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class ApplicationController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
         $perPage = max(1, min((int) $request->input('per_page', 10), 100));
@@ -76,63 +80,64 @@ class ApplicationController extends Controller
         ]);
     }
 
-    public function show(Application $application)
+    public function show(Application $application): JsonResponse
     {
         $this->authorizeApplication($application);
 
         return response()->json($application->load(['company', 'user', 'contacts', 'interviews', 'statusHistories', 'notes', 'reminders']));
     }
 
-  public function import(Request $request)
-{
-    if ($this->hasExtensionImportData($request)) {
+    public function import(Request $request): InertiaResponse
+    {
+        if ($this->hasExtensionImportData($request)) {
+            return Inertia::render('ApplicationImport', [
+                'importData' => $this->importDataFromExtension($request),
+            ]);
+        }
+
+        $url = $request->input('url');
+
         return Inertia::render('ApplicationImport', [
-            'importData' => $this->importDataFromExtension($request),
+            'importData' => $this->extractImportedJobData(is_string($url) ? $url : null),
         ]);
     }
 
-    $url = $request->input('url');
+    private function hasExtensionImportData(Request $request): bool
+    {
+        return collect([
+            'company',
+            'job_title',
+            'location',
+            'job_type',
+            'work_setup',
+            'salary_min',
+            'salary_max',
+            'job_description',
+        ])->contains(fn ($field) => $request->filled($field));
+    }
 
-    return Inertia::render('ApplicationImport', [
-        'importData' => $this->extractImportedJobData(is_string($url) ? $url : null),
-    ]);
-}
+    /** @return array<string, mixed> */
+    private function importDataFromExtension(Request $request): array
+    {
+        $url = $this->cleanJobPostUrl($request->input('url'));
+        $company = $this->cleanText($request->input('company')) ?: $this->websiteLabel($url);
+        $application = $this->cleanApplicationImport($this->cleanText($request->input('job_title')) ?: 'Application', $company, $url);
 
-private function hasExtensionImportData(Request $request): bool
-{
-    return collect([
-        'company',
-        'job_title',
-        'location',
-        'job_type',
-        'work_setup',
-        'salary_min',
-        'salary_max',
-        'job_description',
-    ])->contains(fn ($field) => $request->filled($field));
-}
+        return [
+            'extracted' => true,
+            'url' => $url,
+            'company' => $application['company'],
+            'job_title' => $application['title'],
+            'location' => $this->cleanText($request->input('location')),
+            'job_type' => $this->cleanText($request->input('job_type')),
+            'work_setup' => $this->cleanText($request->input('work_setup')),
+            'salary_min' => $this->cleanSalary($request->input('salary_min')),
+            'salary_max' => $this->cleanSalary($request->input('salary_max')),
+            'job_description' => $this->cleanText($request->input('job_description')),
+        ];
+    }
 
-private function importDataFromExtension(Request $request): array
-{
-    $url = $this->cleanJobPostUrl($request->input('url'));
-    $company = $this->cleanText($request->input('company')) ?: $this->websiteLabel($url);
-    $application = $this->cleanApplicationImport($this->cleanText($request->input('job_title')) ?: 'Application', $company, $url);
-
-    return [
-        'extracted' => true,
-        'url' => $url,
-        'company' => $application['company'],
-        'job_title' => $application['title'],
-        'location' => $this->cleanText($request->input('location')),
-        'job_type' => $this->cleanText($request->input('job_type')),
-        'work_setup' => $this->cleanText($request->input('work_setup')),
-        'salary_min' => $this->cleanSalary($request->input('salary_min')),
-        'salary_max' => $this->cleanSalary($request->input('salary_max')),
-        'job_description' => $this->cleanText($request->input('job_description')),
-    ];
-}
-
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $request->merge([
             'job_post_url' => $this->cleanJobPostUrl($request->input('job_post_url')),
@@ -212,7 +217,7 @@ private function importDataFromExtension(Request $request): array
 
         Log::create([
             'user_id' => $request->user()->getKey(),
-            'action' => 'Created application for job title: ' . $application->job_title,
+            'action' => 'Created application for job title: '.$application->job_title,
         ]);
 
         if ($data['from_import'] ?? false) {
@@ -231,7 +236,7 @@ private function importDataFromExtension(Request $request): array
         ], 201);
     }
 
-    public function update(Request $request, Application $application)
+    public function update(Request $request, Application $application): JsonResponse|RedirectResponse
     {
         $this->authorizeApplication($application);
 
@@ -292,7 +297,7 @@ private function importDataFromExtension(Request $request): array
 
         Log::create([
             'user_id' => $request->user()->getKey(),
-            'action' => 'Updated application for job title: ' . $application->job_title,
+            'action' => 'Updated application for job title: '.$application->job_title,
         ]);
 
         if ($request->header('X-Inertia')) {
@@ -305,7 +310,7 @@ private function importDataFromExtension(Request $request): array
         ]);
     }
 
-    public function destroy(Application $application)
+    public function destroy(Application $application): JsonResponse|RedirectResponse|Response
     {
         $this->authorizeApplication($application);
 
@@ -320,6 +325,7 @@ private function importDataFromExtension(Request $request): array
         return response()->noContent();
     }
 
+    /** @return array<int, string> */
     private function statuses(): array
     {
         return [
@@ -345,6 +351,7 @@ private function importDataFromExtension(Request $request): array
         ];
     }
 
+    /** @return array<string, mixed> */
     private function extractImportedJobData(?string $url): array
     {
         $data = [
@@ -377,7 +384,7 @@ private function importDataFromExtension(Request $request): array
         }
 
         $html = $response->body();
-        $document = new \DOMDocument();
+        $document = new \DOMDocument;
         libxml_use_internal_errors(true);
         $document->loadHTML($html);
         libxml_clear_errors();
@@ -416,6 +423,7 @@ private function importDataFromExtension(Request $request): array
         ]);
     }
 
+    /** @return array<string, string> */
     private function cleanApplicationImport(string $title, string $company, ?string $url): array
     {
         $website = $this->websiteLabel($url);
@@ -441,7 +449,7 @@ private function importDataFromExtension(Request $request): array
                 continue;
             }
 
-            $cleanTitle = trim(preg_replace('/\s*(?:\||-| at )\s*' . preg_quote($label, '/') . '\s*$/i', '', $cleanTitle) ?? $cleanTitle);
+            $cleanTitle = trim(preg_replace('/\s*(?:\||-| at )\s*'.preg_quote($label, '/').'\s*$/i', '', $cleanTitle) ?? $cleanTitle);
         }
 
         return [
@@ -474,9 +482,17 @@ private function importDataFromExtension(Request $request): array
         return preg_replace('/^www\./i', '', $host) ?: 'Website';
     }
 
+    /** @return array<string, mixed> */
     private function jobPostingFromJsonLd(\DOMXPath $xpath): array
     {
-        foreach ($xpath->query('//script[@type="application/ld+json"]') as $script) {
+        $scripts = $xpath->query('//script[@type="application/ld+json"]');
+
+        if (! $scripts) {
+            return [];
+        }
+
+        foreach ($scripts as $script) {
+            /** @var \DOMElement $script */
             $decoded = json_decode($script->textContent, true);
 
             foreach ($this->jsonLdItems($decoded) as $item) {
@@ -492,6 +508,7 @@ private function importDataFromExtension(Request $request): array
         return [];
     }
 
+    /** @return array<int, array<string, mixed>> */
     private function jsonLdItems(mixed $value): array
     {
         if (! is_array($value)) {
@@ -509,6 +526,7 @@ private function importDataFromExtension(Request $request): array
         return array_filter($items, fn ($item) => is_array($item));
     }
 
+    /** @param array<string, mixed> $jobPosting */
     private function locationFromJobPosting(array $jobPosting): ?string
     {
         $location = $jobPosting['jobLocation'] ?? null;
@@ -535,6 +553,7 @@ private function importDataFromExtension(Request $request): array
         return null;
     }
 
+    /** @param array<int, string> $values */
     private function firstTextMatch(string $text, array $values): ?string
     {
         foreach ($values as $value) {
@@ -550,21 +569,39 @@ private function importDataFromExtension(Request $request): array
     {
         $nodes = $xpath->query("//meta[@{$attribute}='{$value}']/@content");
 
-        return $nodes->length ? $nodes->item(0)->nodeValue : null;
+        if (! $nodes || ! $nodes->length) {
+            return null;
+        }
+
+        $node = $nodes->item(0);
+
+        return $node instanceof \DOMNode ? $node->nodeValue : null;
     }
 
     private function pageTitle(\DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query('//title');
 
-        return $nodes->length ? $nodes->item(0)->textContent : null;
+        if (! $nodes || ! $nodes->length) {
+            return null;
+        }
+
+        $node = $nodes->item(0);
+
+        return $node instanceof \DOMNode ? $node->textContent : null;
     }
 
     private function pageText(\DOMXPath $xpath): ?string
     {
         $nodes = $xpath->query('//body');
 
-        return $nodes->length ? $nodes->item(0)->textContent : null;
+        if (! $nodes || ! $nodes->length) {
+            return null;
+        }
+
+        $node = $nodes->item(0);
+
+        return $node instanceof \DOMNode ? $node->textContent : null;
     }
 
     private function cleanText(mixed $value): ?string
