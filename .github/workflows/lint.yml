@@ -1,12 +1,18 @@
 name: linter
 
 on:
+  workflow_dispatch:
+
   push:
     branches:
       - develop
       - main
       - master
       - workos
+      - staging
+      - "fix/**"
+      - "bugfix/**"
+
   pull_request:
     branches:
       - develop
@@ -15,11 +21,12 @@ on:
       - workos
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
@@ -43,9 +50,3 @@ jobs:
 
       - name: Lint Frontend
         run: npm run lint:check
-
-      # - name: Commit Changes
-      #   uses: stefanzweifel/git-auto-commit-action@v7
-      #   with:
-      #     commit_message: fix code style
-      #     commit_options: '--no-verify'

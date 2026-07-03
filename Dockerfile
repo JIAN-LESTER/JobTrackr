@@ -37,4 +37,4 @@ COPY . .
 RUN composer dump-autoload --optimize \
     && chown -R www-data:www-data storage bootstrap/cache
 
-CMD ["php-fpm"]
+CMD CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
