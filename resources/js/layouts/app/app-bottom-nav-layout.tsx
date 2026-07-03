@@ -5,8 +5,8 @@ import AppLogo from '@/components/app-logo';
 import { AppShell } from '@/components/app-shell';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
-import { edit } from '@/routes/profile';
 import type { AppLayoutProps } from '@/types';
+import { edit } from '@/routes/profile';
 
 const navItems = [
     {
