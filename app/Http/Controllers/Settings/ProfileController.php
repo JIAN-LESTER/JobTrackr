@@ -57,7 +57,7 @@ class ProfileController extends Controller
         $user = $request->user();
         $data = collect($validated)->except('photo');
 
-        if (!Schema::hasColumn('users', 'avatar_preset')) {
+        if (! Schema::hasColumn('users', 'avatar_preset')) {
             $data->forget('avatar_preset');
         }
 
@@ -98,7 +98,7 @@ class ProfileController extends Controller
 
     private function storeProfileDocument(int|string $userId, ?UploadedFile $file, string $type): void
     {
-        if (!$file) {
+        if (! $file) {
             return;
         }
 
