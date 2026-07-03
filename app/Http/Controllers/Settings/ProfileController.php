@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Models\Document;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -57,7 +57,7 @@ class ProfileController extends Controller
         $user = $request->user();
         $data = collect($validated)->except('photo');
 
-        if (! Schema::hasColumn('users', 'avatar_preset')) {
+        if (!Schema::hasColumn('users', 'avatar_preset')) {
             $data->forget('avatar_preset');
         }
 
@@ -98,7 +98,7 @@ class ProfileController extends Controller
 
     private function storeProfileDocument(int|string $userId, ?UploadedFile $file, string $type): void
     {
-        if (! $file) {
+        if (!$file) {
             return;
         }
 

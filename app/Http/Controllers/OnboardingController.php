@@ -36,7 +36,7 @@ class OnboardingController extends Controller
          *     education_degree: string,
          *     education_program: string,
          *     avatar_preset?: string|null,
-         *     photo?: \Illuminate\Http\UploadedFile|null
+         *     photo?: UploadedFile|null
          * } $validated
          */
         $validated = $request->validate([
@@ -55,7 +55,7 @@ class OnboardingController extends Controller
         $user = $request->user();
         $data = collect($validated)->except('photo', 'first_name', 'last_name');
 
-        if (! Schema::hasColumn('users', 'avatar_preset')) {
+        if (!Schema::hasColumn('users', 'avatar_preset')) {
             $data->forget('avatar_preset');
         }
 
@@ -74,7 +74,7 @@ class OnboardingController extends Controller
 
     private function storePhoto(int|string $userId, ?UploadedFile $file): void
     {
-        if (! $file) {
+        if (!$file) {
             return;
         }
 
