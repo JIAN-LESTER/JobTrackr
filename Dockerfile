@@ -8,6 +8,7 @@ RUN apt-get update \
         unzip \
         libicu-dev \
         libzip-dev \
+        libpq-dev \
         libpng-dev \
         libjpeg62-turbo-dev \
         libfreetype6-dev \
@@ -16,7 +17,7 @@ RUN apt-get update \
         bcmath \
         gd \
         intl \
-        pdo_mysql \
+        pdo_pgsql \
         zip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
