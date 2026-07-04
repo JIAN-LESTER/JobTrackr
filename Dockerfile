@@ -17,6 +17,7 @@ RUN apt-get update \
         bcmath \
         gd \
         intl \
+        pdo_mysql \
         pdo_pgsql \
         zip \
     && apt-get clean \
@@ -37,5 +38,8 @@ COPY . .
 
 RUN composer dump-autoload --optimize \
     && chown -R www-data:www-data storage bootstrap/cache
+
+RUN npm install
+RUN npm run build
 
 CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
