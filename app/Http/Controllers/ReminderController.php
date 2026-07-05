@@ -57,6 +57,8 @@ class ReminderController extends Controller
         $reminder = Reminder::create($this->validatedData($request));
 
         if ($request->header('X-Inertia')) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Reminder created.']);
+
             return back();
         }
 
@@ -80,6 +82,8 @@ class ReminderController extends Controller
         $reminder->update($data);
 
         if ($request->header('X-Inertia')) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Reminder updated.']);
+
             return back();
         }
 
@@ -95,6 +99,8 @@ class ReminderController extends Controller
             $reminder->update(['is_completed' => true]);
 
             if (request()->header('X-Inertia')) {
+                Inertia::flash('toast', ['type' => 'success', 'message' => 'Reminder marked done.']);
+
                 return back();
             }
 
@@ -107,6 +113,8 @@ class ReminderController extends Controller
         $reminder->delete();
 
         if (request()->header('X-Inertia')) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Reminder deleted.']);
+
             return back();
         }
 

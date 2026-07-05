@@ -227,6 +227,8 @@ class ApplicationController extends Controller
         }
 
         if ($request->header('X-Inertia')) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Application created.']);
+
             return back();
         }
 
@@ -301,6 +303,8 @@ class ApplicationController extends Controller
         ]);
 
         if ($request->header('X-Inertia')) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Application updated.']);
+
             return back();
         }
 
@@ -319,6 +323,8 @@ class ApplicationController extends Controller
         $application->delete();
 
         if (request()->header('X-Inertia')) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Application deleted.']);
+
             return back();
         }
 

@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Laravel\Fortify\Contracts\RegisterViewResponse;
 use Laravel\Fortify\Fortify;
@@ -31,8 +32,9 @@ class RegisteredUserController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Account created. Verify your email, then log in.']);
+
         return redirect()
-            ->route('login')
-            ->with('status', 'Account created. Verify your email, then log in.');
+            ->route('login');
     }
 }
