@@ -6,6 +6,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
@@ -27,14 +28,15 @@ class RegisteredUserController extends Controller
             ]);
         }
 
-        event(new Registered($creator->create($request->all())));
+        event(new Registered($user = $creator->create($request->all())));
 
-        $request->session()->invalidate();
+        Auth::guard('web')->login($user);
+
         $request->session()->regenerateToken();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Account created. Verify your email, then log in.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Account created.']);
 
         return redirect()
-            ->route('login');
+            ->intended(Fortify::redirects('register'));
     }
 }
