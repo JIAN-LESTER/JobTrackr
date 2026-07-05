@@ -17,6 +17,7 @@ import { request } from '@/routes/password';
 type Props = {
     status?: string;
     canResetPassword: boolean;
+    csrfToken: string;
 };
 
 type LoginForm = {
@@ -26,128 +27,8 @@ type LoginForm = {
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function Login({ status, canResetPassword }: Props) {
-    const form = useForm<LoginForm>({
-        email: '',
-        password: '',
-    });
-
-    useEffect(() => {
-        if (status) {
-            toast.success(status);
-        }
-    }, [status]);
-
-    const submit = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        form.clearErrors();
-
-        const email = form.data.email.trim();
-        let hasErrors = false;
-
-        if (!email) {
-            form.setError('email', 'Email address is required.');
-            hasErrors = true;
-        } else if (!emailPattern.test(email)) {
-            form.setError('email', 'Enter a valid email address.');
-            hasErrors = true;
-        }
-
-        if (!form.data.password) {
-            form.setError('password', 'Password is required.');
-            hasErrors = true;
-        }
-
-        if (hasErrors) {
-            return;
-        }
-
-        form.post(store.url(), {
-            onSuccess: () => form.reset('password'),
-        });
-    };
-
+function SideContent() {
     return (
-        <>
-            <Head title="Log in" />
-
-            <form onSubmit={submit} noValidate className="flex flex-col gap-6">
-                <div className="grid gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            name="email"
-                            value={form.data.email}
-                            onChange={(event) => {
-                                form.setData('email', event.target.value);
-                                form.clearErrors('email');
-                            }}
-                            autoFocus
-                            tabIndex={1}
-                            autoComplete="email"
-                            placeholder="Enter email address"
-                        />
-                        <InputError message={form.errors.email} />
-                    </div>
-
-                    <div className="grid gap-2">
-                        <div className="flex items-center">
-                            <Label htmlFor="password">Password</Label>
-                            {canResetPassword && (
-                                <TextLink
-                                    href={request()}
-                                    className="ml-auto text-sm"
-                                    tabIndex={5}
-                                >
-                                    Forgot your password?
-                                </TextLink>
-                            )}
-                        </div>
-                        <PasswordInput
-                            id="password"
-                            name="password"
-                            value={form.data.password}
-                            onChange={(event) => {
-                                form.setData('password', event.target.value);
-                                form.clearErrors('password');
-                            }}
-                            tabIndex={2}
-                            autoComplete="current-password"
-                            placeholder="Enter Password"
-                        />
-                        <InputError message={form.errors.password} />
-                    </div>
-
-                    <Button
-                        type="submit"
-                        className="mt-4 w-full"
-                        tabIndex={4}
-                        disabled={form.processing}
-                        data-test="login-button"
-                    >
-                        {form.processing && <Spinner />}
-                        Log in
-                    </Button>
-                </div>
-
-                <div className="text-center text-sm text-muted-foreground">
-                    Don't have an account?{' '}
-                    <TextLink href={register()} tabIndex={5}>
-                        Sign up
-                    </TextLink>
-                </div>
-            </form>
-        </>
-    );
-}
-
-Login.layout = {
-    title: 'JobTrackr',
-    description: 'Sign in to continue managing your job search.',
-    sidePosition: 'left',
-    side: (
         <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl ring-1 shadow-black/20 ring-white/10 sm:p-8 lg:min-h-[500px]">
             <div className="space-y-3">
                 <p className="text-sm font-medium text-[#f3c76a]">
@@ -192,5 +73,138 @@ Login.layout = {
                 </div>
             </div>
         </div>
-    ),
+    );
+}
+
+export default function Login({ status, canResetPassword, csrfToken }: Props) {
+    const form = useForm<LoginForm>({
+        email: '',
+        password: '',
+    });
+
+    useEffect(() => {
+        if (status) {
+            toast.success(status);
+        }
+    }, [status]);
+
+    const submit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        form.clearErrors();
+
+        const email = form.data.email.trim();
+        let hasErrors = false;
+
+        if (!email) {
+            form.setError('email', 'Email address is required.');
+            hasErrors = true;
+        } else if (!emailPattern.test(email)) {
+            form.setError('email', 'Enter a valid email address.');
+            hasErrors = true;
+        }
+
+        if (!form.data.password) {
+            form.setError('password', 'Password is required.');
+            hasErrors = true;
+        }
+
+        if (hasErrors) {
+            return;
+        }
+
+        form.post(store.url(), {
+            onSuccess: () => form.reset('password'),
+        });
+    };
+
+    return (
+        <>
+            <Head title="Log in" />
+
+            <form
+                action={store.url()}
+                method="post"
+                onSubmit={submit}
+                noValidate
+                className="flex flex-col gap-6"
+            >
+                <input type="hidden" name="_token" value={csrfToken} />
+                <div className="grid gap-6">
+                    <div className="grid gap-2">
+                        <Label htmlFor="email">Email address</Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            name="email"
+                            value={form.data.email}
+                            onChange={(event) => {
+                                form.setData('email', event.target.value);
+                                form.clearErrors('email');
+                            }}
+                            autoFocus
+                            tabIndex={1}
+                            autoComplete="email"
+                            placeholder="Enter email address"
+                            aria-invalid={!!form.errors.email}
+                        />
+                        <InputError message={form.errors.email} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <div className="flex items-center">
+                            <Label htmlFor="password">Password</Label>
+                            {canResetPassword && (
+                                <TextLink
+                                    href={request()}
+                                    className="ml-auto text-sm"
+                                    tabIndex={5}
+                                >
+                                    Forgot your password?
+                                </TextLink>
+                            )}
+                        </div>
+                        <PasswordInput
+                            id="password"
+                            name="password"
+                            value={form.data.password}
+                            onChange={(event) => {
+                                form.setData('password', event.target.value);
+                                form.clearErrors('password');
+                            }}
+                            tabIndex={2}
+                            autoComplete="current-password"
+                            placeholder="Enter Password"
+                            aria-invalid={!!form.errors.password}
+                        />
+                        <InputError message={form.errors.password} />
+                    </div>
+
+                    <Button
+                        type="submit"
+                        className="mt-4 w-full"
+                        tabIndex={4}
+                        disabled={form.processing}
+                        data-test="login-button"
+                    >
+                        {form.processing && <Spinner />}
+                        Log in
+                    </Button>
+                </div>
+
+                <div className="text-center text-sm text-muted-foreground">
+                    Don't have an account?{' '}
+                    <TextLink href={register()} tabIndex={5}>
+                        Sign up
+                    </TextLink>
+                </div>
+            </form>
+        </>
+    );
+}
+
+Login.layout = {
+    title: 'JobTrackr',
+    description: 'Sign in to continue managing your job search.',
+    sidePosition: 'left',
+    side: <SideContent />,
 };

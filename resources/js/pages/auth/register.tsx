@@ -13,6 +13,7 @@ import { store } from '@/routes/register';
 
 type Props = {
     passwordRules: string;
+    csrfToken: string;
 };
 
 type RegisterForm = {
@@ -23,7 +24,58 @@ type RegisterForm = {
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function Register({ passwordRules }: Props) {
+// Shared side panel content — reused in the mobile dialog
+function SideContent() {
+    return (
+        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl ring-1 shadow-black/20 ring-white/10 sm:p-8 lg:min-h-[500px]">
+            <div className="space-y-3">
+                <p className="text-sm font-medium text-[#f3c76a]">
+                    Account setup
+                </p>
+                <h2 className="text-3xl font-semibold">
+                    Start with a clean system for every opportunity.
+                </h2>
+                <p className="text-white/70">
+                    Create your account, set your password, then begin tracking
+                    roles, interviews, reminders, and decisions.
+                </p>
+            </div>
+
+            <div className="space-y-3 text-sm">
+                <div className="flex gap-3">
+                    <MailCheck className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Verify your email</p>
+                        <p className="text-white/65">
+                            Confirm your address before opening your workspace.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <ShieldCheck className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Protect your access</p>
+                        <p className="text-white/65">
+                            Choose a password that keeps your job search data
+                            secure.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <ListTodo className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Build your pipeline</p>
+                        <p className="text-white/65">
+                            Add applications and keep the next action visible.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function Register({ passwordRules, csrfToken }: Props) {
     const form = useForm<RegisterForm>({
         email: '',
         password: '',
@@ -77,6 +129,7 @@ export default function Register({ passwordRules }: Props) {
         }));
 
         form.post(store.url(), {
+            preserveScroll: true,
             onSuccess: () => form.reset('password', 'password_confirmation'),
         });
     };
@@ -84,7 +137,15 @@ export default function Register({ passwordRules }: Props) {
     return (
         <>
             <Head title="Register" />
-            <form onSubmit={submit} noValidate className="flex flex-col gap-6">
+
+            <form
+                action={store.url()}
+                method="post"
+                onSubmit={submit}
+                noValidate
+                className="flex flex-col gap-6"
+            >
+                <input type="hidden" name="_token" value={csrfToken} />
                 <div className="grid gap-6">
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email address</Label>
@@ -101,6 +162,7 @@ export default function Register({ passwordRules }: Props) {
                                 form.clearErrors('email');
                             }}
                             placeholder="email@example.com"
+                            aria-invalid={!!form.errors.email}
                         />
                         <InputError message={form.errors.email} />
                     </div>
@@ -122,6 +184,7 @@ export default function Register({ passwordRules }: Props) {
                             }}
                             placeholder="Password"
                             passwordrules={passwordRules}
+                            aria-invalid={!!form.errors.password}
                         />
                         <InputError message={form.errors.password} />
                     </div>
@@ -145,6 +208,7 @@ export default function Register({ passwordRules }: Props) {
                             }}
                             placeholder="Confirm password"
                             passwordrules={passwordRules}
+                            aria-invalid={!!form.errors.password_confirmation}
                         />
                         <InputError
                             message={form.errors.password_confirmation}
@@ -178,51 +242,5 @@ Register.layout = {
     title: 'Register to JobTrackr',
     description: 'Create your account to start tracking applications.',
     sidePosition: 'right',
-    side: (
-        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl ring-1 shadow-black/20 ring-white/10 sm:p-8 lg:min-h-[500px]">
-            <div className="space-y-3">
-                <p className="text-sm font-medium text-[#f3c76a]">
-                    Account setup
-                </p>
-                <h2 className="text-3xl font-semibold">
-                    Start with a clean system for every opportunity.
-                </h2>
-                <p className="text-white/70">
-                    Create your account, set your password, then begin tracking
-                    roles, interviews, reminders, and decisions.
-                </p>
-            </div>
-
-            <div className="space-y-3 text-sm">
-                <div className="flex gap-3">
-                    <MailCheck className="mt-0.5 size-5 text-[#f3c76a]" />
-                    <div>
-                        <p className="font-medium">Verify your email</p>
-                        <p className="text-white/65">
-                            Confirm your address before opening your workspace.
-                        </p>
-                    </div>
-                </div>
-                <div className="flex gap-3">
-                    <ShieldCheck className="mt-0.5 size-5 text-[#f3c76a]" />
-                    <div>
-                        <p className="font-medium">Protect your access</p>
-                        <p className="text-white/65">
-                            Choose a password that keeps your job search data
-                            secure.
-                        </p>
-                    </div>
-                </div>
-                <div className="flex gap-3">
-                    <ListTodo className="mt-0.5 size-5 text-[#f3c76a]" />
-                    <div>
-                        <p className="font-medium">Build your pipeline</p>
-                        <p className="text-white/65">
-                            Add applications and keep the next action visible.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    ),
+    side: <SideContent />,
 };
