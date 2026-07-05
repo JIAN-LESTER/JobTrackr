@@ -86,11 +86,13 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
         if (!emailAddress) {
             form.setError('email', 'Email address is required.');
+
             return;
         }
 
         if (!emailPattern.test(emailAddress)) {
             form.setError('email', 'Enter a valid email address.');
+
             return;
         }
 
