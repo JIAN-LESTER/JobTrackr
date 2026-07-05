@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class VerifyEmailController extends Controller
 {
@@ -27,8 +28,9 @@ class VerifyEmailController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Email verified. You can now log in.']);
+
         return redirect()
-            ->route('login')
-            ->with('status', 'Email verified. You can now log in.');
+            ->route('login');
     }
 }
