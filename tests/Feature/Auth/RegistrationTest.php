@@ -28,7 +28,6 @@ class RegistrationTest extends TestCase
     public function test_new_users_can_register()
     {
         $response = $this->post(route('register.store'), [
-            'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -51,7 +50,38 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertGuest();
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors([
+            'email' => 'This email is already taken.',
+        ]);
         $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_users_cannot_register_with_invalid_input()
+    {
+        $response = $this->post(route('register.store'), [
+            'email' => 'not an email',
+            'password' => 'short',
+            'password_confirmation' => 'different',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors(['email', 'password']);
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    public function test_registration_normalizes_email_before_saving()
+    {
+        $response = $this->post(route('register.store'), [
+            'email' => ' TEST@EXAMPLE.COM ',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect('/applications');
+        $this->assertDatabaseHas('users', [
+            'name' => 'test',
+            'email' => 'test@example.com',
+        ]);
     }
 }

@@ -41,7 +41,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $primaryKey = 'user_id';
 
-    protected $appends = ['avatar'];
+    protected $appends = ['avatar', 'id'];
 
     /**
      * Get the attributes that should be cast.
@@ -61,6 +61,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class, 'user_id', 'user_id');
+    }
+
+    public function getIdAttribute(): int|string|null
+    {
+        return $this->getKey();
     }
 
     public function getAvatarAttribute(): ?string
