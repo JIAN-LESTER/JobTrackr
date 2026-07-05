@@ -169,7 +169,9 @@ export default function Register({ passwordRules, csrfToken }: Props) {
                             }}
                             placeholder="email@example.com"
                             aria-invalid={!!emailError}
-                            aria-describedby={emailError ? 'email-error' : undefined}
+                            aria-describedby={
+                                emailError ? 'email-error' : undefined
+                            }
                         />
                         {emailError ? (
                             <p
