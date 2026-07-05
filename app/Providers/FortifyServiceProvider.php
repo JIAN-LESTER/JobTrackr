@@ -12,6 +12,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Contracts\LogoutResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 use Laravel\Fortify\Http\Controllers\RegisteredUserController as FortifyRegisteredUserController;
@@ -24,6 +26,32 @@ class FortifyServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(FortifyRegisteredUserController::class, AppRegisteredUserController::class);
+        $this->app->singleton(LoginResponse::class, fn () => new class implements LoginResponse
+        {
+            public function toResponse($request)
+            {
+                if ($request->wantsJson()) {
+                    return response()->json(['two_factor' => false]);
+                }
+
+                Inertia::flash('toast', ['type' => 'success', 'message' => 'Logged in.']);
+
+                return redirect()->intended(Fortify::redirects('login'));
+            }
+        });
+        $this->app->singleton(LogoutResponse::class, fn () => new class implements LogoutResponse
+        {
+            public function toResponse($request)
+            {
+                if ($request->wantsJson()) {
+                    return response()->json('', 204);
+                }
+
+                Inertia::flash('toast', ['type' => 'success', 'message' => 'Logged out.']);
+
+                return redirect(Fortify::redirects('logout', '/'));
+            }
+        });
     }
 
     /**
