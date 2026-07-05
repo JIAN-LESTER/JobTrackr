@@ -81,6 +81,7 @@ export default function Register({ passwordRules, csrfToken }: Props) {
         password: '',
         password_confirmation: '',
     });
+    const emailError = form.errors.email;
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -130,6 +131,11 @@ export default function Register({ passwordRules, csrfToken }: Props) {
 
         form.post(store.url(), {
             preserveScroll: true,
+            onError: (errors) => {
+                if (errors.email) {
+                    form.setError('email', errors.email);
+                }
+            },
             onSuccess: () => form.reset('password', 'password_confirmation'),
         });
     };
@@ -162,9 +168,17 @@ export default function Register({ passwordRules, csrfToken }: Props) {
                                 form.clearErrors('email');
                             }}
                             placeholder="email@example.com"
-                            aria-invalid={!!form.errors.email}
+                            aria-invalid={!!emailError}
+                            aria-describedby={emailError ? 'email-error' : undefined}
                         />
-                        <InputError message={form.errors.email} />
+                        {emailError ? (
+                            <p
+                                id="email-error"
+                                className="text-sm text-red-600 dark:text-red-400"
+                            >
+                                {emailError}
+                            </p>
+                        ) : null}
                     </div>
 
                     <div className="grid gap-2">
