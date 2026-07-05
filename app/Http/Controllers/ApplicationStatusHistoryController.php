@@ -83,6 +83,8 @@ class ApplicationStatusHistoryController extends Controller
         $statusHistory->delete();
 
         if (request()->header('X-Inertia')) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Timeline update deleted.']);
+
             return back();
         }
 
@@ -96,6 +98,8 @@ class ApplicationStatusHistoryController extends Controller
             ->delete();
 
         if ($request->header('X-Inertia')) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Timeline cleared.']);
+
             return back();
         }
 

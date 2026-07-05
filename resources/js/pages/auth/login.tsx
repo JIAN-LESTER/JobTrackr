@@ -1,8 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Bell, BriefcaseBusiness, History } from 'lucide-react';
-import { useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -15,7 +13,6 @@ import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
 type Props = {
-    status?: string;
     canResetPassword: boolean;
     csrfToken: string;
 };
@@ -76,17 +73,11 @@ function SideContent() {
     );
 }
 
-export default function Login({ status, canResetPassword, csrfToken }: Props) {
+export default function Login({ canResetPassword, csrfToken }: Props) {
     const form = useForm<LoginForm>({
         email: '',
         password: '',
     });
-
-    useEffect(() => {
-        if (status) {
-            toast.success(status);
-        }
-    }, [status]);
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();

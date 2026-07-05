@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
@@ -22,6 +23,12 @@ class CreateNewUser implements CreatesNewUsers
     public function create(array $input): User
     {
         $input['email'] = Str::lower(trim((string) Arr::get($input, 'email', '')));
+
+        if (User::query()->whereRaw('LOWER(TRIM(email)) = ?', [$input['email']])->exists()) {
+            throw ValidationException::withMessages([
+                'email' => 'This email is already taken.',
+            ]);
+        }
 
         Validator::make($input, [
             'email' => [

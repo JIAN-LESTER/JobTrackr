@@ -3,6 +3,7 @@
 use App\Http\Controllers\ApplicationContactController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationStatusHistoryController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\LogController;
@@ -14,6 +15,10 @@ use App\Http\Middleware\EnsureOnboardingIsComplete;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/applications')->name('home');
+
+Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('verification.verify');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('onboarding', [OnboardingController::class, 'edit'])->name('onboarding.edit');
