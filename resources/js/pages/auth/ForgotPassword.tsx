@@ -1,7 +1,6 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { KeyRound, MailCheck, ShieldCheck } from 'lucide-react';
-import { useEffect } from 'react';
-import type { FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -16,7 +15,18 @@ type ForgotPasswordForm = {
     email: string;
 };
 
+type ForgotPasswordErrors = {
+    email?: string;
+    default?: ForgotPasswordErrors;
+};
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const forgotPasswordErrorMessage = (errors?: ForgotPasswordErrors) => {
+    const source = errors?.default || errors;
+
+    return source?.email || '';
+};
 
 function SideContent() {
     return (
@@ -67,10 +77,33 @@ function SideContent() {
     );
 }
 
-export default function ForgotPassword({ status }: { status?: string }) {
+export default function ForgotPassword({
+    status,
+    forgotPasswordErrors = {},
+}: {
+    status?: string;
+    forgotPasswordErrors?: ForgotPasswordErrors;
+}) {
+    const { errors = {} } =
+        usePage<{ errors?: ForgotPasswordErrors }>().props;
+    const [validationErrors, setValidationErrors] =
+        useState<ForgotPasswordErrors>({});
+    const [serverMessage, setServerMessage] = useState(
+        forgotPasswordErrorMessage(forgotPasswordErrors),
+    );
+    const [serverMessageId, setServerMessageId] = useState(0);
     const form = useForm<ForgotPasswordForm>({
         email: '',
     });
+    const pageErrors = errors.default || errors;
+    const propServerMessage =
+        forgotPasswordErrorMessage(forgotPasswordErrors) ||
+        forgotPasswordErrorMessage(pageErrors);
+
+    const showServerMessage = (message: string) => {
+        setServerMessage(message);
+        setServerMessageId((id) => id + 1);
+    };
 
     useEffect(() => {
         if (status) {
@@ -78,26 +111,63 @@ export default function ForgotPassword({ status }: { status?: string }) {
         }
     }, [status]);
 
+    useEffect(() => {
+        if (!serverMessage) {
+            return;
+        }
+
+        const timeout = window.setTimeout(() => setServerMessage(''), 3000);
+
+        return () => window.clearTimeout(timeout);
+    }, [serverMessage, serverMessageId]);
+
+    useEffect(() => {
+        if (propServerMessage) {
+            showServerMessage(propServerMessage);
+        }
+    }, [propServerMessage]);
+
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.clearErrors();
+        setValidationErrors({});
+        setServerMessage('');
 
         const emailAddress = form.data.email.trim();
 
         if (!emailAddress) {
-            form.setError('email', 'Email address is required.');
+            setValidationErrors({ email: 'Email address is required.' });
 
             return;
         }
 
         if (!emailPattern.test(emailAddress)) {
-            form.setError('email', 'Enter a valid email address.');
+            setValidationErrors({ email: 'Enter a valid email address.' });
 
             return;
         }
 
         form.post(email.url(), {
             data: { email: emailAddress },
+            onError: (errors) => {
+                showServerMessage(
+                    forgotPasswordErrorMessage(errors) ||
+                        'Could not send password reset link.',
+                );
+            },
+            onSuccess: (page) => {
+                const props = page.props as {
+                    errors?: ForgotPasswordErrors;
+                    forgotPasswordErrors?: ForgotPasswordErrors;
+                };
+                const message =
+                    forgotPasswordErrorMessage(props.forgotPasswordErrors) ||
+                    forgotPasswordErrorMessage(props.errors);
+
+                if (message) {
+                    showServerMessage(message);
+                }
+            },
         });
     };
 
@@ -107,6 +177,15 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
             <form onSubmit={submit} noValidate className="flex flex-col gap-6">
                 <div className="grid gap-6">
+                    {serverMessage && (
+                        <div
+                            role="alert"
+                            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300"
+                        >
+                            {serverMessage}
+                        </div>
+                    )}
+
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email address</Label>
                         <Input
@@ -116,15 +195,15 @@ export default function ForgotPassword({ status }: { status?: string }) {
                             value={form.data.email}
                             onChange={(event) => {
                                 form.setData('email', event.target.value);
-                                form.clearErrors('email');
+                                setValidationErrors({});
                             }}
                             autoFocus
                             tabIndex={1}
                             autoComplete="email"
                             placeholder="email@example.com"
-                            aria-invalid={!!form.errors.email}
+                            aria-invalid={!!validationErrors.email}
                         />
-                        <InputError message={form.errors.email} />
+                        <InputError message={validationErrors.email} />
                     </div>
 
                     <Button
