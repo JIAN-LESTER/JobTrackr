@@ -53,7 +53,7 @@ class FortifyServiceProvider extends ServiceProvider
 
                 Inertia::flash('toast', ['type' => 'success', 'message' => 'Logged out.']);
 
-                return redirect(Fortify::redirects('logout', '/'));
+                return redirect()->route('login');
             }
         });
     }
