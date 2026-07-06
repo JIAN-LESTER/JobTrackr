@@ -57,11 +57,27 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->post(route('login.store'), [
+        $response = $this->post(route('login.store'), [
             'email' => $user->email,
             'password' => 'wrong-password',
         ]);
 
+        $response->assertSessionHasErrors([
+            'password' => 'The provided credentials are incorrect.',
+        ]);
+        $this->assertGuest();
+    }
+
+    public function test_users_are_told_when_the_account_does_not_exist()
+    {
+        $response = $this->post(route('login.store'), [
+            'email' => 'missing@example.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors([
+            'email' => 'An account with this email does not exist.',
+        ]);
         $this->assertGuest();
     }
 

@@ -5,11 +5,14 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Controllers\Auth\RegisteredUserController as AppRegisteredUserController;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Laravel\Fortify\Contracts\LoginResponse;
@@ -71,6 +74,26 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+        Fortify::authenticateUsing(function (Request $request): ?User {
+            $email = Str::lower(trim((string) $request->input(Fortify::username(), '')));
+            $user = User::query()
+                ->whereRaw('LOWER(TRIM(email)) = ?', [$email])
+                ->first();
+
+            if (! $user) {
+                throw ValidationException::withMessages([
+                    Fortify::username() => 'An account with this email does not exist.',
+                ]);
+            }
+
+            if (! Hash::check((string) $request->input('password'), $user->password)) {
+                throw ValidationException::withMessages([
+                    'password' => 'The provided credentials are incorrect.',
+                ]);
+            }
+
+            return $user;
+        });
     }
 
     /**
@@ -80,6 +103,10 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
+            'loginErrors' => [
+                'email' => $request->session()->get('errors')?->getBag('default')->first('email') ?: null,
+                'password' => $request->session()->get('errors')?->getBag('default')->first('password') ?: null,
+            ],
             'status' => $request->session()->get('status'),
         ]));
 
