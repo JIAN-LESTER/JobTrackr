@@ -1,4 +1,5 @@
 import AuthLayoutTemplate from '@/layouts/auth/auth-simple-layout';
+import { useFlashToast } from '@/hooks/use-flash-toast';
 
 export default function AuthLayout({
     title = '',
@@ -15,6 +16,8 @@ export default function AuthLayout({
     modalOnly?: boolean;
     children: React.ReactNode;
 }) {
+    useFlashToast();
+
     if (modalOnly) {
         return <>{children}</>;
     }
