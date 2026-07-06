@@ -23,6 +23,74 @@ type RegisterForm = {
 };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const symbolPattern = /[^A-Za-z0-9]/;
+
+type PasswordRequirement = {
+    label: string;
+    met: boolean;
+};
+
+function getMinimumPasswordLength(passwordRules: string): number {
+    const match = passwordRules.match(/min(?:length)?\s*:?\s*(\d+)/i);
+
+    return match ? Number(match[1]) : 8;
+}
+
+function getPasswordRequirements(
+    password: string,
+    passwordRules: string,
+): PasswordRequirement[] {
+    const rules = passwordRules.toLowerCase();
+    const minimumLength = getMinimumPasswordLength(passwordRules);
+    const requirements: PasswordRequirement[] = [
+        {
+            label: `Minimum ${minimumLength} characters`,
+            met: password.length >= minimumLength,
+        },
+    ];
+
+    if (rules.includes('lower')) {
+        requirements.push({
+            label: 'At least 1 lowercase letter',
+            met: /[a-z]/.test(password),
+        });
+    }
+
+    if (rules.includes('upper')) {
+        requirements.push({
+            label: 'At least 1 uppercase letter',
+            met: /[A-Z]/.test(password),
+        });
+    }
+
+    if (rules.includes('digit') || rules.includes('number')) {
+        requirements.push({
+            label: 'At least 1 number',
+            met: /\d/.test(password),
+        });
+    }
+
+    if (
+        rules.includes('symbol') ||
+        rules.includes('special') ||
+        /required\s*:\s*\[[^\]]+\]/.test(rules)
+    ) {
+        requirements.push({
+            label: 'At least 1 special character',
+            met: symbolPattern.test(password),
+        });
+    }
+
+    return requirements;
+}
+
+function PasswordInstructions({ minimumLength }: { minimumLength: number }) {
+    return (
+        <p className="text-sm text-muted-foreground">
+            Use at least {minimumLength} characters and a strong password.
+        </p>
+    );
+}
 
 // Shared side panel content — reused in the mobile dialog
 function SideContent() {
@@ -82,6 +150,14 @@ export default function Register({ passwordRules, csrfToken }: Props) {
         password_confirmation: '',
     });
     const emailError = form.errors.email;
+    const minimumPasswordLength = getMinimumPasswordLength(passwordRules);
+    const passwordRequirements = getPasswordRequirements(
+        form.data.password,
+        passwordRules,
+    );
+    const unmetPasswordRequirements = passwordRequirements.filter(
+        (requirement) => !requirement.met,
+    );
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -101,10 +177,12 @@ export default function Register({ passwordRules, csrfToken }: Props) {
         if (!form.data.password) {
             form.setError('password', 'Password is required.');
             hasErrors = true;
-        } else if (form.data.password.length < 8) {
+        } else if (unmetPasswordRequirements.length > 0) {
             form.setError(
                 'password',
-                'Password must be at least 8 characters.',
+                `Password must satisfy: ${unmetPasswordRequirements
+                    .map((requirement) => requirement.label.toLowerCase())
+                    .join(', ')}.`,
             );
             hasErrors = true;
         }
@@ -169,7 +247,9 @@ export default function Register({ passwordRules, csrfToken }: Props) {
                             }}
                             placeholder="email@example.com"
                             aria-invalid={!!emailError}
-                            aria-describedby={emailError ? 'email-error' : undefined}
+                            aria-describedby={
+                                emailError ? 'email-error' : undefined
+                            }
                         />
                         {emailError ? (
                             <p
@@ -199,6 +279,9 @@ export default function Register({ passwordRules, csrfToken }: Props) {
                             placeholder="Password"
                             passwordrules={passwordRules}
                             aria-invalid={!!form.errors.password}
+                        />
+                        <PasswordInstructions
+                            minimumLength={minimumPasswordLength}
                         />
                         <InputError message={form.errors.password} />
                     </div>

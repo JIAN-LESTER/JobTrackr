@@ -1,6 +1,6 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { Bell, BriefcaseBusiness, History } from 'lucide-react';
-import type { FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -15,6 +15,7 @@ import { request } from '@/routes/password';
 type Props = {
     canResetPassword: boolean;
     csrfToken: string;
+    loginErrors?: LoginErrors;
 };
 
 type LoginForm = {
@@ -22,7 +23,19 @@ type LoginForm = {
     password: string;
 };
 
+type LoginErrors = {
+    email?: string;
+    password?: string;
+    default?: LoginErrors;
+};
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const loginErrorMessage = (errors?: LoginErrors) => {
+    const source = errors?.default || errors;
+
+    return source?.email || source?.password || '';
+};
 
 function SideContent() {
     return (
@@ -73,38 +86,93 @@ function SideContent() {
     );
 }
 
-export default function Login({ canResetPassword, csrfToken }: Props) {
+export default function Login({
+    canResetPassword,
+    csrfToken,
+    loginErrors = {},
+}: Props) {
+    const { errors = {} } = usePage<{ errors?: LoginErrors }>().props;
+    const [validationErrors, setValidationErrors] = useState<LoginErrors>({});
+    const [authMessage, setAuthMessage] = useState(
+        loginErrors.email || loginErrors.password || '',
+    );
+    const [authMessageId, setAuthMessageId] = useState(0);
     const form = useForm<LoginForm>({
         email: '',
         password: '',
     });
+    const pageErrors = errors.default || errors;
+    const propAuthMessage =
+        loginErrorMessage(loginErrors) || loginErrorMessage(pageErrors);
+
+    const showLoginError = (message: string) => {
+        setAuthMessage(message);
+        setAuthMessageId((id) => id + 1);
+    };
+
+    useEffect(() => {
+        if (!authMessage) {
+            return;
+        }
+
+        const timeout = window.setTimeout(() => setAuthMessage(''), 3000);
+
+        return () => window.clearTimeout(timeout);
+    }, [authMessage, authMessageId]);
+
+    useEffect(() => {
+        if (propAuthMessage) {
+            showLoginError(propAuthMessage);
+        }
+    }, [propAuthMessage]);
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.clearErrors();
+        setValidationErrors({});
+        setAuthMessage('');
 
         const email = form.data.email.trim();
-        let hasErrors = false;
+        const nextErrors: LoginErrors = {};
 
         if (!email) {
-            form.setError('email', 'Email address is required.');
-            hasErrors = true;
+            nextErrors.email = 'Email address is required.';
         } else if (!emailPattern.test(email)) {
-            form.setError('email', 'Enter a valid email address.');
-            hasErrors = true;
+            nextErrors.email = 'Enter a valid email address.';
         }
 
         if (!form.data.password) {
-            form.setError('password', 'Password is required.');
-            hasErrors = true;
+            nextErrors.password = 'Password is required.';
         }
 
-        if (hasErrors) {
+        if (nextErrors.email || nextErrors.password) {
+            setValidationErrors(nextErrors);
             return;
         }
 
         form.post(store.url(), {
-            onSuccess: () => form.reset('password'),
+            onError: (errors) => {
+                showLoginError(
+                    loginErrorMessage(errors) ||
+                        'The provided credentials are incorrect.',
+                );
+            },
+            onSuccess: (page) => {
+                const props = page.props as {
+                    errors?: LoginErrors;
+                    loginErrors?: LoginErrors;
+                };
+                const message =
+                    loginErrorMessage(props.loginErrors) ||
+                    loginErrorMessage(props.errors);
+
+                if (message) {
+                    showLoginError(message);
+                    return;
+                }
+
+                form.reset('password');
+            },
         });
     };
 
@@ -121,6 +189,15 @@ export default function Login({ canResetPassword, csrfToken }: Props) {
             >
                 <input type="hidden" name="_token" value={csrfToken} />
                 <div className="grid gap-6">
+                    {authMessage && (
+                        <div
+                            role="alert"
+                            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300"
+                        >
+                            {authMessage}
+                        </div>
+                    )}
+
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email address</Label>
                         <Input
@@ -130,15 +207,18 @@ export default function Login({ canResetPassword, csrfToken }: Props) {
                             value={form.data.email}
                             onChange={(event) => {
                                 form.setData('email', event.target.value);
-                                form.clearErrors('email');
+                                setValidationErrors((errors) => ({
+                                    ...errors,
+                                    email: undefined,
+                                }));
                             }}
                             autoFocus
                             tabIndex={1}
                             autoComplete="email"
                             placeholder="Enter email address"
-                            aria-invalid={!!form.errors.email}
+                            aria-invalid={!!validationErrors.email}
                         />
-                        <InputError message={form.errors.email} />
+                        <InputError message={validationErrors.email} />
                     </div>
 
                     <div className="grid gap-2">
@@ -160,14 +240,17 @@ export default function Login({ canResetPassword, csrfToken }: Props) {
                             value={form.data.password}
                             onChange={(event) => {
                                 form.setData('password', event.target.value);
-                                form.clearErrors('password');
+                                setValidationErrors((errors) => ({
+                                    ...errors,
+                                    password: undefined,
+                                }));
                             }}
                             tabIndex={2}
                             autoComplete="current-password"
                             placeholder="Enter Password"
-                            aria-invalid={!!form.errors.password}
+                            aria-invalid={!!validationErrors.password}
                         />
-                        <InputError message={form.errors.password} />
+                        <InputError message={validationErrors.password} />
                     </div>
 
                     <Button
