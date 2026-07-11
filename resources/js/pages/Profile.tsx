@@ -1,5 +1,5 @@
 import { Form, Head, usePage } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import AppearanceTabs from '@/components/appearance-tabs';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DegreeSelect from '@/components/degree-select';
@@ -436,7 +436,21 @@ export default function Profile() {
                                     description="Manage sign out and account deletion"
                                 />
 
-                                <Form {...logout.form()} className="mt-5">
+                                <Form
+                                    {...logout.form()}
+                                    className="mt-5"
+                                    onSubmit={(
+                                        event: FormEvent<HTMLFormElement>,
+                                    ) => {
+                                        if (
+                                            !window.confirm(
+                                                'Log out of your account?',
+                                            )
+                                        ) {
+                                            event.preventDefault();
+                                        }
+                                    }}
+                                >
                                     {({ processing }) => (
                                         <Button
                                             type="submit"

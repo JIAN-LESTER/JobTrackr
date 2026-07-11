@@ -1,6 +1,6 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { ListTodo, MailCheck, ShieldCheck } from 'lucide-react';
-import type { FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -14,12 +14,20 @@ import { store } from '@/routes/register';
 type Props = {
     passwordRules: string;
     csrfToken: string;
+    registerErrors?: RegisterErrors;
 };
 
 type RegisterForm = {
     email: string;
     password: string;
     password_confirmation: string;
+};
+
+type RegisterErrors = {
+    email?: string;
+    password?: string;
+    password_confirmation?: string;
+    default?: RegisterErrors;
 };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -92,6 +100,17 @@ function PasswordInstructions({ minimumLength }: { minimumLength: number }) {
     );
 }
 
+const registerErrorMessage = (errors?: RegisterErrors) => {
+    const source = errors?.default || errors;
+
+    return (
+        source?.email ||
+        source?.password ||
+        source?.password_confirmation ||
+        ''
+    );
+};
+
 // Shared side panel content — reused in the mobile dialog
 function SideContent() {
     return (
@@ -143,13 +162,27 @@ function SideContent() {
     );
 }
 
-export default function Register({ passwordRules, csrfToken }: Props) {
+export default function Register({
+    passwordRules,
+    csrfToken,
+    registerErrors = {},
+}: Props) {
+    const { errors = {} } = usePage<{ errors?: RegisterErrors }>().props;
+    const [validationErrors, setValidationErrors] = useState<RegisterErrors>(
+        {},
+    );
+    const [serverMessage, setServerMessage] = useState(
+        registerErrorMessage(registerErrors),
+    );
+    const [serverMessageId, setServerMessageId] = useState(0);
     const form = useForm<RegisterForm>({
         email: '',
         password: '',
         password_confirmation: '',
     });
-    const emailError = form.errors.email;
+    const pageErrors = errors.default || errors;
+    const propServerMessage =
+        registerErrorMessage(registerErrors) || registerErrorMessage(pageErrors);
     const minimumPasswordLength = getMinimumPasswordLength(passwordRules);
     const passwordRequirements = getPasswordRequirements(
         form.data.password,
@@ -159,46 +192,63 @@ export default function Register({ passwordRules, csrfToken }: Props) {
         (requirement) => !requirement.met,
     );
 
+    const showServerMessage = (message: string) => {
+        setServerMessage(message);
+        setServerMessageId((id) => id + 1);
+    };
+
+    useEffect(() => {
+        if (!serverMessage) {
+            return;
+        }
+
+        const timeout = window.setTimeout(() => setServerMessage(''), 3000);
+
+        return () => window.clearTimeout(timeout);
+    }, [serverMessage, serverMessageId]);
+
+    useEffect(() => {
+        if (propServerMessage) {
+            showServerMessage(propServerMessage);
+        }
+    }, [propServerMessage]);
+
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.clearErrors();
+        setValidationErrors({});
+        setServerMessage('');
 
         const email = form.data.email.trim();
-        let hasErrors = false;
+        const nextErrors: RegisterErrors = {};
 
         if (!email) {
-            form.setError('email', 'Email address is required.');
-            hasErrors = true;
+            nextErrors.email = 'Email address is required.';
         } else if (!emailPattern.test(email)) {
-            form.setError('email', 'Enter a valid email address.');
-            hasErrors = true;
+            nextErrors.email = 'Enter a valid email address.';
         }
 
         if (!form.data.password) {
-            form.setError('password', 'Password is required.');
-            hasErrors = true;
+            nextErrors.password = 'Password is required.';
         } else if (unmetPasswordRequirements.length > 0) {
-            form.setError(
-                'password',
-                `Password must satisfy: ${unmetPasswordRequirements
+            nextErrors.password = `Password must satisfy: ${unmetPasswordRequirements
                     .map((requirement) => requirement.label.toLowerCase())
-                    .join(', ')}.`,
-            );
-            hasErrors = true;
+                    .join(', ')}.`;
         }
 
         if (!form.data.password_confirmation) {
-            form.setError('password_confirmation', 'Confirm your password.');
-            hasErrors = true;
+            nextErrors.password_confirmation = 'Confirm your password.';
         } else if (form.data.password_confirmation !== form.data.password) {
-            form.setError(
-                'password_confirmation',
-                'Password confirmation does not match.',
-            );
-            hasErrors = true;
+            nextErrors.password_confirmation =
+                'Password confirmation does not match.';
         }
 
-        if (hasErrors) {
+        if (
+            nextErrors.email ||
+            nextErrors.password ||
+            nextErrors.password_confirmation
+        ) {
+            setValidationErrors(nextErrors);
             return;
         }
 
@@ -210,11 +260,26 @@ export default function Register({ passwordRules, csrfToken }: Props) {
         form.post(store.url(), {
             preserveScroll: true,
             onError: (errors) => {
-                if (errors.email) {
-                    form.setError('email', errors.email);
-                }
+                showServerMessage(
+                    registerErrorMessage(errors) || 'Could not create account.',
+                );
             },
-            onSuccess: () => form.reset('password', 'password_confirmation'),
+            onSuccess: (page) => {
+                const props = page.props as {
+                    errors?: RegisterErrors;
+                    registerErrors?: RegisterErrors;
+                };
+                const message =
+                    registerErrorMessage(props.registerErrors) ||
+                    registerErrorMessage(props.errors);
+
+                if (message) {
+                    showServerMessage(message);
+                    return;
+                }
+
+                form.reset('password', 'password_confirmation');
+            },
         });
     };
 
@@ -231,6 +296,15 @@ export default function Register({ passwordRules, csrfToken }: Props) {
             >
                 <input type="hidden" name="_token" value={csrfToken} />
                 <div className="grid gap-6">
+                    {serverMessage && (
+                        <div
+                            role="alert"
+                            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-300"
+                        >
+                            {serverMessage}
+                        </div>
+                    )}
+
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email address</Label>
                         <Input
@@ -243,20 +317,25 @@ export default function Register({ passwordRules, csrfToken }: Props) {
                             value={form.data.email}
                             onChange={(event) => {
                                 form.setData('email', event.target.value);
-                                form.clearErrors('email');
+                                setValidationErrors((errors) => ({
+                                    ...errors,
+                                    email: undefined,
+                                }));
                             }}
                             placeholder="email@example.com"
-                            aria-invalid={!!emailError}
+                            aria-invalid={!!validationErrors.email}
                             aria-describedby={
-                                emailError ? 'email-error' : undefined
+                                validationErrors.email
+                                    ? 'email-error'
+                                    : undefined
                             }
                         />
-                        {emailError ? (
+                        {validationErrors.email ? (
                             <p
                                 id="email-error"
                                 className="text-sm text-red-600 dark:text-red-400"
                             >
-                                {emailError}
+                                {validationErrors.email}
                             </p>
                         ) : null}
                     </div>
@@ -271,19 +350,20 @@ export default function Register({ passwordRules, csrfToken }: Props) {
                             value={form.data.password}
                             onChange={(event) => {
                                 form.setData('password', event.target.value);
-                                form.clearErrors(
-                                    'password',
-                                    'password_confirmation',
-                                );
+                                setValidationErrors((errors) => ({
+                                    ...errors,
+                                    password: undefined,
+                                    password_confirmation: undefined,
+                                }));
                             }}
                             placeholder="Password"
                             passwordrules={passwordRules}
-                            aria-invalid={!!form.errors.password}
+                            aria-invalid={!!validationErrors.password}
                         />
                         <PasswordInstructions
                             minimumLength={minimumPasswordLength}
                         />
-                        <InputError message={form.errors.password} />
+                        <InputError message={validationErrors.password} />
                     </div>
 
                     <div className="grid gap-2">
@@ -301,14 +381,19 @@ export default function Register({ passwordRules, csrfToken }: Props) {
                                     'password_confirmation',
                                     event.target.value,
                                 );
-                                form.clearErrors('password_confirmation');
+                                setValidationErrors((errors) => ({
+                                    ...errors,
+                                    password_confirmation: undefined,
+                                }));
                             }}
                             placeholder="Confirm password"
                             passwordrules={passwordRules}
-                            aria-invalid={!!form.errors.password_confirmation}
+                            aria-invalid={
+                                !!validationErrors.password_confirmation
+                            }
                         />
                         <InputError
-                            message={form.errors.password_confirmation}
+                            message={validationErrors.password_confirmation}
                         />
                     </div>
 

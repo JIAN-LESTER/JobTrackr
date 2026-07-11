@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RegisteredUserController as AppRegisteredUserContr
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -52,7 +53,7 @@ class FortifyServiceProvider extends ServiceProvider
 
                 Inertia::flash('toast', ['type' => 'success', 'message' => 'Logged out.']);
 
-                return redirect(Fortify::redirects('logout', '/'));
+                return redirect()->route('login');
             }
         });
     }
@@ -107,6 +108,7 @@ class FortifyServiceProvider extends ServiceProvider
                 'email' => $request->session()->get('errors')?->getBag('default')->first('email') ?: null,
                 'password' => $request->session()->get('errors')?->getBag('default')->first('password') ?: null,
             ],
+            'emailVerificationMessage' => $request->session()->get('emailVerificationMessage'),
             'status' => $request->session()->get('status'),
         ]));
 
@@ -117,16 +119,36 @@ class FortifyServiceProvider extends ServiceProvider
         ]));
 
         Fortify::requestPasswordResetLinkView(fn (Request $request) => Inertia::render('auth/ForgotPassword', [
+            'forgotPasswordErrors' => [
+                'email' => $request->session()->get('errors')?->getBag('default')->first('email') ?: null,
+            ],
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::registerView(fn () => Inertia::render('auth/register', [
+        Fortify::registerView(fn (Request $request) => Inertia::render('auth/register', [
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'registerErrors' => [
+                'email' => $request->session()->get('errors')?->getBag('default')->first('email') ?: null,
+                'password' => $request->session()->get('errors')?->getBag('default')->first('password') ?: null,
+                'password_confirmation' => $request->session()->get('errors')?->getBag('default')->first('password_confirmation') ?: null,
+            ],
         ]));
 
-        Fortify::verifyEmailView(fn (Request $request) => Inertia::render('auth/VerifyEmail', [
-            'status' => $request->session()->get('status'),
-        ]));
+        Fortify::verifyEmailView(function (Request $request) {
+            $email = $request->user()?->email;
+
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            $request->session()->flash(
+                'emailVerificationMessage',
+                $email
+                    ? "We've sent a verification link to {$email}. Please verify your email before logging in."
+                    : 'Please verify your email before logging in.'
+            );
+
+            return redirect()->route('login');
+        });
     }
 
     /**

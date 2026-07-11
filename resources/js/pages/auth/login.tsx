@@ -1,10 +1,18 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Bell, BriefcaseBusiness, History } from 'lucide-react';
+import { Bell, BriefcaseBusiness, History, MailCheck } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -15,6 +23,7 @@ import { request } from '@/routes/password';
 type Props = {
     canResetPassword: boolean;
     csrfToken: string;
+    emailVerificationMessage?: string | null;
     loginErrors?: LoginErrors;
 };
 
@@ -89,10 +98,14 @@ function SideContent() {
 export default function Login({
     canResetPassword,
     csrfToken,
+    emailVerificationMessage,
     loginErrors = {},
 }: Props) {
     const { errors = {} } = usePage<{ errors?: LoginErrors }>().props;
     const [validationErrors, setValidationErrors] = useState<LoginErrors>({});
+    const [verificationModalOpen, setVerificationModalOpen] = useState(
+        !!emailVerificationMessage,
+    );
     const [authMessage, setAuthMessage] = useState(
         loginErrors.email || loginErrors.password || '',
     );
@@ -125,6 +138,10 @@ export default function Login({
             showLoginError(propAuthMessage);
         }
     }, [propAuthMessage]);
+
+    useEffect(() => {
+        setVerificationModalOpen(!!emailVerificationMessage);
+    }, [emailVerificationMessage]);
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -179,6 +196,52 @@ export default function Login({
     return (
         <>
             <Head title="Log in" />
+
+            <Dialog
+                open={verificationModalOpen}
+                onOpenChange={setVerificationModalOpen}
+            >
+                <DialogContent className="overflow-hidden p-0 sm:max-w-md">
+                    <div className="border-b bg-[#17201b] px-6 py-5 text-white">
+                        <div className="flex items-center gap-4">
+                            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#f3c76a] text-[#17201b] shadow-sm">
+                                <MailCheck className="size-6" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-[#f3c76a]">
+                                    Account created
+                                </p>
+                                <DialogTitle className="mt-1 text-xl text-white">
+                                    Verify your email
+                                </DialogTitle>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="px-6 pb-6 pt-5">
+                        <DialogHeader>
+                            <DialogDescription className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-left text-sm leading-6 text-green-800 dark:border-green-900/70 dark:bg-green-950/40 dark:text-green-200">
+                                {emailVerificationMessage}
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <p className="mt-4 text-sm text-muted-foreground">
+                            Open the link in your inbox, then return here to log
+                            in.
+                        </p>
+
+                        <DialogFooter className="mt-6">
+                            <Button
+                                type="button"
+                                className="w-full"
+                                onClick={() => setVerificationModalOpen(false)}
+                            >
+                                Back to login
+                            </Button>
+                        </DialogFooter>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <form
                 action={store.url()}
