@@ -1,6 +1,7 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { ListTodo, MailCheck, ShieldCheck } from 'lucide-react';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -104,10 +105,7 @@ const registerErrorMessage = (errors?: RegisterErrors) => {
     const source = errors?.default || errors;
 
     return (
-        source?.email ||
-        source?.password ||
-        source?.password_confirmation ||
-        ''
+        source?.email || source?.password || source?.password_confirmation || ''
     );
 };
 
@@ -171,8 +169,9 @@ export default function Register({
     const [validationErrors, setValidationErrors] = useState<RegisterErrors>(
         {},
     );
+    const pageErrors = errors.default || errors;
     const [serverMessage, setServerMessage] = useState(
-        registerErrorMessage(registerErrors),
+        registerErrorMessage(registerErrors) || registerErrorMessage(pageErrors),
     );
     const [serverMessageId, setServerMessageId] = useState(0);
     const form = useForm<RegisterForm>({
@@ -180,9 +179,6 @@ export default function Register({
         password: '',
         password_confirmation: '',
     });
-    const pageErrors = errors.default || errors;
-    const propServerMessage =
-        registerErrorMessage(registerErrors) || registerErrorMessage(pageErrors);
     const minimumPasswordLength = getMinimumPasswordLength(passwordRules);
     const passwordRequirements = getPasswordRequirements(
         form.data.password,
@@ -207,12 +203,6 @@ export default function Register({
         return () => window.clearTimeout(timeout);
     }, [serverMessage, serverMessageId]);
 
-    useEffect(() => {
-        if (propServerMessage) {
-            showServerMessage(propServerMessage);
-        }
-    }, [propServerMessage]);
-
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.clearErrors();
@@ -232,8 +222,8 @@ export default function Register({
             nextErrors.password = 'Password is required.';
         } else if (unmetPasswordRequirements.length > 0) {
             nextErrors.password = `Password must satisfy: ${unmetPasswordRequirements
-                    .map((requirement) => requirement.label.toLowerCase())
-                    .join(', ')}.`;
+                .map((requirement) => requirement.label.toLowerCase())
+                .join(', ')}.`;
         }
 
         if (!form.data.password_confirmation) {
@@ -249,6 +239,7 @@ export default function Register({
             nextErrors.password_confirmation
         ) {
             setValidationErrors(nextErrors);
+
             return;
         }
 
@@ -275,6 +266,7 @@ export default function Register({
 
                 if (message) {
                     showServerMessage(message);
+
                     return;
                 }
 

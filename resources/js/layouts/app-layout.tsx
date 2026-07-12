@@ -1,5 +1,5 @@
-import AppLayoutTemplate from '@/layouts/app/app-bottom-nav-layout';
 import { useFlashToast } from '@/hooks/use-flash-toast';
+import AppLayoutTemplate from '@/layouts/app/app-bottom-nav-layout';
 import type { BreadcrumbItem } from '@/types';
 
 export default function AppLayout({

@@ -1,6 +1,7 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Bell, BriefcaseBusiness, History, MailCheck } from 'lucide-react';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -106,17 +107,15 @@ export default function Login({
     const [verificationModalOpen, setVerificationModalOpen] = useState(
         !!emailVerificationMessage,
     );
+    const pageErrors = errors.default || errors;
     const [authMessage, setAuthMessage] = useState(
-        loginErrors.email || loginErrors.password || '',
+        loginErrorMessage(loginErrors) || loginErrorMessage(pageErrors),
     );
     const [authMessageId, setAuthMessageId] = useState(0);
     const form = useForm<LoginForm>({
         email: '',
         password: '',
     });
-    const pageErrors = errors.default || errors;
-    const propAuthMessage =
-        loginErrorMessage(loginErrors) || loginErrorMessage(pageErrors);
 
     const showLoginError = (message: string) => {
         setAuthMessage(message);
@@ -132,16 +131,6 @@ export default function Login({
 
         return () => window.clearTimeout(timeout);
     }, [authMessage, authMessageId]);
-
-    useEffect(() => {
-        if (propAuthMessage) {
-            showLoginError(propAuthMessage);
-        }
-    }, [propAuthMessage]);
-
-    useEffect(() => {
-        setVerificationModalOpen(!!emailVerificationMessage);
-    }, [emailVerificationMessage]);
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -164,6 +153,7 @@ export default function Login({
 
         if (nextErrors.email || nextErrors.password) {
             setValidationErrors(nextErrors);
+
             return;
         }
 
@@ -185,6 +175,7 @@ export default function Login({
 
                 if (message) {
                     showLoginError(message);
+
                     return;
                 }
 
@@ -218,7 +209,7 @@ export default function Login({
                         </div>
                     </div>
 
-                    <div className="px-6 pb-6 pt-5">
+                    <div className="px-6 pt-5 pb-6">
                         <DialogHeader>
                             <DialogDescription className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-left text-sm leading-6 text-green-800 dark:border-green-900/70 dark:bg-green-950/40 dark:text-green-200">
                                 {emailVerificationMessage}

@@ -20,9 +20,10 @@ type Props = {
 export function UserMenuContent({ user }: Props) {
     const cleanup = useMobileNavigation();
 
-    const handleLogout = (event: MouseEvent<HTMLElement>) => {
+    const handleLogout = (event: MouseEvent<Element>) => {
         if (!window.confirm('Log out of your account?')) {
             event.preventDefault();
+
             return;
         }
 

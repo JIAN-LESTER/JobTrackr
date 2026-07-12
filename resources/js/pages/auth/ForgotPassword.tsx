@@ -1,6 +1,7 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { KeyRound, MailCheck, ShieldCheck } from 'lucide-react';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -84,21 +85,18 @@ export default function ForgotPassword({
     status?: string;
     forgotPasswordErrors?: ForgotPasswordErrors;
 }) {
-    const { errors = {} } =
-        usePage<{ errors?: ForgotPasswordErrors }>().props;
+    const { errors = {} } = usePage<{ errors?: ForgotPasswordErrors }>().props;
     const [validationErrors, setValidationErrors] =
         useState<ForgotPasswordErrors>({});
+    const pageErrors = errors.default || errors;
     const [serverMessage, setServerMessage] = useState(
-        forgotPasswordErrorMessage(forgotPasswordErrors),
+        forgotPasswordErrorMessage(forgotPasswordErrors) ||
+            forgotPasswordErrorMessage(pageErrors),
     );
     const [serverMessageId, setServerMessageId] = useState(0);
     const form = useForm<ForgotPasswordForm>({
         email: '',
     });
-    const pageErrors = errors.default || errors;
-    const propServerMessage =
-        forgotPasswordErrorMessage(forgotPasswordErrors) ||
-        forgotPasswordErrorMessage(pageErrors);
 
     const showServerMessage = (message: string) => {
         setServerMessage(message);
@@ -121,12 +119,6 @@ export default function ForgotPassword({
         return () => window.clearTimeout(timeout);
     }, [serverMessage, serverMessageId]);
 
-    useEffect(() => {
-        if (propServerMessage) {
-            showServerMessage(propServerMessage);
-        }
-    }, [propServerMessage]);
-
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         form.clearErrors();
@@ -147,8 +139,12 @@ export default function ForgotPassword({
             return;
         }
 
+        form.transform((data) => ({
+            ...data,
+            email: emailAddress,
+        }));
+
         form.post(email.url(), {
-            data: { email: emailAddress },
             onError: (errors) => {
                 showServerMessage(
                     forgotPasswordErrorMessage(errors) ||
