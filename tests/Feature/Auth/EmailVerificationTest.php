@@ -30,6 +30,10 @@ class EmailVerificationTest extends TestCase
         $response = $this->get('https://jobtrackr-sglu.onrender.com'.$pathAndQuery);
 
         $response->assertRedirect(route('login'));
+        $response->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Email verified. You can now log in.',
+        ]);
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
     }
 }
