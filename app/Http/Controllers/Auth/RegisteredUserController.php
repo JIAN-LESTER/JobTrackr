@@ -29,16 +29,11 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user = $creator->create($request->all())));
 
-        Auth::guard('web')->logout();
+        Auth::guard('web')->login($user);
 
-        $request->session()->regenerateToken();
-
-        $request->session()->flash(
-            'emailVerificationMessage',
-            "We've sent a verification link to {$user->email}. Please verify your email before logging in."
-        );
+        $request->session()->regenerate();
 
         return redirect()
-            ->route('login');
+            ->intended(Fortify::redirects('register'));
     }
 }

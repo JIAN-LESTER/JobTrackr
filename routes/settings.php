@@ -13,7 +13,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::redirect('settings/security', '/settings/profile')->name('security.edit');
+    Route::get('settings/security', [SecurityController::class, 'edit'])->name('security.edit');
 
     Route::put('settings/password', [SecurityController::class, 'update'])
         ->middleware('throttle:6,1')

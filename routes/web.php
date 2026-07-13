@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/applications')->name('home');
 
 Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
-    ->middleware(['signed', 'throttle:6,1'])
+    ->middleware(['signed:relative', 'throttle:6,1'])
     ->name('verification.verify');
 
 Route::middleware(['auth', 'verified'])->group(function () {

@@ -17,6 +17,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 use Throwable;
 
 /**
@@ -37,7 +38,7 @@ use Throwable;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     protected $primaryKey = 'user_id';
 
