@@ -41,4 +41,4 @@ RUN npm run build \
     && composer dump-autoload --optimize \
     && chown -R www-data:www-data storage bootstrap/cache
 
-CMD php artisan migrate:fresh --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}

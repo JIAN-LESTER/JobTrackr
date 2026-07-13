@@ -171,7 +171,8 @@ export default function Register({
     );
     const pageErrors = errors.default || errors;
     const [serverMessage, setServerMessage] = useState(
-        registerErrorMessage(registerErrors) || registerErrorMessage(pageErrors),
+        registerErrorMessage(registerErrors) ||
+            registerErrorMessage(pageErrors),
     );
     const [serverMessageId, setServerMessageId] = useState(0);
     const form = useForm<RegisterForm>({
