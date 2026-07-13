@@ -192,7 +192,7 @@ export default function Login({
                 open={verificationModalOpen}
                 onOpenChange={setVerificationModalOpen}
             >
-                <DialogContent className="overflow-hidden p-0 sm:max-w-md [&_[data-slot=dialog-close]]:flex [&_[data-slot=dialog-close]]:size-8 [&_[data-slot=dialog-close]]:items-center [&_[data-slot=dialog-close]]:justify-center [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:bg-white/10 [&_[data-slot=dialog-close]]:text-white [&_[data-slot=dialog-close]]:opacity-100 [&_[data-slot=dialog-close]]:ring-offset-[#17201b] [&_[data-slot=dialog-close]]:hover:bg-white/20">
+                <DialogContent className="overflow-hidden border-0 p-0 sm:max-w-md [&_[data-slot=dialog-close]]:flex [&_[data-slot=dialog-close]]:size-8 [&_[data-slot=dialog-close]]:items-center [&_[data-slot=dialog-close]]:justify-center [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:bg-white/10 [&_[data-slot=dialog-close]]:text-[#f3c76a] [&_[data-slot=dialog-close]]:opacity-100 [&_[data-slot=dialog-close]]:ring-offset-[#17201b] [&_[data-slot=dialog-close]]:hover:bg-white/20 [&_[data-slot=dialog-close]]:hover:text-white">
                     <div className="border-b bg-[#17201b] px-6 py-5 pr-16 text-white">
                         <div className="flex items-center gap-4">
                             <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#f3c76a] text-[#17201b] shadow-sm">
