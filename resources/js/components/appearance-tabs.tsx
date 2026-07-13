@@ -1,45 +1,30 @@
-import type { LucideIcon } from 'lucide-react';
-import { Monitor, Moon, Sun } from 'lucide-react';
-import type { HTMLAttributes } from 'react';
-import type { Appearance } from '@/hooks/use-appearance';
+import { Moon, Sun } from 'lucide-react';
+import type { ButtonHTMLAttributes } from 'react';
 import { useAppearance } from '@/hooks/use-appearance';
 import { cn } from '@/lib/utils';
 
 export default function AppearanceToggleTab({
     className = '',
     ...props
-}: HTMLAttributes<HTMLDivElement>) {
+}: ButtonHTMLAttributes<HTMLButtonElement>) {
     const { appearance, updateAppearance } = useAppearance();
-
-    const tabs: { value: Appearance; icon: LucideIcon; label: string }[] = [
-        { value: 'light', icon: Sun, label: 'Light' },
-        { value: 'dark', icon: Moon, label: 'Dark' },
-        { value: 'system', icon: Monitor, label: 'System' },
-    ];
+    const nextAppearance = appearance === 'dark' ? 'light' : 'dark';
+    const Icon = appearance === 'dark' ? Sun : Moon;
+    const label = `Use ${nextAppearance} theme`;
 
     return (
-        <div
+        <button
+            {...props}
+            type="button"
+            aria-label={label}
+            title={label}
+            onClick={() => updateAppearance(nextAppearance)}
             className={cn(
-                'inline-flex gap-1 rounded-lg bg-neutral-100 p-1 dark:bg-neutral-800',
+                'inline-flex size-9 items-center justify-center text-[#17201b] transition-colors hover:text-[#2f6f4f] focus-visible:ring-2 focus-visible:ring-[#2f6f4f] focus-visible:ring-offset-2 focus-visible:outline-none dark:text-[#f4f8f2] dark:hover:text-[#f3c76a] dark:focus-visible:ring-[#f3c76a] dark:focus-visible:ring-offset-[#0f1713]',
                 className,
             )}
-            {...props}
         >
-            {tabs.map(({ value, icon: Icon, label }) => (
-                <button
-                    key={value}
-                    onClick={() => updateAppearance(value)}
-                    className={cn(
-                        'flex items-center rounded-md px-3.5 py-1.5 transition-colors',
-                        appearance === value
-                            ? 'bg-white shadow-xs dark:bg-neutral-700 dark:text-neutral-100'
-                            : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60',
-                    )}
-                >
-                    <Icon className="-ml-1 h-4 w-4" />
-                    <span className="ml-1.5 text-sm">{label}</span>
-                </button>
-            ))}
-        </div>
+            <Icon className="h-5 w-5" />
+        </button>
     );
 }
