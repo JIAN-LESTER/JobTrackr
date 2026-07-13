@@ -51,7 +51,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'two_factor_secret' => Crypt::encryptString('test-two-factor-secret'),
-            'two_factor_recovery_codes' => Crypt::encryptString(json_encode(['test-recovery-code'])),
+            'two_factor_recovery_codes' => Crypt::encryptString(json_encode(['test-recovery-code'], JSON_THROW_ON_ERROR)),
             'two_factor_confirmed_at' => now(),
         ]);
     }
