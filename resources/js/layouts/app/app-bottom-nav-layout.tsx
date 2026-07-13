@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppContent } from '@/components/app-content';
 import AppLogo from '@/components/app-logo';
+import AppearanceTabs from '@/components/appearance-tabs';
 import { AppShell } from '@/components/app-shell';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
@@ -62,6 +63,8 @@ export default function AppBottomNavLayout({ children }: AppLayoutProps) {
                             );
                         })}
                     </nav>
+
+                    <AppearanceTabs className="ml-auto" />
                 </div>
             </header>
             <AppContent variant="header">
