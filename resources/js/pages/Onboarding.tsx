@@ -44,6 +44,15 @@ type OnboardingStep = {
     icon: typeof BriefcaseBusiness;
 };
 
+type OnboardingDraftField = keyof Omit<OnboardingForm, 'photo'>;
+
+type OnboardingDraftData = Partial<Record<OnboardingDraftField, string>>;
+
+type OnboardingDraft = {
+    data: OnboardingDraftData;
+    step: number;
+};
+
 const maxPhotoSize = 2048 * 1024;
 
 const industries = [
@@ -77,7 +86,111 @@ const onboardingSteps: OnboardingStep[] = [
     },
 ];
 
+const onboardingDraftKey = (userId: number | string) =>
+    `jobtrackr:onboarding-draft:${userId}`;
+
+const onboardingDraftFields = [
+    'first_name',
+    'last_name',
+    'industry',
+    'job_title',
+    'location',
+    'education_school',
+    'education_degree',
+    'education_program',
+    'avatar_preset',
+] as const satisfies readonly OnboardingDraftField[];
+
 const requiredMessage = (label: string) => `${label} is required.`;
+
+const normalizeStep = (value: unknown) =>
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value < onboardingSteps.length
+        ? value
+        : 0;
+
+const readOnboardingDraft = (draftKey: string): OnboardingDraft | null => {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    try {
+        const storedDraft = window.sessionStorage.getItem(draftKey);
+
+        if (!storedDraft) {
+            return null;
+        }
+
+        const parsedDraft = JSON.parse(storedDraft) as {
+            data?: Record<string, unknown>;
+            step?: unknown;
+        };
+        const data = onboardingDraftFields.reduce<OnboardingDraftData>(
+            (draftData, field) => {
+                const value = parsedDraft.data?.[field];
+
+                if (typeof value === 'string') {
+                    draftData[field] = value;
+                }
+
+                return draftData;
+            },
+            {},
+        );
+
+        return {
+            data,
+            step: normalizeStep(parsedDraft.step),
+        };
+    } catch {
+        return null;
+    }
+};
+
+const writeOnboardingDraft = (
+    draftKey: string,
+    data: OnboardingForm,
+    step: number,
+) => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    const draftData = onboardingDraftFields.reduce<OnboardingDraftData>(
+        (persistedData, field) => {
+            persistedData[field] = data[field];
+
+            return persistedData;
+        },
+        {},
+    );
+
+    try {
+        window.sessionStorage.setItem(
+            draftKey,
+            JSON.stringify({
+                data: draftData,
+                step,
+            }),
+        );
+    } catch {
+        // Browsers may block session storage in private or restricted modes.
+    }
+};
+
+const clearOnboardingDraft = (draftKey: string) => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        window.sessionStorage.removeItem(draftKey);
+    } catch {
+        // Browsers may block session storage in private or restricted modes.
+    }
+};
 
 const validateOnboardingForm = (
     data: OnboardingForm,
@@ -141,13 +254,15 @@ const validateOnboardingForm = (
 };
 
 export default function Onboarding({ user }: Props) {
-    const [step, setStep] = useState(0);
+    const draftKey = onboardingDraftKey(user.id);
+    const [draft] = useState(() => readOnboardingDraft(draftKey));
+    const [step, setStep] = useState(() => draft?.step ?? 0);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [validationErrors, setValidationErrors] =
         useState<OnboardingValidationErrors>({});
     const photoInputRef = useRef<HTMLInputElement>(null);
     const [firstName = '', ...otherNames] = user.name.split(' ');
-    const form = useForm<OnboardingForm>({
+    const defaultFormData: OnboardingForm = {
         first_name: firstName,
         last_name: otherNames.join(' '),
         industry: user.industry || '',
@@ -157,6 +272,11 @@ export default function Onboarding({ user }: Props) {
         education_degree: user.education_degree || '',
         education_program: user.education_program || '',
         avatar_preset: user.avatar_preset || 'career-mark',
+        photo: null,
+    };
+    const form = useForm<OnboardingForm>({
+        ...defaultFormData,
+        ...draft?.data,
         photo: null,
     });
     const avatarFallback =
@@ -175,6 +295,10 @@ export default function Onboarding({ user }: Props) {
             }
         };
     }, [photoPreview]);
+
+    useEffect(() => {
+        writeOnboardingDraft(draftKey, form.data, step);
+    }, [draftKey, form.data, step]);
 
     const setFormData = (
         field: keyof OnboardingForm,
@@ -213,6 +337,7 @@ export default function Onboarding({ user }: Props) {
 
         form.post('/onboarding', {
             forceFormData: true,
+            onSuccess: () => clearOnboardingDraft(draftKey),
         });
     };
 
