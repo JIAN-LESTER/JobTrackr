@@ -75,7 +75,7 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
-        Fortify::authenticateUsing(function (Request $request): ?User {
+        Fortify::authenticateUsing(function (Request $request): User {
             $email = Str::lower(trim((string) $request->input(Fortify::username(), '')));
             $user = User::query()
                 ->whereRaw('LOWER(TRIM(email)) = ?', [$email])
