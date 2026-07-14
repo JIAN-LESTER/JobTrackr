@@ -860,6 +860,7 @@ export default function AnalyzeResume({
 
                         <Button
                             type="submit"
+                            className="bg-[#17201b] text-[#f4f8f2] hover:bg-[#2d3b31] dark:bg-[#f3c76a] dark:text-[#17201b] dark:hover:bg-[#e0b657]"
                             disabled={
                                 form.processing ||
                                 !applications.length ||
@@ -927,22 +928,28 @@ function StatusMetric({
     detail?: string;
     emphasized?: boolean;
 }) {
+    const helperClassName = emphasized
+        ? 'text-[#dbe7df] dark:text-[#5c4a16]'
+        : 'text-muted-foreground';
+
     return (
         <div
             className={`rounded-sm px-3 py-2 ${
                 emphasized
-                    ? 'bg-[#dcefe4] text-[#24543d] dark:bg-[#2f6f4f]/25 dark:text-[#b8e6ca]'
+                    ? 'bg-[#17201b] text-[#f4f8f2] dark:bg-[#f3c76a] dark:text-[#17201b]'
                     : 'bg-[#f8faf7] text-foreground dark:bg-[#16231c]'
             }`}
         >
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <p
+                className={`text-[11px] font-medium uppercase tracking-wide ${helperClassName}`}
+            >
                 {label}
             </p>
             <p className="mt-0.5 text-base font-semibold leading-none">
                 {value}
             </p>
             {detail ? (
-                <p className="mt-1 text-[11px] text-muted-foreground">
+                <p className={`mt-1 text-[11px] ${helperClassName}`}>
                     {detail}
                 </p>
             ) : null}
@@ -976,7 +983,7 @@ function SegmentedControl<T extends string>({
                         onClick={() => onChange(option.value)}
                         className={`min-h-8 flex-1 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${
                             isSelected
-                                ? 'bg-[#2f6f4f] text-white shadow-xs dark:bg-[#7cc492] dark:text-[#0f1713]'
+                                ? 'bg-[#17201b] text-[#f4f8f2] shadow-xs dark:bg-[#f3c76a] dark:text-[#17201b]'
                                 : 'text-muted-foreground hover:bg-[#e6f2ea] hover:text-foreground dark:hover:bg-[#203529]'
                         } ${
                             option.disabled
@@ -1026,7 +1033,7 @@ function AnalysisCard({
                     ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                    <div className="whitespace-nowrap rounded-full bg-[#dcefe4] px-3 py-2 text-sm font-semibold text-[#24543d] dark:bg-[#2f6f4f]/25 dark:text-[#b8e6ca]">
+                    <div className="whitespace-nowrap rounded-full bg-[#17201b] px-3 py-2 text-sm font-semibold text-[#f4f8f2] dark:bg-[#f3c76a] dark:text-[#17201b]">
                         {item.match_score}% match
                     </div>
                     <ChevronDown
