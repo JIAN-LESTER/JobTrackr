@@ -2,8 +2,6 @@ import { Form, Head, usePage } from '@inertiajs/react';
 import { FileText, Image } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DegreeSelect from '@/components/degree-select';
 import DeleteUser from '@/components/delete-user';
@@ -15,9 +13,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useInitials } from '@/hooks/use-initials';
+import type { Auth } from '@/types';
+import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
+import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
-import type { Auth } from '@/types';
 
 type PageProps = {
     auth?: Auth;

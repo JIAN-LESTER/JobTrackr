@@ -602,7 +602,9 @@ class ResumeAnalysisController extends Controller
         $value = preg_replace_callback('/\\\\([0-7]{1,3}|.)/s', function (array $matches) {
             $escaped = $matches[1];
             if (preg_match('/^[0-7]{1,3}$/', $escaped)) {
-                return chr((int) octdec($escaped));
+                $codepoint = (int) octdec($escaped);
+
+                return $codepoint >= 0 && $codepoint <= 255 ? chr($codepoint) : '';
             }
 
             return match ($escaped) {
