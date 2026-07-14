@@ -1,5 +1,9 @@
 import { Head, useForm } from '@inertiajs/react';
-import { BriefcaseBusiness, Camera, GraduationCap } from 'lucide-react';
+import {
+    BriefcaseBusiness,
+    FileText,
+    GraduationCap,
+} from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
@@ -35,6 +39,7 @@ type OnboardingForm = {
     education_program: string;
     avatar_preset: string;
     photo: File | null;
+    resume: File | null;
 };
 
 type OnboardingValidationErrors = Partial<Record<keyof OnboardingForm, string>>;
@@ -44,7 +49,7 @@ type OnboardingStep = {
     icon: typeof BriefcaseBusiness;
 };
 
-type OnboardingDraftField = keyof Omit<OnboardingForm, 'photo'>;
+type OnboardingDraftField = keyof Omit<OnboardingForm, 'photo' | 'resume'>;
 
 type OnboardingDraftData = Partial<Record<OnboardingDraftField, string>>;
 
@@ -54,6 +59,8 @@ type OnboardingDraft = {
 };
 
 const maxPhotoSize = 2048 * 1024;
+const maxResumeSize = 5120 * 1024;
+const resumeExtensions = ['pdf', 'doc', 'docx'];
 
 const industries = [
     'Accounting',
@@ -81,8 +88,8 @@ const onboardingSteps: OnboardingStep[] = [
         icon: GraduationCap,
     },
     {
-        label: 'Picture',
-        icon: Camera,
+        label: 'Documents',
+        icon: FileText,
     },
 ];
 
@@ -250,6 +257,18 @@ const validateOnboardingForm = (
         }
     }
 
+    if (step === 2 && data.resume) {
+        const extension = data.resume.name.split('.').pop()?.toLowerCase();
+
+        if (!extension || !resumeExtensions.includes(extension)) {
+            errors.resume = 'Resume must be a PDF, DOC, or DOCX file.';
+        }
+
+        if (data.resume.size > maxResumeSize) {
+            errors.resume = 'Resume must be 5 MB or smaller.';
+        }
+    }
+
     return errors;
 };
 
@@ -273,11 +292,13 @@ export default function Onboarding({ user }: Props) {
         education_program: user.education_program || '',
         avatar_preset: user.avatar_preset || 'career-mark',
         photo: null,
+        resume: null,
     };
     const form = useForm<OnboardingForm>({
         ...defaultFormData,
         ...draft?.data,
         photo: null,
+        resume: null,
     });
     const avatarFallback =
         `${form.data.first_name.charAt(0)}${form.data.last_name.charAt(0)}`.toUpperCase() ||
@@ -653,6 +674,31 @@ export default function Onboarding({ user }: Props) {
                                             message={fieldError(
                                                 'avatar_preset',
                                             )}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="resume">Resume</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                id="resume"
+                                                type="file"
+                                                accept=".pdf,.doc,.docx"
+                                                onChange={(event) =>
+                                                    setFormData(
+                                                        'resume',
+                                                        event.target.files?.[0] ??
+                                                            null,
+                                                    )
+                                                }
+                                            />
+                                            <FileText className="size-5 shrink-0 text-muted-foreground" />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            PDF, DOC, or DOCX. Maximum 5 MB.
+                                        </p>
+                                        <InputError
+                                            message={fieldError('resume')}
                                         />
                                     </div>
                                 </div>

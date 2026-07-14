@@ -16,12 +16,12 @@ const navItems = [
         href: '/applications',
     },
     {
-        title: 'Reminders',
-        href: '/reminders',
+        title: 'Analyze resume',
+        href: '/analyze-resume',
     },
     {
-        title: 'Timeline',
-        href: '/status-histories',
+        title: 'Activity',
+        href: '/activity',
     },
     {
         title: 'Profile',
@@ -32,8 +32,9 @@ const navItems = [
 export default function AppBottomNavLayout({ children }: AppLayoutProps) {
     const { auth } = usePage().props;
     const { currentUrl, isCurrentUrl } = useCurrentUrl();
-    const onboardingIncomplete = !auth.user.onboarding_completed_at;
     const isOnboarding = currentUrl === '/onboarding';
+    const onboardingIncomplete =
+        !!auth?.user && !auth.user.onboarding_completed_at;
     const shouldHideBottomNav = isOnboarding;
 
     return (

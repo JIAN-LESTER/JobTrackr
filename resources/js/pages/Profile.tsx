@@ -1,4 +1,5 @@
 import { Form, Head, usePage } from '@inertiajs/react';
+import { FileText } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
@@ -24,7 +25,7 @@ type PageProps = {
     user?: Auth['user'];
     passwordRules?: string;
     profileDocuments: {
-        document_type: 'photo';
+        document_type: 'photo' | 'resume';
         file_name: string;
     }[];
 };
@@ -49,6 +50,9 @@ export default function Profile() {
     const getInitials = useInitials();
     const latestPhoto = profileDocuments.find(
         (document) => document.document_type === 'photo',
+    );
+    const latestResume = profileDocuments.find(
+        (document) => document.document_type === 'resume',
     );
 
     useEffect(() => {
@@ -296,6 +300,34 @@ export default function Profile() {
                                         ) : null}
 
                                         <InputError message={errors.photo} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="resume">Resume</Label>
+
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                id="resume"
+                                                type="file"
+                                                className="block w-full"
+                                                name="resume"
+                                                accept=".pdf,.doc,.docx"
+                                            />
+                                            <FileText className="size-5 shrink-0 text-muted-foreground" />
+                                        </div>
+
+                                        {latestResume ? (
+                                            <p className="truncate rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                                                Current:{' '}
+                                                {latestResume.file_name}
+                                            </p>
+                                        ) : null}
+
+                                        <p className="text-xs text-muted-foreground">
+                                            PDF, DOC, or DOCX. Maximum 5 MB.
+                                        </p>
+
+                                        <InputError message={errors.resume} />
                                     </div>
 
                                     <div className="flex items-center gap-4 sm:col-span-2">

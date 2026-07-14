@@ -7,6 +7,8 @@ use App\Models\Company;
 use App\Models\Log;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ApplicationWorkflowTest extends TestCase
@@ -98,6 +100,37 @@ class ApplicationWorkflowTest extends TestCase
         $this->get(route('applications.index'))->assertOk();
         $this->get(route('companies.index'))->assertOk();
         $this->get(route('logs.index'))->assertOk();
+    }
+
+    public function test_job_link_import_extracts_visible_job_description(): void
+    {
+        $user = $this->onboardedUser();
+        $url = 'https://jobs.example.com/software-engineer';
+
+        Http::fake([
+            $url => Http::response(<<<'HTML'
+                <html>
+                    <head>
+                        <meta property="og:title" content="Software Engineer">
+                        <meta property="og:site_name" content="Acme Careers">
+                    </head>
+                    <body>
+                        <div id="jobDescriptionText">
+                            Build Laravel and React features for customer-facing workflows.
+                        </div>
+                    </body>
+                </html>
+                HTML),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('applications.import', ['url' => $url]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('ApplicationImport')
+                ->where('importData.extracted', true)
+                ->where('importData.job_description', 'Build Laravel and React features for customer-facing workflows.'),
+            );
     }
 
     private function onboardedUser(array $attributes = []): User

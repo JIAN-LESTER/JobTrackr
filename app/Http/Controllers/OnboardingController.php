@@ -36,7 +36,8 @@ class OnboardingController extends Controller
          *     education_degree: string,
          *     education_program: string,
          *     avatar_preset?: string|null,
-         *     photo?: UploadedFile|null
+         *     photo?: UploadedFile|null,
+         *     resume?: UploadedFile|null
          * } $validated
          */
         $validated = $request->validate([
@@ -50,10 +51,11 @@ class OnboardingController extends Controller
             'education_program' => ['required', 'string', 'max:255'],
             'avatar_preset' => ['nullable', 'string', 'in:'.implode(',', AvatarPresets::keys())],
             'photo' => ['nullable', 'image', 'max:2048'],
+            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
         ]);
 
         $user = $request->user();
-        $data = collect($validated)->except('photo', 'first_name', 'last_name');
+        $data = collect($validated)->except('photo', 'resume', 'first_name', 'last_name');
 
         if (! Schema::hasColumn('users', 'avatar_preset')) {
             $data->forget('avatar_preset');
@@ -67,12 +69,13 @@ class OnboardingController extends Controller
         $user->onboarding_completed_at = now();
         $user->save();
 
-        $this->storePhoto($user->getKey(), $request->file('photo'));
+        $this->storeDocument($user->getKey(), $request->file('photo'), 'photo');
+        $this->storeDocument($user->getKey(), $request->file('resume'), 'resume');
 
         return redirect('/applications');
     }
 
-    private function storePhoto(int|string $userId, ?UploadedFile $file): void
+    private function storeDocument(int|string $userId, ?UploadedFile $file, string $type): void
     {
         if (! $file) {
             return;
@@ -82,7 +85,7 @@ class OnboardingController extends Controller
 
         Document::create([
             'user_id' => $userId,
-            'document_type' => 'photo',
+            'document_type' => $type,
             'file_name' => $file->getClientOriginalName(),
             'file_path' => $path,
             'mime_type' => $file->getMimeType(),
