@@ -1,7 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ChevronDown, FileText, Sparkles, Upload } from 'lucide-react';
 import type { DragEvent, FormEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -64,6 +64,12 @@ type Form = {
 
 type FormErrors = Partial<Record<keyof Form | 'analysis', string>>;
 
+type TimerState = {
+    currentTime: number;
+    cooldownEndsAt: number;
+    cooldownSecondsRemaining: number;
+};
+
 const sections: Array<
     [keyof Omit<ResumeAnalysisResult, 'match_score' | 'company_name'>, string]
 > = [
@@ -72,7 +78,10 @@ const sections: Array<
     ['keyword_recommendations', 'Keyword recommendations'],
     ['experience_and_project_alignment', 'Experience and project alignment'],
     ['weak_or_unclear_sections', 'Weak or unclear resume sections'],
-    ['suggested_bullet_point_improvements', 'Suggested bullet-point improvements'],
+    [
+        'suggested_bullet_point_improvements',
+        'Suggested bullet-point improvements',
+    ],
 ];
 
 const formatDate = (value: string) =>
@@ -239,16 +248,23 @@ export default function AnalyzeResume({
     const [closedAnalysisIds, setClosedAnalysisIds] = useState<number[]>([]);
     const [isApplicationDetailsOpen, setIsApplicationDetailsOpen] =
         useState(false);
-    const [currentTime, setCurrentTime] = useState(() => Date.now());
-    const cooldownEndsAt = useMemo(
-        () => Date.now() + cooldownSecondsRemaining * 1000,
-        [cooldownSecondsRemaining],
-    );
+    const [timerState, setTimerState] = useState<TimerState>(() => {
+        const currentTime = Date.now();
 
-    const cooldownRemaining = secondsBetween(cooldownEndsAt, currentTime);
+        return {
+            currentTime,
+            cooldownEndsAt: currentTime + cooldownSecondsRemaining * 1000,
+            cooldownSecondsRemaining,
+        };
+    });
+
+    const cooldownRemaining = secondsBetween(
+        timerState.cooldownEndsAt,
+        timerState.currentTime,
+    );
     const resetRemaining = secondsBetween(
         new Date(nextResetAt).getTime(),
-        currentTime,
+        timerState.currentTime,
     );
     const isQuotaReached = remaining === 0;
     const isCooldownActive = cooldownRemaining > 0;
@@ -257,19 +273,31 @@ export default function AnalyzeResume({
     );
     const selectedApplication = applications.find(
         (application) =>
-            String(application.application_id) ===
-            form.data.job_application_id,
+            String(application.application_id) === form.data.job_application_id,
     );
     const selectedApplicationDescription =
         selectedApplication?.job_description?.trim() || '';
 
     useEffect(() => {
         const timer = window.setInterval(() => {
-            setCurrentTime(Date.now());
+            setTimerState((state) => {
+                const currentTime = Date.now();
+                const cooldownEndsAt =
+                    state.cooldownSecondsRemaining ===
+                    cooldownSecondsRemaining
+                        ? state.cooldownEndsAt
+                        : currentTime + cooldownSecondsRemaining * 1000;
+
+                return {
+                    currentTime,
+                    cooldownEndsAt,
+                    cooldownSecondsRemaining,
+                };
+            });
         }, 1000);
 
         return () => window.clearInterval(timer);
-    }, []);
+    }, [cooldownSecondsRemaining]);
 
     const selectApplication = (value: string) => {
         setSubmitError(null);
@@ -454,9 +482,7 @@ export default function AnalyzeResume({
                                             Application
                                         </Label>
                                         <Select
-                                            value={
-                                                form.data.job_application_id
-                                            }
+                                            value={form.data.job_application_id}
                                             onValueChange={selectApplication}
                                         >
                                             <SelectTrigger
@@ -480,8 +506,7 @@ export default function AnalyzeResume({
                                                                 application.job_title
                                                             }{' '}
                                                             -{' '}
-                                                            {application
-                                                                .company
+                                                            {application.company
                                                                 ?.name ||
                                                                 'Unknown company'}
                                                         </SelectItem>
@@ -490,9 +515,7 @@ export default function AnalyzeResume({
                                             </SelectContent>
                                         </Select>
                                         <InputError
-                                            message={
-                                                errors.job_application_id
-                                            }
+                                            message={errors.job_application_id}
                                         />
                                     </div>
 
@@ -505,14 +528,11 @@ export default function AnalyzeResume({
                                             className="rounded-md border border-[#cbd8cf] bg-white/60 p-3 text-sm dark:border-[#33463a] dark:bg-[#213128]/50"
                                         >
                                             <p className="font-medium">
-                                                {
-                                                    selectedApplication.job_title
-                                                }
+                                                {selectedApplication.job_title}
                                             </p>
                                             <p className="mt-1 text-muted-foreground">
                                                 {selectedApplication.company
-                                                    ?.name ||
-                                                    'Unknown company'}
+                                                    ?.name || 'Unknown company'}
                                                 {' - '}
                                                 {selectedApplication.location ||
                                                     'Location not set'}
@@ -576,7 +596,7 @@ export default function AnalyzeResume({
                                             </div>
                                             {selectedApplicationDescription ? (
                                                 <CollapsibleContent>
-                                                    <div className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-md border border-[#cbd8cf] bg-[#f8faf7] p-3 text-muted-foreground dark:border-[#33463a] dark:bg-[#16231c]">
+                                                    <div className="mt-3 max-h-64 overflow-y-auto rounded-md border border-[#cbd8cf] bg-[#f8faf7] p-3 whitespace-pre-wrap text-muted-foreground dark:border-[#33463a] dark:bg-[#16231c]">
                                                         {
                                                             selectedApplicationDescription
                                                         }
@@ -595,9 +615,7 @@ export default function AnalyzeResume({
                                         <Input
                                             id="custom-job-title"
                                             className="mt-2"
-                                            value={
-                                                form.data.custom_job_title
-                                            }
+                                            value={form.data.custom_job_title}
                                             onChange={(event) =>
                                                 form.setData(
                                                     'custom_job_title',
@@ -714,9 +732,7 @@ export default function AnalyzeResume({
                                             Resume
                                         </Label>
                                         <Select
-                                            value={
-                                                form.data.resume_document_id
-                                            }
+                                            value={form.data.resume_document_id}
                                             onValueChange={(value) =>
                                                 form.setData(
                                                     'resume_document_id',
@@ -883,9 +899,7 @@ export default function AnalyzeResume({
 
                     <section className="space-y-4">
                         <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm dark:border-[#33463a] dark:bg-[#16231c]">
-                            <h2 className="font-semibold">
-                                Analyzed Resumes
-                            </h2>
+                            <h2 className="font-semibold">Analyzed Resumes</h2>
                             <p className="mt-1 text-sm text-muted-foreground">
                                 Match score, skills gaps, keywords, alignment
                                 feedback, weak sections, and stronger bullet
@@ -950,11 +964,11 @@ function StatusMetric({
             }`}
         >
             <p
-                className={`text-[11px] font-medium uppercase tracking-wide ${helperClassName}`}
+                className={`text-[11px] font-medium tracking-wide uppercase ${helperClassName}`}
             >
                 {label}
             </p>
-            <p className="mt-0.5 text-base font-semibold leading-none">
+            <p className="mt-0.5 text-base leading-none font-semibold">
                 {value}
             </p>
             {detail ? (
@@ -977,7 +991,7 @@ function SegmentedControl<T extends string>({
 }) {
     return (
         <div
-            className="mt-2 inline-flex w-full rounded-md border border-[#cbd8cf] bg-white/60 p-1 dark:border-[#33463a] dark:bg-[#213128]/50 sm:w-auto"
+            className="mt-2 inline-flex w-full rounded-md border border-[#cbd8cf] bg-white/60 p-1 sm:w-auto dark:border-[#33463a] dark:bg-[#213128]/50"
             role="group"
         >
             {options.map((option) => {
@@ -1042,7 +1056,7 @@ function AnalysisCard({
                     ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                    <div className="whitespace-nowrap rounded-full bg-[#17201b] px-3 py-2 text-sm font-semibold text-[#f4f8f2] dark:bg-[#f3c76a] dark:text-[#17201b]">
+                    <div className="rounded-full bg-[#17201b] px-3 py-2 text-sm font-semibold whitespace-nowrap text-[#f4f8f2] dark:bg-[#f3c76a] dark:text-[#17201b]">
                         {item.match_score}% match
                     </div>
                     <ChevronDown

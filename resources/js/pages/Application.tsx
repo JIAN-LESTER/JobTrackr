@@ -660,7 +660,9 @@ export default function Applications({
                 className="size-8 border-[#cbd8cf] bg-white/80 text-[#8f6a1f] hover:bg-[#f8edcf] dark:border-[#33463a] dark:bg-[#213128]/70 dark:text-[#f8d98a]"
                 aria-label="Analyze job and resume"
             >
-                <Link href={`/analyze-resume?application=${application.application_id}`}>
+                <Link
+                    href={`/analyze-resume?application=${application.application_id}`}
+                >
                     <Sparkles className="size-4" />
                 </Link>
             </Button>
@@ -709,7 +711,8 @@ export default function Applications({
                                 Applications
                             </h1>
                             <p className="text-sm text-muted-foreground">
-                                View your job applications and track their progress.
+                                View your job applications and track their
+                                progress.
                             </p>
                         </div>
 
@@ -1699,7 +1702,8 @@ export default function Applications({
                                                         >
                                                             <span>
                                                                 <span className="block text-xs text-muted-foreground">
-                                                                    Job description
+                                                                    Job
+                                                                    description
                                                                 </span>
                                                                 <span className="block font-normal text-foreground">
                                                                     {selectedApplicationDescription
@@ -1717,7 +1721,7 @@ export default function Applications({
                                                         </Button>
                                                     </CollapsibleTrigger>
                                                     <CollapsibleContent>
-                                                        <div className="border-t border-[#cbd8cf] px-3 pb-3 pt-2 dark:border-[#33463a]">
+                                                        <div className="border-t border-[#cbd8cf] px-3 pt-2 pb-3 dark:border-[#33463a]">
                                                             {selectedApplicationDescription ? (
                                                                 <p className="max-h-64 overflow-y-auto whitespace-pre-wrap text-muted-foreground">
                                                                     {
@@ -1726,7 +1730,11 @@ export default function Applications({
                                                                 </p>
                                                             ) : (
                                                                 <p className="text-muted-foreground">
-                                                                    Add a job description by editing this application.
+                                                                    Add a job
+                                                                    description
+                                                                    by editing
+                                                                    this
+                                                                    application.
                                                                 </p>
                                                             )}
                                                         </div>

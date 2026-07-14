@@ -1,9 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import {
-    BriefcaseBusiness,
-    FileText,
-    GraduationCap,
-} from 'lucide-react';
+import { BriefcaseBusiness, FileText, GraduationCap } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
@@ -687,8 +683,8 @@ export default function Onboarding({ user }: Props) {
                                                 onChange={(event) =>
                                                     setFormData(
                                                         'resume',
-                                                        event.target.files?.[0] ??
-                                                            null,
+                                                        event.target
+                                                            .files?.[0] ?? null,
                                                     )
                                                 }
                                             />

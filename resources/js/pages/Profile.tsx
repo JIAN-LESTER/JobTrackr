@@ -272,7 +272,7 @@ export default function Profile() {
                                     <div className="grid gap-2">
                                         <Label htmlFor="photo">Picture</Label>
 
-                                        <div className="border-input focus-within:border-ring focus-within:ring-ring/50 flex h-9 w-full items-center rounded-md border bg-transparent shadow-xs transition-[color,box-shadow] focus-within:ring-[3px]">
+                                        <div className="flex h-9 w-full items-center rounded-md border border-input bg-transparent shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
                                             <Input
                                                 id="photo"
                                                 ref={photoInput}
@@ -282,8 +282,8 @@ export default function Profile() {
                                                 accept="image/*"
                                                 onChange={(event) => {
                                                     const file =
-                                                        event.target.files?.[0] ??
-                                                        null;
+                                                        event.target
+                                                            .files?.[0] ?? null;
                                                     setPhotoPreview(
                                                         file
                                                             ? URL.createObjectURL(
@@ -312,7 +312,7 @@ export default function Profile() {
                                     <div className="grid gap-2">
                                         <Label htmlFor="resume">Resume</Label>
 
-                                        <div className="border-input focus-within:border-ring focus-within:ring-ring/50 flex h-9 w-full items-center rounded-md border bg-transparent shadow-xs transition-[color,box-shadow] focus-within:ring-[3px]">
+                                        <div className="flex h-9 w-full items-center rounded-md border border-input bg-transparent shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
                                             <Input
                                                 id="resume"
                                                 type="file"

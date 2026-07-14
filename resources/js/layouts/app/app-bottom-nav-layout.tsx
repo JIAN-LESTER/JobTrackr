@@ -53,7 +53,8 @@ export default function AppBottomNavLayout({ children }: AppLayoutProps) {
                         {navItems.map((item) => {
                             const active = isCurrentUrl(item.href);
                             const disabledForOnboarding =
-                                onboardingIncomplete && item.title !== 'Profile';
+                                onboardingIncomplete &&
+                                item.title !== 'Profile';
 
                             return (
                                 <Link

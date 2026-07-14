@@ -27,7 +27,9 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-const activityNavItems: NavItem[] = [{ title: 'Timeline & reminders', href: '/activity', icon: History }];
+const activityNavItems: NavItem[] = [
+    { title: 'Timeline & reminders', href: '/activity', icon: History },
+];
 
 export function AppSidebar() {
     return (
