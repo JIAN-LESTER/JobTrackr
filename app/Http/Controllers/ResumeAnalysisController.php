@@ -231,7 +231,7 @@ class ResumeAnalysisController extends Controller
             ]);
 
             throw ValidationException::withMessages([
-                'analysis' => ["You have reached the limit of {$quota['dailyLimit']} resume analyses. Try again after ".$quota['nextResetAt']->format('g:i A').'.'],
+                'analysis' => "You have reached the limit of {$quota['dailyLimit']} resume analyses. Try again after ".$quota['nextResetAt']->format('g:i A').'.',
             ]);
         }
 
@@ -243,7 +243,7 @@ class ResumeAnalysisController extends Controller
             ]);
 
             throw ValidationException::withMessages([
-                'analysis' => ["Wait {$minutesRemaining} more minute".($minutesRemaining === 1 ? '' : 's').' before analyzing another resume.'],
+                'analysis' => "Wait {$minutesRemaining} more minute".($minutesRemaining === 1 ? '' : 's').' before analyzing another resume.',
             ]);
         }
 
