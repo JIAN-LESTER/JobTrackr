@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -224,6 +225,9 @@ class ResumeAnalysisController extends Controller
             'job_description_length' => mb_strlen($jobDescription),
         ]);
         $analysis = $analyzer->analyze($resumeText, $jobDescription);
+        if (empty($analysis['company_name'])) {
+            $analysis['company_name'] = $this->companyNameFromJobPostUrl($jobPostUrl);
+        }
         Log::info('Resume analyzer service completed.', [
             'user_id' => $request->user()->getKey(),
             'application_id' => $application->getKey(),
@@ -245,6 +249,111 @@ class ResumeAnalysisController extends Controller
         }
 
         return response()->json(['message' => 'Resume analysis saved to this application.', 'analysis' => $resumeAnalysis->load(['jobApplication.company', 'resumeDocument'])], 201);
+    }
+
+    private function companyNameFromJobPostUrl(?string $url): ?string
+    {
+        if (! $url || ! filter_var($url, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(6)
+                ->withHeaders(['User-Agent' => 'JobTrackr/1.0'])
+                ->get($url);
+        } catch (\Throwable $exception) {
+            Log::info('Resume analysis company lookup failed.', [
+                'url' => $url,
+                'exception' => $exception::class,
+            ]);
+
+            return null;
+        }
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $document = new \DOMDocument;
+        libxml_use_internal_errors(true);
+        $document->loadHTML($response->body());
+        libxml_clear_errors();
+
+        $xpath = new \DOMXPath($document);
+
+        return $this->cleanCompanyName(
+            $this->companyNameFromJsonLd($xpath)
+                ?? $this->metaContent($xpath, 'property', 'og:site_name')
+                ?? $this->metaContent($xpath, 'name', 'application-name')
+        );
+    }
+
+    private function companyNameFromJsonLd(\DOMXPath $xpath): ?string
+    {
+        foreach ($xpath->query('//script[@type="application/ld+json"]') ?: [] as $node) {
+            $data = json_decode($node->textContent, true);
+            $company = $this->findJobPostingCompany($data);
+
+            if ($company) {
+                return $company;
+            }
+        }
+
+        return null;
+    }
+
+    private function findJobPostingCompany(mixed $data): ?string
+    {
+        if (! is_array($data)) {
+            return null;
+        }
+
+        $type = $data['@type'] ?? null;
+        $types = is_array($type) ? $type : [$type];
+
+        if (in_array('JobPosting', $types, true)) {
+            $organization = $data['hiringOrganization'] ?? null;
+            $name = is_array($organization) ? ($organization['name'] ?? null) : null;
+
+            return is_scalar($name) ? (string) $name : null;
+        }
+
+        foreach ($data as $value) {
+            $company = $this->findJobPostingCompany($value);
+
+            if ($company) {
+                return $company;
+            }
+        }
+
+        return null;
+    }
+
+    private function metaContent(\DOMXPath $xpath, string $attribute, string $value): ?string
+    {
+        $nodes = $xpath->query('//meta[@'.$attribute.'="'.$value.'"]/@content');
+        $content = $nodes && $nodes->length > 0 ? $nodes->item(0)?->nodeValue : null;
+
+        return is_string($content) ? $content : null;
+    }
+
+    private function cleanCompanyName(?string $company): ?string
+    {
+        $company = trim((string) $company);
+
+        if ($company === '') {
+            return null;
+        }
+
+        $genericLabels = ['LinkedIn', 'Indeed', 'Glassdoor', 'Website'];
+
+        foreach ($genericLabels as $label) {
+            if (strcasecmp($company, $label) === 0) {
+                return null;
+            }
+        }
+
+        return mb_substr($company, 0, 255);
     }
 
     /** @return array{dailyLimit:int, analysesToday:int, resetHour:int, nextResetAt:Carbon, cooldownMinutes:int, cooldownSecondsRemaining:int} */

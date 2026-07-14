@@ -2,6 +2,7 @@ import type { Application } from './Application';
 
 export type ResumeAnalysisResult = {
     match_score: number;
+    company_name?: string | null;
     missing_technical_skills: string[];
     relevant_skills_present: string[];
     keyword_recommendations: string[];

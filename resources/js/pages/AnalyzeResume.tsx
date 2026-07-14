@@ -1,11 +1,16 @@
 import { Head, useForm } from '@inertiajs/react';
-import { FileText, Sparkles, Upload } from 'lucide-react';
+import { ChevronDown, FileText, Sparkles, Upload } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -56,7 +61,9 @@ type Form = {
 
 type FormErrors = Partial<Record<keyof Form | 'analysis', string>>;
 
-const sections: Array<[keyof Omit<ResumeAnalysisResult, 'match_score'>, string]> = [
+const sections: Array<
+    [keyof Omit<ResumeAnalysisResult, 'match_score' | 'company_name'>, string]
+> = [
     ['missing_technical_skills', 'Missing technical skills'],
     ['relevant_skills_present', 'Relevant skills already present'],
     ['keyword_recommendations', 'Keyword recommendations'],
@@ -90,6 +97,78 @@ const formatCooldown = (seconds: number) => {
 
 const secondsUntil = (value: string) =>
     Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 1000));
+
+const genericCompanyNames = ['Imported', 'Unknown company', 'Website'];
+const genericApplicationTitles = ['Application', 'Imported job'];
+
+const cleanLabel = (value: string | null | undefined) => value?.trim() || '';
+
+const websiteLabel = (url: string | null) => {
+    if (!url) {
+        return '';
+    }
+
+    try {
+        return new URL(url).hostname.replace(/^www\./, '') || '';
+    } catch {
+        return '';
+    }
+};
+
+const isGenericCompanyName = (value: string) =>
+    genericCompanyNames.some(
+        (name) => name.toLowerCase() === value.toLowerCase(),
+    );
+
+const isGenericApplicationTitle = (value: string) =>
+    genericApplicationTitles.some(
+        (title) => title.toLowerCase() === value.toLowerCase(),
+    );
+
+const companyFromDescription = (description: string) => {
+    const patterns = [
+        /(?:^|\n)\s*(?:company|employer|organization|hiring company)\s*[:\-]\s*([^\n\r|\u2022]+)/i,
+        /(?:^|\n)\s*about\s+(?!us\b|the company\b|our company\b)([A-Z][^\n\r.]{1,79})/,
+        /(?:^|\n)\s*at\s+([A-Z][A-Za-z0-9&.'\- ]{1,60}),\s+(?:we|our)\b/i,
+    ];
+
+    for (const pattern of patterns) {
+        const match = description.match(pattern);
+        const company = match?.[1]?.trim().replace(/[.,;:]$/, '');
+
+        if (company && company.length <= 80) {
+            return company;
+        }
+    }
+
+    return '';
+};
+
+const analysisCompanyName = (item: ResumeAnalysis) => {
+    const savedCompany = cleanLabel(item.job_application?.company?.name);
+    const analyzedCompany = cleanLabel(item.analysis.company_name);
+    const descriptionCompany = companyFromDescription(item.job_description);
+    const urlCompany = websiteLabel(item.job_post_url);
+
+    return (
+        [savedCompany, analyzedCompany, descriptionCompany, urlCompany].find(
+            (company) => company && !isGenericCompanyName(company),
+        ) ||
+        savedCompany ||
+        analyzedCompany ||
+        descriptionCompany ||
+        urlCompany ||
+        'Unknown company'
+    );
+};
+
+const analysisTitle = (item: ResumeAnalysis) => {
+    const title = cleanLabel(item.job_application?.job_title);
+
+    return title && !isGenericApplicationTitle(title)
+        ? title
+        : analysisCompanyName(item);
+};
 
 const firstError = (errors: FormErrors) =>
     errors.analysis ||
@@ -136,6 +215,10 @@ export default function AnalyzeResume({
     });
     const errors = form.errors as FormErrors;
     const remaining = Math.max(0, dailyLimit - analysesToday);
+    const currentAnalysisId = analyses[0]?.resume_analysis_id;
+    const [openAnalysisIds, setOpenAnalysisIds] = useState<number[]>(
+        currentAnalysisId ? [currentAnalysisId] : [],
+    );
     const [cooldownRemaining, setCooldownRemaining] = useState(
         cooldownSecondsRemaining,
     );
@@ -147,6 +230,10 @@ export default function AnalyzeResume({
     const selectedResumeDocument = resumeDocuments.find(
         (resume) => String(resume.document_id) === form.data.resume_document_id,
     );
+
+    useEffect(() => {
+        setOpenAnalysisIds(currentAnalysisId ? [currentAnalysisId] : []);
+    }, [currentAnalysisId]);
 
     useEffect(() => {
         setCooldownRemaining(cooldownSecondsRemaining);
@@ -220,6 +307,16 @@ export default function AnalyzeResume({
                     toast.dismiss(toastId);
                 }
             },
+        });
+    };
+
+    const toggleAnalysisCard = (id: number, open: boolean) => {
+        setOpenAnalysisIds((ids) => {
+            if (open) {
+                return ids.includes(id) ? ids : [...ids, id];
+            }
+
+            return ids.filter((openId) => openId !== id);
         });
     };
 
@@ -522,6 +619,15 @@ export default function AnalyzeResume({
                             <AnalysisCard
                                 key={item.resume_analysis_id}
                                 item={item}
+                                isOpen={openAnalysisIds.includes(
+                                    item.resume_analysis_id,
+                                )}
+                                onOpenChange={(open) =>
+                                    toggleAnalysisCard(
+                                        item.resume_analysis_id,
+                                        open,
+                                    )
+                                }
                             />
                         ))}
                         {!analyses.length && (
@@ -581,18 +687,31 @@ function SourceOption({
     );
 }
 
-function AnalysisCard({ item }: { item: ResumeAnalysis }) {
+function AnalysisCard({
+    item,
+    isOpen,
+    onOpenChange,
+}: {
+    item: ResumeAnalysis;
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const title = analysisTitle(item);
+    const company = analysisCompanyName(item);
+    const titleIsCompany = title.toLowerCase() === company.toLowerCase();
+
     return (
-        <article className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm dark:border-[#33463a] dark:bg-[#16231c]">
-            <div className="flex items-start justify-between gap-3">
-                <div>
-                    <h2 className="font-semibold">
-                        {item.job_application?.job_title || 'Application'}
-                    </h2>
+        <Collapsible
+            open={isOpen}
+            onOpenChange={onOpenChange}
+            className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm dark:border-[#33463a] dark:bg-[#16231c]"
+        >
+            <CollapsibleTrigger className="flex w-full items-start justify-between gap-3 text-left">
+                <div className="min-w-0">
+                    <h2 className="font-semibold">{title}</h2>
                     <p className="text-sm text-muted-foreground">
-                        {item.job_application?.company?.name ||
-                            'Unknown company'}{' '}
-                        - analyzed {formatDate(item.created_at)}
+                        {titleIsCompany ? '' : `${company} - `}analyzed{' '}
+                        {formatDate(item.created_at)}
                     </p>
                     {item.resume_document ? (
                         <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
@@ -601,27 +720,36 @@ function AnalysisCard({ item }: { item: ResumeAnalysis }) {
                         </p>
                     ) : null}
                 </div>
-                <div className="rounded-full bg-[#dcefe4] px-3 py-2 text-sm font-semibold text-[#24543d] dark:bg-[#2f6f4f]/25 dark:text-[#b8e6ca]">
-                    {item.match_score}% match
-                </div>
-            </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-                {sections.map(([key, title]) => (
-                    <div key={key}>
-                        <h3 className="text-sm font-medium">{title}</h3>
-                        <ul className="mt-1 space-y-1 text-sm text-muted-foreground">
-                            {item.analysis[key].length ? (
-                                item.analysis[key].map((entry) => (
-                                    <li key={entry}>- {entry}</li>
-                                ))
-                            ) : (
-                                <li>- No issues identified.</li>
-                            )}
-                        </ul>
+                <div className="flex shrink-0 items-center gap-2">
+                    <div className="whitespace-nowrap rounded-full bg-[#dcefe4] px-3 py-2 text-sm font-semibold text-[#24543d] dark:bg-[#2f6f4f]/25 dark:text-[#b8e6ca]">
+                        {item.match_score}% match
                     </div>
-                ))}
-            </div>
-        </article>
+                    <ChevronDown
+                        className={`size-4 text-muted-foreground transition-transform ${
+                            isOpen ? 'rotate-180' : ''
+                        }`}
+                    />
+                </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    {sections.map(([key, title]) => (
+                        <div key={key}>
+                            <h3 className="text-sm font-medium">{title}</h3>
+                            <ul className="mt-1 space-y-1 text-sm text-muted-foreground">
+                                {item.analysis[key].length ? (
+                                    item.analysis[key].map((entry) => (
+                                        <li key={entry}>- {entry}</li>
+                                    ))
+                                ) : (
+                                    <li>- No issues identified.</li>
+                                )}
+                            </ul>
+                        </div>
+                    ))}
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
     );
 }
 

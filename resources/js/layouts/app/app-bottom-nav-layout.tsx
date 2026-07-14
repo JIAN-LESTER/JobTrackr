@@ -16,7 +16,7 @@ const navItems = [
         href: '/applications',
     },
     {
-        title: 'Analyze resume',
+        title: 'Resume Analyzer',
         href: '/analyze-resume',
     },
     {

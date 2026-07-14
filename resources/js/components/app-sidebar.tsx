@@ -21,7 +21,7 @@ const mainNavItems: NavItem[] = [
         icon: BriefcaseBusiness,
     },
     {
-        title: 'Analyze resume',
+        title: 'Resume Analyzer',
         href: '/analyze-resume',
         icon: Sparkles,
     },
