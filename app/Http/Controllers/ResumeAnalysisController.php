@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -22,6 +23,7 @@ class ResumeAnalysisController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $userId = $request->user()->getKey();
+        $quota = $this->analysisQuota($userId);
 
         return Inertia::render('AnalyzeResume', [
             'applications' => Application::query()->with('company')->where('user_id', $userId)->latest()->get(),
@@ -32,6 +34,11 @@ class ResumeAnalysisController extends Controller
                 ->get(['document_id', 'file_name', 'mime_type', 'created_at']),
             'analyses' => ResumeAnalysis::query()->with(['jobApplication.company', 'resumeDocument'])->where('user_id', $userId)->latest()->limit(12)->get(),
             'selectedApplicationId' => $request->integer('application') ?: null,
+            'dailyLimit' => $quota['dailyLimit'],
+            'analysesToday' => $quota['analysesToday'],
+            'nextResetAt' => $quota['nextResetAt']->toIso8601String(),
+            'cooldownMinutes' => $quota['cooldownMinutes'],
+            'cooldownSecondsRemaining' => $quota['cooldownSecondsRemaining'],
         ]);
     }
 
@@ -174,6 +181,41 @@ class ResumeAnalysisController extends Controller
             'resume_text_length' => mb_strlen($resumeText),
         ]);
 
+        $quota = $this->analysisQuota($request->user()->getKey());
+        Log::info('Resume analysis quota checked.', [
+            'user_id' => $request->user()->getKey(),
+            'analyses_today' => $quota['analysesToday'],
+            'daily_limit' => $quota['dailyLimit'],
+            'reset_hour' => $quota['resetHour'],
+            'next_reset_at' => $quota['nextResetAt']->toIso8601String(),
+            'cooldown_seconds_remaining' => $quota['cooldownSecondsRemaining'],
+        ]);
+
+        if ($quota['analysesToday'] >= $quota['dailyLimit']) {
+            Log::warning('Resume analysis stopped because the daily limit was reached.', [
+                'user_id' => $request->user()->getKey(),
+                'analyses_today' => $quota['analysesToday'],
+                'daily_limit' => $quota['dailyLimit'],
+                'next_reset_at' => $quota['nextResetAt']->toIso8601String(),
+            ]);
+
+            throw ValidationException::withMessages([
+                'analysis' => "You have reached the limit of {$quota['dailyLimit']} resume analyses. Try again after ".$quota['nextResetAt']->format('g:i A').'.',
+            ]);
+        }
+
+        if ($quota['cooldownSecondsRemaining'] > 0) {
+            $minutesRemaining = max(1, (int) ceil($quota['cooldownSecondsRemaining'] / 60));
+            Log::warning('Resume analysis stopped because the cooldown is active.', [
+                'user_id' => $request->user()->getKey(),
+                'cooldown_seconds_remaining' => $quota['cooldownSecondsRemaining'],
+            ]);
+
+            throw ValidationException::withMessages([
+                'analysis' => "Wait {$minutesRemaining} more minute".($minutesRemaining === 1 ? '' : 's').' before analyzing another resume.',
+            ]);
+        }
+
         Log::info('Resume analyzer service starting.', [
             'user_id' => $request->user()->getKey(),
             'application_id' => $application->getKey(),
@@ -203,6 +245,48 @@ class ResumeAnalysisController extends Controller
         }
 
         return response()->json(['message' => 'Resume analysis saved to this application.', 'analysis' => $resumeAnalysis->load(['jobApplication.company', 'resumeDocument'])], 201);
+    }
+
+    /** @return array{dailyLimit:int, analysesToday:int, resetHour:int, nextResetAt:Carbon, cooldownMinutes:int, cooldownSecondsRemaining:int} */
+    private function analysisQuota(int|string $userId): array
+    {
+        $timezone = config('app.timezone');
+        $now = now($timezone);
+        $dailyLimit = max(1, (int) config('ai.resume_analyzer.daily_limit', 5));
+        $resetHour = max(0, min(23, (int) config('ai.resume_analyzer.reset_hour', 8)));
+        $cooldownMinutes = max(0, (int) config('ai.resume_analyzer.cooldown_minutes', 5));
+        $windowStart = $now->copy()->setTime($resetHour, 0);
+
+        if ($now->lt($windowStart)) {
+            $windowStart->subDay();
+        }
+
+        $nextResetAt = $windowStart->copy()->addDay();
+        $analysesToday = ResumeAnalysis::query()
+            ->where('user_id', $userId)
+            ->where('created_at', '>=', $windowStart)
+            ->where('created_at', '<', $nextResetAt)
+            ->count();
+
+        $lastAnalysis = ResumeAnalysis::query()
+            ->where('user_id', $userId)
+            ->latest()
+            ->first(['created_at']);
+        $cooldownSecondsRemaining = 0;
+
+        if ($lastAnalysis && $cooldownMinutes > 0) {
+            $availableAt = $lastAnalysis->created_at->copy()->setTimezone($timezone)->addMinutes($cooldownMinutes);
+            $cooldownSecondsRemaining = $now->lt($availableAt) ? $now->diffInSeconds($availableAt) : 0;
+        }
+
+        return [
+            'dailyLimit' => $dailyLimit,
+            'analysesToday' => $analysesToday,
+            'resetHour' => $resetHour,
+            'nextResetAt' => $nextResetAt,
+            'cooldownMinutes' => $cooldownMinutes,
+            'cooldownSecondsRemaining' => $cooldownSecondsRemaining,
+        ];
     }
 
     private function storeResume(Request $request, Application $application, UploadedFile $file): Document

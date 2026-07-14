@@ -1,9 +1,10 @@
 import { Head, useForm } from '@inertiajs/react';
 import { FileText, Sparkles, Upload } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import InputError from '@/components/input-error';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +27,11 @@ type Props = {
     resumeDocuments: ResumeDocument[];
     analyses: ResumeAnalysis[];
     selectedApplicationId: number | null;
+    dailyLimit: number;
+    analysesToday: number;
+    nextResetAt: string;
+    cooldownMinutes: number;
+    cooldownSecondsRemaining: number;
 };
 
 type ResumeSource = 'document' | 'upload';
@@ -64,6 +70,27 @@ const formatDate = (value: string) =>
         new Date(value),
     );
 
+const formatTime = (value: string) =>
+    new Intl.DateTimeFormat(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+    }).format(new Date(value));
+
+const formatCooldown = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (hours > 0) {
+        return `${hours}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+    }
+
+    return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+};
+
+const secondsUntil = (value: string) =>
+    Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 1000));
+
 const firstError = (errors: FormErrors) =>
     errors.analysis ||
     errors.job_source ||
@@ -80,6 +107,11 @@ export default function AnalyzeResume({
     resumeDocuments,
     analyses,
     selectedApplicationId,
+    dailyLimit,
+    analysesToday,
+    nextResetAt,
+    cooldownMinutes,
+    cooldownSecondsRemaining,
 }: Props) {
     const initialApplication =
         applications.find(
@@ -103,9 +135,31 @@ export default function AnalyzeResume({
         resume_file: null,
     });
     const errors = form.errors as FormErrors;
+    const remaining = Math.max(0, dailyLimit - analysesToday);
+    const [cooldownRemaining, setCooldownRemaining] = useState(
+        cooldownSecondsRemaining,
+    );
+    const [resetRemaining, setResetRemaining] = useState(
+        secondsUntil(nextResetAt),
+    );
+    const isQuotaReached = remaining === 0;
+    const isCooldownActive = cooldownRemaining > 0;
     const selectedResumeDocument = resumeDocuments.find(
         (resume) => String(resume.document_id) === form.data.resume_document_id,
     );
+
+    useEffect(() => {
+        setCooldownRemaining(cooldownSecondsRemaining);
+    }, [cooldownSecondsRemaining]);
+
+    useEffect(() => {
+        const timer = window.setInterval(() => {
+            setCooldownRemaining((seconds) => Math.max(0, seconds - 1));
+            setResetRemaining(secondsUntil(nextResetAt));
+        }, 1000);
+
+        return () => window.clearInterval(timer);
+    }, [nextResetAt]);
 
     const selectApplication = (value: string) => {
         setSubmitError(null);
@@ -182,6 +236,24 @@ export default function AnalyzeResume({
                             Match your resume to an application and save the
                             feedback with that job.
                         </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="w-fit">
+                            {remaining} of {dailyLimit} analyses left
+                        </Badge>
+                        <Badge variant="outline" className="w-fit">
+                            {cooldownMinutes}-minute interval
+                        </Badge>
+                        {isCooldownActive ? (
+                            <Badge variant="outline" className="w-fit">
+                                Next in {formatCooldown(cooldownRemaining)}
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline" className="w-fit">
+                                Reset in {formatCooldown(resetRemaining)} at{' '}
+                                {formatTime(nextResetAt)}
+                            </Badge>
+                        )}
                     </div>
                 </div>
 
@@ -419,7 +491,9 @@ export default function AnalyzeResume({
                             type="submit"
                             disabled={
                                 form.processing ||
-                                !applications.length
+                                !applications.length ||
+                                isQuotaReached ||
+                                isCooldownActive
                             }
                         >
                             {form.processing ? (
@@ -427,7 +501,9 @@ export default function AnalyzeResume({
                             ) : (
                                 <Sparkles className="size-4" />
                             )}
-                            Analyze and save
+                            {isCooldownActive
+                                ? `Wait ${formatCooldown(cooldownRemaining)}`
+                                : 'Analyze and save'}
                         </Button>
                     </form>
 
