@@ -1,7 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ChevronDown, FileText, Sparkles, Upload } from 'lucide-react';
 import type { DragEvent, FormEvent } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -110,8 +110,8 @@ const formatCooldown = (seconds: number) => {
     return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
 };
 
-const secondsUntil = (value: string) =>
-    Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 1000));
+const secondsBetween = (endTime: number, currentTime: number) =>
+    Math.max(0, Math.ceil((endTime - currentTime) / 1000));
 
 const genericCompanyNames = ['Imported', 'Unknown company', 'Website'];
 const genericApplicationTitles = ['Application', 'Imported job'];
@@ -142,9 +142,9 @@ const isGenericApplicationTitle = (value: string) =>
 
 const companyFromDescription = (description: string) => {
     const patterns = [
-        /(?:^|\n)\s*(?:company|employer|organization|hiring company)\s*[:\-]\s*([^\n\r|\u2022]+)/i,
+        /(?:^|\n)\s*(?:company|employer|organization|hiring company)\s*[:-]\s*([^\n\r|\u2022]+)/i,
         /(?:^|\n)\s*about\s+(?!us\b|the company\b|our company\b)([A-Z][^\n\r.]{1,79})/,
-        /(?:^|\n)\s*at\s+([A-Z][A-Za-z0-9&.'\- ]{1,60}),\s+(?:we|our)\b/i,
+        /(?:^|\n)\s*at\s+([A-Z][-A-Za-z0-9&.' ]{1,60}),\s+(?:we|our)\b/i,
     ];
 
     for (const pattern of patterns) {
@@ -235,16 +235,20 @@ export default function AnalyzeResume({
     const errors = form.errors as FormErrors;
     const remaining = Math.max(0, dailyLimit - analysesToday);
     const currentAnalysisId = analyses[0]?.resume_analysis_id;
-    const [openAnalysisIds, setOpenAnalysisIds] = useState<number[]>(
-        currentAnalysisId ? [currentAnalysisId] : [],
-    );
+    const [openAnalysisIds, setOpenAnalysisIds] = useState<number[]>([]);
+    const [closedAnalysisIds, setClosedAnalysisIds] = useState<number[]>([]);
     const [isApplicationDetailsOpen, setIsApplicationDetailsOpen] =
         useState(false);
-    const [cooldownRemaining, setCooldownRemaining] = useState(
-        cooldownSecondsRemaining,
+    const [currentTime, setCurrentTime] = useState(() => Date.now());
+    const cooldownEndsAt = useMemo(
+        () => Date.now() + cooldownSecondsRemaining * 1000,
+        [cooldownSecondsRemaining],
     );
-    const [resetRemaining, setResetRemaining] = useState(
-        secondsUntil(nextResetAt),
+
+    const cooldownRemaining = secondsBetween(cooldownEndsAt, currentTime);
+    const resetRemaining = secondsBetween(
+        new Date(nextResetAt).getTime(),
+        currentTime,
     );
     const isQuotaReached = remaining === 0;
     const isCooldownActive = cooldownRemaining > 0;
@@ -260,21 +264,12 @@ export default function AnalyzeResume({
         selectedApplication?.job_description?.trim() || '';
 
     useEffect(() => {
-        setOpenAnalysisIds(currentAnalysisId ? [currentAnalysisId] : []);
-    }, [currentAnalysisId]);
-
-    useEffect(() => {
-        setCooldownRemaining(cooldownSecondsRemaining);
-    }, [cooldownSecondsRemaining]);
-
-    useEffect(() => {
         const timer = window.setInterval(() => {
-            setCooldownRemaining((seconds) => Math.max(0, seconds - 1));
-            setResetRemaining(secondsUntil(nextResetAt));
+            setCurrentTime(Date.now());
         }, 1000);
 
         return () => window.clearInterval(timer);
-    }, [nextResetAt]);
+    }, []);
 
     const selectApplication = (value: string) => {
         setSubmitError(null);
@@ -358,6 +353,13 @@ export default function AnalyzeResume({
     };
 
     const toggleAnalysisCard = (id: number, open: boolean) => {
+        setClosedAnalysisIds((ids) => {
+            if (!open) {
+                return ids.includes(id) ? ids : [...ids, id];
+            }
+
+            return ids.filter((closedId) => closedId !== id);
+        });
         setOpenAnalysisIds((ids) => {
             if (open) {
                 return ids.includes(id) ? ids : [...ids, id];
@@ -894,9 +896,16 @@ export default function AnalyzeResume({
                             <AnalysisCard
                                 key={item.resume_analysis_id}
                                 item={item}
-                                isOpen={openAnalysisIds.includes(
-                                    item.resume_analysis_id,
-                                )}
+                                isOpen={
+                                    openAnalysisIds.includes(
+                                        item.resume_analysis_id,
+                                    ) ||
+                                    (item.resume_analysis_id ===
+                                        currentAnalysisId &&
+                                        !closedAnalysisIds.includes(
+                                            item.resume_analysis_id,
+                                        ))
+                                }
                                 onOpenChange={(open) =>
                                     toggleAnalysisCard(
                                         item.resume_analysis_id,

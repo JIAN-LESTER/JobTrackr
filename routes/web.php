@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ApplicationContactController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationStatusHistoryController;
-use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\InterviewController;

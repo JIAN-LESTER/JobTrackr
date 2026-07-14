@@ -74,6 +74,7 @@ class ResumeAnalysisController extends Controller
             'resume_file' => ['nullable', 'file', 'mimes:pdf,docx,txt', 'max:5120'],
         ]);
 
+        /** @var Application $application */
         $application = Application::query()->findOrFail($data['job_application_id']);
         abort_unless((string) $application->user_id === (string) $request->user()->getKey(), 404);
         Log::info('Resume analysis application resolved.', [
@@ -142,6 +143,7 @@ class ResumeAnalysisController extends Controller
                 throw ValidationException::withMessages(['resume_document_id' => 'Select a saved resume to analyze.']);
             }
 
+            /** @var Document|null $document */
             $document = Document::query()
                 ->where('user_id', $request->user()->getKey())
                 ->where('document_type', 'resume')
@@ -273,6 +275,7 @@ class ResumeAnalysisController extends Controller
 
         if ($request->header('X-Inertia')) {
             Inertia::flash('toast', ['type' => 'success', 'message' => 'Resume analysis saved to this application.']);
+
             return back();
         }
 
@@ -319,6 +322,10 @@ class ResumeAnalysisController extends Controller
     private function companyNameFromJsonLd(\DOMXPath $xpath): ?string
     {
         foreach ($xpath->query('//script[@type="application/ld+json"]') ?: [] as $node) {
+            if (! $node instanceof \DOMElement) {
+                continue;
+            }
+
             $data = json_decode($node->textContent, true);
             $company = $this->findJobPostingCompany($data);
 
@@ -388,7 +395,7 @@ class ResumeAnalysisController extends Controller
     private function analysisQuota(int|string $userId): array
     {
         $timezone = config('app.timezone');
-        $now = now($timezone);
+        $now = Carbon::now($timezone);
         $dailyLimit = max(1, (int) config('ai.resume_analyzer.daily_limit', 5));
         $resetHour = max(0, min(23, (int) config('ai.resume_analyzer.reset_hour', 8)));
         $cooldownMinutes = max(0, (int) config('ai.resume_analyzer.cooldown_minutes', 5));
@@ -413,7 +420,7 @@ class ResumeAnalysisController extends Controller
 
         if ($lastAnalysis && $cooldownMinutes > 0) {
             $availableAt = $lastAnalysis->created_at->copy()->setTimezone($timezone)->addMinutes($cooldownMinutes);
-            $cooldownSecondsRemaining = $now->lt($availableAt) ? $now->diffInSeconds($availableAt) : 0;
+            $cooldownSecondsRemaining = $now->lt($availableAt) ? (int) ceil($now->diffInSeconds($availableAt)) : 0;
         }
 
         return [
@@ -595,7 +602,7 @@ class ResumeAnalysisController extends Controller
         $value = preg_replace_callback('/\\\\([0-7]{1,3}|.)/s', function (array $matches) {
             $escaped = $matches[1];
             if (preg_match('/^[0-7]{1,3}$/', $escaped)) {
-                return chr(octdec($escaped));
+                return chr((int) octdec($escaped));
             }
 
             return match ($escaped) {
