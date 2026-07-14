@@ -709,7 +709,7 @@ export default function Applications({
                                 Applications
                             </h1>
                             <p className="text-sm text-muted-foreground">
-                                {applications.total} tracked applications
+                                View your job applications and track their progress.
                             </p>
                         </div>
 

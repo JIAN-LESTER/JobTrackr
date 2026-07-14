@@ -22,7 +22,7 @@ export default function Activity({ statusHistories, reminders }: Props) {
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-[#eef3ef] p-4 dark:bg-background">
                 <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm dark:border-[#33463a] dark:bg-[#16231c]">
                     <h1 className="text-xl font-semibold tracking-tight">Activity</h1>
-                    <p className="text-sm text-muted-foreground">Your timeline leads the page; upcoming reminders stay close by.</p>
+                    <p className="text-sm text-muted-foreground">See your application activity and upcoming reminders.</p>
                 </div>
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
                     <section className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm dark:border-[#33463a] dark:bg-[#16231c]">

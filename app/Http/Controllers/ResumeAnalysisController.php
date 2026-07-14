@@ -32,7 +32,15 @@ class ResumeAnalysisController extends Controller
                 ->where('user_id', $userId)
                 ->where('document_type', 'resume')
                 ->latest()
-                ->get(['document_id', 'file_name', 'mime_type', 'created_at']),
+                ->get(['document_id', 'file_name', 'file_path', 'file_size', 'mime_type', 'created_at'])
+                ->map(fn (Document $document) => [
+                    'document_id' => $document->document_id,
+                    'file_name' => $document->file_name,
+                    'file_size' => $document->file_size,
+                    'file_url' => $document->file_path ? Storage::disk('public')->url($document->file_path) : null,
+                    'mime_type' => $document->mime_type,
+                    'created_at' => $document->created_at?->toIso8601String(),
+                ]),
             'analyses' => ResumeAnalysis::query()->with(['jobApplication.company', 'resumeDocument'])->where('user_id', $userId)->latest()->limit(12)->get(),
             'selectedApplicationId' => $request->integer('application') ?: null,
             'dailyLimit' => $quota['dailyLimit'],
@@ -57,6 +65,8 @@ class ResumeAnalysisController extends Controller
         $data = $request->validate([
             'job_source' => ['required', 'string', 'in:application,custom'],
             'job_application_id' => ['required', 'integer', 'exists:applications,application_id'],
+            'custom_job_title' => ['nullable', 'string', 'max:255'],
+            'custom_company_name' => ['nullable', 'string', 'max:255'],
             'job_description' => ['nullable', 'string', 'max:20000'],
             'job_post_url' => ['nullable', 'url', 'max:255'],
             'resume_source' => ['required', 'string', 'in:document,upload'],
@@ -79,6 +89,12 @@ class ResumeAnalysisController extends Controller
         $jobPostUrl = $jobSource === 'custom'
             ? (($data['job_post_url'] ?? null) ?: null)
             : $application->job_post_url;
+        $customJobTitle = $jobSource === 'custom'
+            ? trim((string) ($data['custom_job_title'] ?? ''))
+            : '';
+        $customCompanyName = $jobSource === 'custom'
+            ? $this->cleanCompanyName($data['custom_company_name'] ?? null)
+            : null;
 
         if ($jobDescription === '') {
             $jobDescriptionField = $jobSource === 'custom' ? 'job_description' : 'job_application_id';
@@ -90,6 +106,18 @@ class ResumeAnalysisController extends Controller
             ]);
 
             throw ValidationException::withMessages([$jobDescriptionField => 'Add a job description before analyzing this resume.']);
+        }
+
+        if ($jobSource === 'custom') {
+            $jobContext = array_filter([
+                $customJobTitle !== '' ? "Job title: {$customJobTitle}" : null,
+                $customCompanyName ? "Company: {$customCompanyName}" : null,
+                $jobPostUrl ? "Job post URL: {$jobPostUrl}" : null,
+            ]);
+
+            if ($jobContext !== []) {
+                $jobDescription = implode("\n", $jobContext)."\n\n".$jobDescription;
+            }
         }
         Log::info('Resume analysis job context ready.', [
             'user_id' => $request->user()->getKey(),
@@ -226,7 +254,7 @@ class ResumeAnalysisController extends Controller
         ]);
         $analysis = $analyzer->analyze($resumeText, $jobDescription);
         if (empty($analysis['company_name'])) {
-            $analysis['company_name'] = $this->companyNameFromJobPostUrl($jobPostUrl);
+            $analysis['company_name'] = $customCompanyName ?: $this->companyNameFromJobPostUrl($jobPostUrl);
         }
         Log::info('Resume analyzer service completed.', [
             'user_id' => $request->user()->getKey(),
