@@ -4,6 +4,7 @@ import {
     Bell,
     BriefcaseBusiness,
     Bookmark,
+    ChevronDown,
     Edit,
     ExternalLink,
     MessagesSquare,
@@ -19,6 +20,11 @@ import { PreferredView } from '@/components/preferred-view';
 import { StatCard } from '@/components/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
     Dialog,
     DialogContent,
@@ -366,6 +372,8 @@ export default function Applications({
         useState<Application | null>(null);
     const [selectedApplication, setSelectedApplication] =
         useState<Application | null>(null);
+    const [isSelectedDescriptionOpen, setIsSelectedDescriptionOpen] =
+        useState(false);
     const [reminderApplication, setReminderApplication] =
         useState<Application | null>(null);
     const [deletingApplication, setDeletingApplication] =
@@ -376,6 +384,8 @@ export default function Applications({
     const [editFormErrors, setEditFormErrors] =
         useState<ApplicationValidationErrors>({});
     const selectedStatus = filters.status || 'all';
+    const selectedApplicationDescription =
+        selectedApplication?.job_description?.trim() || '';
     const visibleStatuses = filterButtonStatuses.filter((status) =>
         statuses.includes(status),
     );
@@ -1601,6 +1611,7 @@ export default function Applications({
                                 onOpenChange={(open) => {
                                     if (!open) {
                                         setSelectedApplication(null);
+                                        setIsSelectedDescriptionOpen(false);
                                     }
                                 }}
                             >
@@ -1671,18 +1682,56 @@ export default function Applications({
                                                     </div>
                                                 </div>
 
-                                                {selectedApplication.job_description ? (
-                                                    <div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            Job description
+                                                <Collapsible
+                                                    open={
+                                                        isSelectedDescriptionOpen
+                                                    }
+                                                    onOpenChange={
+                                                        setIsSelectedDescriptionOpen
+                                                    }
+                                                    className="rounded-md border border-[#cbd8cf] dark:border-[#33463a]"
+                                                >
+                                                    <CollapsibleTrigger asChild>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            className="h-auto w-full justify-between gap-3 px-3 py-2 text-left hover:bg-[#eef3ef] dark:hover:bg-[#213128]/70"
+                                                        >
+                                                            <span>
+                                                                <span className="block text-xs text-muted-foreground">
+                                                                    Job description
+                                                                </span>
+                                                                <span className="block font-normal text-foreground">
+                                                                    {selectedApplicationDescription
+                                                                        ? `${selectedApplicationDescription.length.toLocaleString()} characters`
+                                                                        : 'No description saved'}
+                                                                </span>
+                                                            </span>
+                                                            <ChevronDown
+                                                                className={`size-4 shrink-0 text-muted-foreground transition-transform ${
+                                                                    isSelectedDescriptionOpen
+                                                                        ? 'rotate-180'
+                                                                        : ''
+                                                                }`}
+                                                            />
+                                                        </Button>
+                                                    </CollapsibleTrigger>
+                                                    <CollapsibleContent>
+                                                        <div className="border-t border-[#cbd8cf] px-3 pb-3 pt-2 dark:border-[#33463a]">
+                                                            {selectedApplicationDescription ? (
+                                                                <p className="max-h-64 overflow-y-auto whitespace-pre-wrap text-muted-foreground">
+                                                                    {
+                                                                        selectedApplicationDescription
+                                                                    }
+                                                                </p>
+                                                            ) : (
+                                                                <p className="text-muted-foreground">
+                                                                    Add a job description by editing this application.
+                                                                </p>
+                                                            )}
                                                         </div>
-                                                        <p className="mt-1 whitespace-pre-line">
-                                                            {
-                                                                selectedApplication.job_description
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                ) : null}
+                                                    </CollapsibleContent>
+                                                </Collapsible>
 
                                                 {selectedApplication.job_post_url ? (
                                                     <Button
@@ -1983,9 +2032,10 @@ export default function Applications({
                     storageKey="jobtrackr.applications.preferred-view"
                     emptyState="No applications found."
                     getKey={(application) => application.application_id}
-                    onItemClick={(application) =>
-                        setSelectedApplication(application)
-                    }
+                    onItemClick={(application) => {
+                        setIsSelectedDescriptionOpen(false);
+                        setSelectedApplication(application);
+                    }}
                     columns={[
                         {
                             key: 'company',
