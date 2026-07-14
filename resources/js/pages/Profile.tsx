@@ -1,10 +1,9 @@
 import { Form, Head, usePage } from '@inertiajs/react';
-import { FileText } from 'lucide-react';
+import { FileText, Image } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
-import AppearanceTabs from '@/components/appearance-tabs';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
 import DegreeSelect from '@/components/degree-select';
 import DeleteUser from '@/components/delete-user';
@@ -73,14 +72,18 @@ export default function Profile() {
 
             <h1 className="sr-only">Profile settings</h1>
 
-            <div className="mx-auto w-full max-w-screen-2xl px-4 py-6">
-                <Heading
-                    title="Profile"
-                    description="Manage your profile and account settings"
-                />
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto bg-[#eef3ef] p-4 dark:bg-background">
+                <div className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-4 shadow-sm shadow-[#17201b]/5 dark:border-[#33463a] dark:bg-[#16231c]">
+                    <h1 className="text-xl font-semibold tracking-tight">
+                        Profile
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                        Manage your profile and account settings.
+                    </p>
+                </div>
 
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch">
-                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6 lg:h-full">
+                <div className="grid gap-4 xl:grid-cols-2 xl:items-stretch">
+                    <section className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-5 shadow-sm shadow-[#17201b]/5 sm:p-6 dark:border-[#33463a] dark:bg-[#16231c]">
                         <Heading
                             variant="small"
                             title="Account information"
@@ -99,6 +102,7 @@ export default function Profile() {
                                 <>
                                     <div className="grid gap-2 sm:col-span-2">
                                         <AvatarPresetPicker
+                                            className="border-y border-[#dce6df] py-4 sm:grid-cols-[minmax(180px,0.42fr)_minmax(0,1fr)] sm:items-start dark:border-[#33463a]"
                                             name="avatar_preset"
                                             value={avatarPreset}
                                             onChange={(value) => {
@@ -268,30 +272,33 @@ export default function Profile() {
                                     <div className="grid gap-2">
                                         <Label htmlFor="photo">Picture</Label>
 
-                                        <Input
-                                            id="photo"
-                                            ref={photoInput}
-                                            type="file"
-                                            className="block w-full"
-                                            name="photo"
-                                            accept="image/*"
-                                            onChange={(event) => {
-                                                const file =
-                                                    event.target.files?.[0] ??
-                                                    null;
-                                                setPhotoPreview(
-                                                    file
-                                                        ? URL.createObjectURL(
-                                                              file,
-                                                          )
-                                                        : null,
-                                                );
+                                        <div className="border-input focus-within:border-ring focus-within:ring-ring/50 flex h-9 w-full items-center rounded-md border bg-transparent shadow-xs transition-[color,box-shadow] focus-within:ring-[3px]">
+                                            <Input
+                                                id="photo"
+                                                ref={photoInput}
+                                                type="file"
+                                                className="h-full flex-1 border-0 px-3 py-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
+                                                name="photo"
+                                                accept="image/*"
+                                                onChange={(event) => {
+                                                    const file =
+                                                        event.target.files?.[0] ??
+                                                        null;
+                                                    setPhotoPreview(
+                                                        file
+                                                            ? URL.createObjectURL(
+                                                                  file,
+                                                              )
+                                                            : null,
+                                                    );
 
-                                                if (file) {
-                                                    setAvatarPreset('');
-                                                }
-                                            }}
-                                        />
+                                                    if (file) {
+                                                        setAvatarPreset('');
+                                                    }
+                                                }}
+                                            />
+                                            <Image className="mr-3 size-5 shrink-0 text-muted-foreground" />
+                                        </div>
 
                                         {latestPhoto ? (
                                             <p className="truncate rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
@@ -305,15 +312,15 @@ export default function Profile() {
                                     <div className="grid gap-2">
                                         <Label htmlFor="resume">Resume</Label>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="border-input focus-within:border-ring focus-within:ring-ring/50 flex h-9 w-full items-center rounded-md border bg-transparent shadow-xs transition-[color,box-shadow] focus-within:ring-[3px]">
                                             <Input
                                                 id="resume"
                                                 type="file"
-                                                className="block w-full"
+                                                className="h-full flex-1 border-0 px-3 py-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
                                                 name="resume"
                                                 accept=".pdf,.doc,.docx"
                                             />
-                                            <FileText className="size-5 shrink-0 text-muted-foreground" />
+                                            <FileText className="mr-3 size-5 shrink-0 text-muted-foreground" />
                                         </div>
 
                                         {latestResume ? (
@@ -343,8 +350,8 @@ export default function Profile() {
                         </Form>
                     </section>
 
-                    <div className="grid gap-4">
-                        <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                    <div className="grid h-full gap-4">
+                        <section className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-5 shadow-sm shadow-[#17201b]/5 sm:p-6 dark:border-[#33463a] dark:bg-[#16231c]">
                             <Heading
                                 variant="small"
                                 title="Update password"
@@ -371,11 +378,11 @@ export default function Profile() {
                                         currentPasswordInput.current?.focus();
                                     }
                                 }}
-                                className="mt-5 space-y-4"
+                                className="mt-5 grid gap-4 sm:grid-cols-2"
                             >
                                 {({ errors, processing }) => (
                                     <>
-                                        <div className="grid gap-2">
+                                        <div className="grid gap-2 sm:col-span-2">
                                             <Label htmlFor="current_password">
                                                 Current password
                                             </Label>
@@ -437,7 +444,7 @@ export default function Profile() {
                                             />
                                         </div>
 
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-4 sm:col-span-2">
                                             <Button
                                                 disabled={processing}
                                                 data-test="update-password-button"
@@ -450,57 +457,55 @@ export default function Profile() {
                             </Form>
                         </section>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
-                                <Heading
-                                    variant="small"
-                                    title="Appearance settings"
-                                    description="Update the appearance settings for your account"
-                                />
-                                <div className="mt-5">
-                                    <AppearanceTabs />
-                                </div>
-                            </section>
+                        <section className="rounded-lg border border-[#cbd8cf] bg-[#f8faf7] p-5 shadow-sm shadow-[#17201b]/5 sm:p-6 dark:border-[#33463a] dark:bg-[#16231c]">
+                            <Heading
+                                variant="small"
+                                title="Account actions"
+                                description="Manage sign out and account deletion"
+                            />
 
-                            <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
-                                <Heading
-                                    variant="small"
-                                    title="Account actions"
-                                    description="Manage sign out and account deletion"
-                                />
-
-                                <Form
-                                    {...logout.form()}
-                                    className="mt-5"
-                                    onSubmit={(
-                                        event: FormEvent<HTMLFormElement>,
-                                    ) => {
-                                        if (
-                                            !window.confirm(
-                                                'Log out of your account?',
-                                            )
-                                        ) {
-                                            event.preventDefault();
-                                        }
-                                    }}
-                                >
-                                    {({ processing }) => (
-                                        <Button
-                                            type="submit"
-                                            variant="outline"
-                                            disabled={processing}
-                                            data-test="logout-button"
-                                        >
+                            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                                <div className="flex flex-col justify-between gap-4 rounded-md border border-[#dce6df] bg-white/70 p-4 dark:border-[#33463a] dark:bg-[#213128]/50">
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium">
                                             Log out
-                                        </Button>
-                                    )}
-                                </Form>
-                            </section>
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            End your current session on this
+                                            device.
+                                        </p>
+                                    </div>
 
-                            <section className="rounded-lg border bg-card p-5 shadow-xs sm:col-span-2 sm:p-6">
+                                    <Form
+                                        {...logout.form()}
+                                        onSubmit={(
+                                            event: FormEvent<HTMLFormElement>,
+                                        ) => {
+                                            if (
+                                                !window.confirm(
+                                                    'Log out of your account?',
+                                                )
+                                            ) {
+                                                event.preventDefault();
+                                            }
+                                        }}
+                                    >
+                                        {({ processing }) => (
+                                            <Button
+                                                type="submit"
+                                                variant="outline"
+                                                disabled={processing}
+                                                data-test="logout-button"
+                                            >
+                                                Log out
+                                            </Button>
+                                        )}
+                                    </Form>
+                                </div>
+
                                 <DeleteUser />
-                            </section>
-                        </div>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>

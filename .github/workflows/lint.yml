@@ -8,7 +8,7 @@ on:
       - develop
       - main
       - master
-      - workos
+      - resume-analyzer
       - staging
       - "fix/**"
       - "bugfix/**"
@@ -18,7 +18,7 @@ on:
       - develop
       - main
       - master
-      - workos
+      - resume-analyzer
 
 permissions:
   contents: read
