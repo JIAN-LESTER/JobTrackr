@@ -283,8 +283,7 @@ export default function AnalyzeResume({
             setTimerState((state) => {
                 const currentTime = Date.now();
                 const cooldownEndsAt =
-                    state.cooldownSecondsRemaining ===
-                    cooldownSecondsRemaining
+                    state.cooldownSecondsRemaining === cooldownSecondsRemaining
                         ? state.cooldownEndsAt
                         : currentTime + cooldownSecondsRemaining * 1000;
 
