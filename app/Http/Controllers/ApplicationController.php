@@ -399,14 +399,18 @@ class ApplicationController extends Controller
         $jobPosting = $this->jobPostingFromJsonLd($xpath);
         $title = $jobPosting['title'] ?? $this->metaContent($xpath, 'property', 'og:title') ?? $this->pageTitle($xpath);
         $company = $jobPosting['hiringOrganization']['name'] ?? $this->metaContent($xpath, 'property', 'og:site_name');
-        $description = $jobPosting['description'] ?? $this->metaContent($xpath, 'name', 'description');
+        $description = $this->firstCleanText([
+            $jobPosting['description'] ?? null,
+            $this->jobDescriptionFromPage($xpath),
+            $this->metaContent($xpath, 'name', 'description'),
+            $this->metaContent($xpath, 'property', 'og:description'),
+        ]);
         $salary = $jobPosting['baseSalary']['value'] ?? null;
         $salaryValue = is_array($salary) ? ($salary['value'] ?? null) : $salary;
         $employmentType = $jobPosting['employmentType'] ?? null;
         $text = implode(' ', array_filter([
             $this->cleanText($title),
-            $this->cleanText($description),
-            $this->cleanText($this->metaContent($xpath, 'property', 'og:description')),
+            $description,
             $this->cleanText($this->pageText($xpath)),
         ]));
         $jobType = $this->cleanText(is_array($employmentType) ? implode(', ', $employmentType) : $employmentType)
@@ -418,6 +422,7 @@ class ApplicationController extends Controller
         $application = $this->cleanApplicationImport($this->cleanText($title) ?: $data['job_title'], $companyName, $url);
 
         return array_merge($data, [
+            'extracted' => true,
             'company' => $application['company'],
             'job_title' => $application['title'],
             'location' => $this->locationFromJobPosting($jobPosting) ?? $this->locationFromText($text),
@@ -425,7 +430,7 @@ class ApplicationController extends Controller
             'work_setup' => $workSetup === 'Onsite' ? 'On-site' : $workSetup,
             'salary_min' => $this->cleanSalary(is_array($salary) ? ($salary['minValue'] ?? $salaryValue) : $salaryValue),
             'salary_max' => $this->cleanSalary(is_array($salary) ? ($salary['maxValue'] ?? $salaryValue) : $salaryValue),
-            'job_description' => $this->cleanText($description),
+            'job_description' => $description,
         ]);
     }
 
@@ -608,6 +613,55 @@ class ApplicationController extends Controller
         $node = $nodes->item(0);
 
         return $node instanceof \DOMNode ? $node->textContent : null;
+    }
+
+    private function jobDescriptionFromPage(\DOMXPath $xpath): ?string
+    {
+        $queries = [
+            "//*[@id='jobDescriptionText']",
+            "//*[@data-testid='jobDescription']",
+            "//*[@data-testid='job-description']",
+            "//*[@data-test='job-description']",
+            "//*[@data-test-id='job-description']",
+            "//*[@data-automation='jobDescription']",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobs-description-content__text ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobs-description ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-jobDescriptionText ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-description ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' description__text ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' show-more-less-html ')]",
+        ];
+
+        foreach ($queries as $query) {
+            $nodes = $xpath->query($query);
+
+            if (! $nodes || ! $nodes->length) {
+                continue;
+            }
+
+            $node = $nodes->item(0);
+            $text = $node instanceof \DOMNode ? $this->cleanText($node->textContent) : null;
+
+            if ($text) {
+                return $text;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param array<int, mixed> $values */
+    private function firstCleanText(array $values): ?string
+    {
+        foreach ($values as $value) {
+            $text = $this->cleanText($value);
+
+            if ($text) {
+                return $text;
+            }
+        }
+
+        return null;
     }
 
     private function cleanText(mixed $value): ?string

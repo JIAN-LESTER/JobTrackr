@@ -10,6 +10,7 @@ import {
     Plus,
     Search,
     Send,
+    Sparkles,
     Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -87,6 +88,7 @@ type ApplicationForm = {
     status: string;
     applied_date: string;
     job_post_url: string;
+    job_description: string;
 };
 
 type ReminderForm = {
@@ -423,6 +425,7 @@ export default function Applications({
         status: 'applied',
         applied_date: '',
         job_post_url: '',
+        job_description: '',
     });
     const editForm = useForm<ApplicationForm>({
         company: '',
@@ -436,6 +439,7 @@ export default function Applications({
         status: 'applied',
         applied_date: '',
         job_post_url: '',
+        job_description: '',
     });
     const reminderForm = useForm<ReminderForm>({
         job_application_id: '',
@@ -527,6 +531,7 @@ export default function Applications({
             status: application.status,
             applied_date: application.applied_date?.slice(0, 10) || '',
             job_post_url: application.job_post_url || '',
+            job_description: application.job_description || '',
         });
     };
 
@@ -637,6 +642,18 @@ export default function Applications({
                     ))}
                 </SelectContent>
             </Select>
+            <Button
+                asChild
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-8 border-[#cbd8cf] bg-white/80 text-[#8f6a1f] hover:bg-[#f8edcf] dark:border-[#33463a] dark:bg-[#213128]/70 dark:text-[#f8d98a]"
+                aria-label="Analyze job and resume"
+            >
+                <Link href={`/analyze-resume?application=${application.application_id}`}>
+                    <Sparkles className="size-4" />
+                </Link>
+            </Button>
             <Button
                 type="button"
                 variant="outline"
@@ -1056,6 +1073,26 @@ export default function Applications({
                                             ) : null}
                                         </div>
 
+                                        <div className="space-y-2">
+                                            <Label htmlFor="job_description">
+                                                Job description
+                                            </Label>
+                                            <textarea
+                                                id="job_description"
+                                                value={
+                                                    form.data.job_description
+                                                }
+                                                rows={6}
+                                                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                                onChange={(event) =>
+                                                    setAddFormData(
+                                                        'job_description',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+
                                         <div className="grid gap-4 sm:grid-cols-2">
                                             <div className="space-y-2">
                                                 <Label>Status</Label>
@@ -1403,6 +1440,27 @@ export default function Applications({
                                             </div>
                                         </div>
 
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit_job_description">
+                                                Job description
+                                            </Label>
+                                            <textarea
+                                                id="edit_job_description"
+                                                value={
+                                                    editForm.data
+                                                        .job_description
+                                                }
+                                                rows={6}
+                                                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                                onChange={(event) =>
+                                                    setEditFormData(
+                                                        'job_description',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </div>
+
                                         <div className="grid gap-4 sm:grid-cols-2">
                                             <div className="space-y-2">
                                                 <Label htmlFor="edit_salary_min">
@@ -1546,7 +1604,7 @@ export default function Applications({
                                     }
                                 }}
                             >
-                                <DialogContent className="sm:max-w-xl">
+                                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
                                     {selectedApplication ? (
                                         <>
                                             <DialogHeader>
@@ -1616,7 +1674,7 @@ export default function Applications({
                                                 {selectedApplication.job_description ? (
                                                     <div>
                                                         <div className="text-xs text-muted-foreground">
-                                                            Description
+                                                            Job description
                                                         </div>
                                                         <p className="mt-1 whitespace-pre-line">
                                                             {
