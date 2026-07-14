@@ -7,8 +7,8 @@ import { AppShell } from '@/components/app-shell';
 import AppearanceTabs from '@/components/appearance-tabs';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
-import { edit } from '@/routes/profile';
 import type { AppLayoutProps } from '@/types';
+import { edit } from '@/routes/profile';
 
 const navItems = [
     {
@@ -16,12 +16,12 @@ const navItems = [
         href: '/applications',
     },
     {
-        title: 'Reminders',
-        href: '/reminders',
+        title: 'Resume Analyzer',
+        href: '/analyze-resume',
     },
     {
-        title: 'Timeline',
-        href: '/status-histories',
+        title: 'Activity',
+        href: '/activity',
     },
     {
         title: 'Profile',
@@ -32,8 +32,9 @@ const navItems = [
 export default function AppBottomNavLayout({ children }: AppLayoutProps) {
     const { auth } = usePage().props;
     const { currentUrl, isCurrentUrl } = useCurrentUrl();
-    const onboardingIncomplete = !auth.user.onboarding_completed_at;
     const isOnboarding = currentUrl === '/onboarding';
+    const onboardingIncomplete =
+        !!auth?.user && !auth.user.onboarding_completed_at;
     const shouldHideBottomNav = isOnboarding;
 
     return (
@@ -52,7 +53,8 @@ export default function AppBottomNavLayout({ children }: AppLayoutProps) {
                         {navItems.map((item) => {
                             const active = isCurrentUrl(item.href);
                             const disabledForOnboarding =
-                                onboardingIncomplete && item.title !== 'Profile';
+                                onboardingIncomplete &&
+                                item.title !== 'Profile';
 
                             return (
                                 <Link

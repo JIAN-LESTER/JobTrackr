@@ -1,9 +1,9 @@
 import { Link } from '@inertiajs/react';
-import { Bell, BriefcaseBusiness, History, User } from 'lucide-react';
+import { BriefcaseBusiness, History, Sparkles, User } from 'lucide-react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
-import { edit } from '@/routes/profile';
 import type { NavItem } from '@/types';
+import { edit } from '@/routes/profile';
 
 const navItems: NavItem[] = [
     {
@@ -12,13 +12,13 @@ const navItems: NavItem[] = [
         icon: BriefcaseBusiness,
     },
     {
-        title: 'Reminders',
-        href: '/reminders',
-        icon: Bell,
+        title: 'Analyze',
+        href: '/analyze-resume',
+        icon: Sparkles,
     },
     {
-        title: 'Timeline',
-        href: '/status-histories',
+        title: 'Activity',
+        href: '/activity',
         icon: History,
     },
 ];

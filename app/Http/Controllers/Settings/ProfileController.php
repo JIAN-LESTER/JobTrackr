@@ -27,7 +27,7 @@ class ProfileController extends Controller
         /** @var Collection<int, Document> $documents */
         $documents = $request->user()
             ->documents()
-            ->where('document_type', 'photo')
+            ->whereIn('document_type', ['photo', 'resume'])
             ->latest()
             ->get();
 
@@ -55,7 +55,7 @@ class ProfileController extends Controller
     {
         $validated = $request->validated();
         $user = $request->user();
-        $data = collect($validated)->except('photo');
+        $data = collect($validated)->except('photo', 'resume');
 
         if (! Schema::hasColumn('users', 'avatar_preset')) {
             $data->forget('avatar_preset');
@@ -73,6 +73,7 @@ class ProfileController extends Controller
         $user->save();
 
         $this->storeProfileDocument($user->getKey(), $request->file('photo'), 'photo');
+        $this->storeProfileDocument($user->getKey(), $request->file('resume'), 'resume');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
 

@@ -22,7 +22,8 @@ function extractJobData() {
     if (!html) return null;
     const div = document.createElement('div');
     div.innerHTML = html;
-    return clean(div.textContent).slice(0, 3000);
+    const text = clean(div.textContent);
+    return text ? text.slice(0, 5000) : null;
   };
 
   const metaContent = (attr, value) => {
@@ -85,6 +86,23 @@ function extractJobData() {
     : matchText(topCardText || bodyText, ['Remote', 'Hybrid', 'On-site', 'Onsite']);
   const jobType = clean(job.employmentType)
     || matchText(topCardText || bodyText, ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship', 'Temporary']);
+  const description = stripHtml(job.description)
+    || firstText([
+      '#jobDescriptionText',
+      '[data-testid="jobDescription"]',
+      '[data-testid="job-description"]',
+      '[data-test="job-description"]',
+      '[data-test-id="job-description"]',
+      '[data-automation="jobDescription"]',
+      '.jobs-description-content__text',
+      '.jobs-description',
+      '.jobsearch-jobDescriptionText',
+      '.job-description',
+      '.description__text',
+      '.show-more-less-html',
+    ])
+    || clean(metaContent('name', 'description'))
+    || clean(metaContent('property', 'og:description'));
 
   return {
     company: clean(job.hiringOrganization?.name)
@@ -116,7 +134,7 @@ function extractJobData() {
     work_setup: workSetup === 'Onsite' ? 'On-site' : workSetup,
     salary_min: typeof salary === 'object' ? (salary?.minValue ?? salary?.value) : salary,
     salary_max: typeof salary === 'object' ? (salary?.maxValue ?? salary?.value) : salary,
-    job_description: stripHtml(job.description) || clean(metaContent('name', 'description')),
+    job_description: description ? description.slice(0, 5000) : null,
     url: window.location.href,
   };
 }
