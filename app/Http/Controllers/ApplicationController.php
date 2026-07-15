@@ -6,6 +6,8 @@ use App\Models\Application;
 use App\Models\ApplicationStatusHistory;
 use App\Models\Company;
 use App\Models\Log;
+use GuzzleHttp\Cookie\CookieJar;
+use Illuminate\Http\Client\Response as HttpClientResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -163,16 +165,18 @@ class ApplicationController extends Controller
         if (($data['import_url_only'] ?? false) && ! empty($data['job_post_url'])) {
             $importData = $this->extractImportedJobData($data['job_post_url']);
 
-            $data = array_merge($data, [
-                'company' => $importData['company'] ?? $data['company'],
-                'job_title' => $importData['job_title'] ?? $data['job_title'],
-                'job_type' => $importData['job_type'] ?? $data['job_type'] ?? null,
-                'work_setup' => $importData['work_setup'] ?? $data['work_setup'] ?? null,
-                'location' => $importData['location'] ?? $data['location'] ?? null,
-                'salary_min' => $importData['salary_min'] ?? $data['salary_min'] ?? null,
-                'salary_max' => $importData['salary_max'] ?? $data['salary_max'] ?? null,
-                'job_description' => $importData['job_description'] ?? $data['job_description'] ?? null,
-            ]);
+            if ($importData['extracted'] ?? false) {
+                $data = array_merge($data, [
+                    'company' => $importData['company'] ?? $data['company'],
+                    'job_title' => $importData['job_title'] ?? $data['job_title'],
+                    'job_type' => $importData['job_type'] ?? $data['job_type'] ?? null,
+                    'work_setup' => $importData['work_setup'] ?? $data['work_setup'] ?? null,
+                    'location' => $importData['location'] ?? $data['location'] ?? null,
+                    'salary_min' => $importData['salary_min'] ?? $data['salary_min'] ?? null,
+                    'salary_max' => $importData['salary_max'] ?? $data['salary_max'] ?? null,
+                    'job_description' => $importData['job_description'] ?? $data['job_description'] ?? null,
+                ]);
+            }
         }
 
         $companyName = trim($data['company']);
@@ -378,9 +382,7 @@ class ApplicationController extends Controller
         }
 
         try {
-            $response = Http::timeout(8)
-                ->withHeaders(['User-Agent' => 'JobTrackr/1.0'])
-                ->get($url);
+            $response = $this->fetchImportedJobPage($url);
         } catch (\Throwable) {
             return $data;
         }
@@ -392,22 +394,25 @@ class ApplicationController extends Controller
         $html = $response->body();
         $document = new \DOMDocument;
         libxml_use_internal_errors(true);
-        $document->loadHTML($html);
+        $this->loadHtmlDocument($document, $html);
         libxml_clear_errors();
 
         $xpath = new \DOMXPath($document);
+        $adapter = $this->jobImportDomAdapter($url);
         $jobPosting = $this->jobPostingFromJsonLd($xpath);
-        $title = $jobPosting['title'] ?? $this->jobTitleFromPage($xpath) ?? $this->metaContent($xpath, 'property', 'og:title') ?? $this->pageTitle($xpath);
-        $company = $jobPosting['hiringOrganization']['name'] ?? $this->companyFromPage($xpath) ?? $this->metaContent($xpath, 'property', 'og:site_name');
+        $embeddedJob = $this->embeddedJobDataFromScripts($xpath);
+        $title = $jobPosting['title'] ?? $embeddedJob['title'] ?? $this->jobTitleFromPage($xpath, $adapter) ?? $this->metaContent($xpath, 'property', 'og:title') ?? $this->pageTitle($xpath);
+        $company = $jobPosting['hiringOrganization']['name'] ?? $embeddedJob['company'] ?? $this->companyFromPage($xpath, $adapter) ?? $this->metaContent($xpath, 'property', 'og:site_name');
         $description = $this->firstFormattedDescription([
             $jobPosting['description'] ?? null,
-            $this->jobDescriptionFromPage($xpath),
+            $embeddedJob['description'] ?? null,
+            $this->jobDescriptionFromPage($xpath, $adapter),
             $this->metaContent($xpath, 'name', 'description'),
             $this->metaContent($xpath, 'property', 'og:description'),
         ]);
-        $salary = $jobPosting['baseSalary']['value'] ?? null;
+        $salary = $jobPosting['baseSalary']['value'] ?? $embeddedJob['salary'] ?? null;
         $salaryValue = is_array($salary) ? ($salary['value'] ?? null) : $salary;
-        $employmentType = $jobPosting['employmentType'] ?? null;
+        $employmentType = $jobPosting['employmentType'] ?? $embeddedJob['employment_type'] ?? null;
         $text = implode(' ', array_filter([
             $this->cleanText($title),
             $description,
@@ -419,18 +424,101 @@ class ApplicationController extends Controller
             : $this->workSetupFromText($text);
         $companyName = $this->cleanText($company) ?: $data['company'];
         $application = $this->cleanApplicationImport($this->cleanText($title) ?: $data['job_title'], $companyName, $url);
+        $extracted = $this->cleanText($title) || $description || $jobPosting !== [] || $embeddedJob !== [];
 
         return array_merge($data, [
-            'extracted' => true,
+            'extracted' => $extracted,
             'company' => $application['company'],
             'job_title' => $application['title'],
-            'location' => $this->locationFromJobPosting($jobPosting) ?? $this->locationFromPage($xpath) ?? $this->locationFromText($text),
+            'location' => $this->locationFromJobPosting($jobPosting) ?? $embeddedJob['location'] ?? $this->locationFromPage($xpath, $adapter) ?? $this->locationFromText($text),
             'job_type' => $jobType,
-            'work_setup' => $workSetup,
-            'salary_min' => $this->cleanSalary(is_array($salary) ? ($salary['minValue'] ?? $salaryValue) : $salaryValue),
-            'salary_max' => $this->cleanSalary(is_array($salary) ? ($salary['maxValue'] ?? $salaryValue) : $salaryValue),
+            'work_setup' => $workSetup ?? $embeddedJob['work_setup'] ?? null,
+            'salary_min' => $this->salaryMinimum($salary, $salaryValue),
+            'salary_max' => $this->salaryMaximum($salary, $salaryValue),
             'job_description' => $description,
         ]);
+    }
+
+    private function fetchImportedJobPage(string $url): HttpClientResponse
+    {
+        $cookies = new CookieJar;
+        $headers = $this->jobImportRequestHeaders($url);
+        $client = Http::timeout(8)
+            ->withHeaders($headers)
+            ->withOptions([
+                'cookies' => $cookies,
+                'allow_redirects' => [
+                    'max' => 5,
+                    'strict' => false,
+                    'referer' => true,
+                    'protocols' => ['http', 'https'],
+                ],
+            ]);
+
+        $origin = parse_url($url, PHP_URL_SCHEME).'://'.parse_url($url, PHP_URL_HOST).'/';
+
+        if (filter_var($origin, FILTER_VALIDATE_URL)) {
+            try {
+                $client->get($origin);
+            } catch (\Throwable) {
+                // Some sites block the landing page but still allow the job URL.
+            }
+        }
+
+        return $client->get($url);
+    }
+
+    /** @return array<string, string> */
+    private function jobImportRequestHeaders(string $url): array
+    {
+        $origin = parse_url($url, PHP_URL_SCHEME).'://'.parse_url($url, PHP_URL_HOST);
+
+        return [
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language' => 'en-US,en;q=0.9',
+            'Cache-Control' => 'no-cache',
+            'Connection' => 'keep-alive',
+            'Pragma' => 'no-cache',
+            'Referer' => filter_var($origin, FILTER_VALIDATE_URL) ? $origin.'/' : 'https://www.google.com/',
+            'Upgrade-Insecure-Requests' => '1',
+        ];
+    }
+
+    private function salaryMinimum(mixed $salary, mixed $fallback): ?string
+    {
+        if (! is_array($salary)) {
+            return $this->cleanSalary($fallback);
+        }
+
+        return $this->cleanSalary($this->firstCleanText([
+            $salary['minValue'] ?? null,
+            $salary['min'] ?? null,
+            $salary['minimum'] ?? null,
+            $salary['minimumAmount'] ?? null,
+            $salary['minAmount'] ?? null,
+            $salary['range']['min'] ?? null,
+            $salary['value'] ?? null,
+            $fallback,
+        ]));
+    }
+
+    private function salaryMaximum(mixed $salary, mixed $fallback): ?string
+    {
+        if (! is_array($salary)) {
+            return $this->cleanSalary($fallback);
+        }
+
+        return $this->cleanSalary($this->firstCleanText([
+            $salary['maxValue'] ?? null,
+            $salary['max'] ?? null,
+            $salary['maximum'] ?? null,
+            $salary['maximumAmount'] ?? null,
+            $salary['maxAmount'] ?? null,
+            $salary['range']['max'] ?? null,
+            $salary['value'] ?? null,
+            $fallback,
+        ]));
     }
 
     /** @return array<string, string> */
@@ -474,7 +562,27 @@ class ApplicationController extends Controller
             return false;
         }
 
-        return in_array(strtolower($label), ['linkedin', 'linkedin.com', strtolower($website)], true);
+        return in_array(strtolower($label), $this->siteLabels($website), true);
+    }
+
+    /** @return array<int, string> */
+    private function siteLabels(string $website): array
+    {
+        $host = strtolower($website);
+        $parts = array_values(array_filter(explode('.', $host)));
+        $root = count($parts) >= 2 ? $parts[count($parts) - 2] : $host;
+
+        return array_values(array_unique(array_filter([
+            $host,
+            preg_replace('/^www\./i', '', $host),
+            $root,
+            'linkedin',
+            'linkedin.com',
+            'indeed',
+            'indeed.com',
+            'jobstreet',
+            'jobstreet.com',
+        ])));
     }
 
     private function websiteLabel(?string $url): string
@@ -516,6 +624,398 @@ class ApplicationController extends Controller
         }
 
         return [];
+    }
+
+    /** @return array<string, mixed> */
+    private function embeddedJobDataFromScripts(\DOMXPath $xpath): array
+    {
+        $scripts = $xpath->query('//script');
+
+        if (! $scripts) {
+            return [];
+        }
+
+        $best = [];
+        $bestScore = 0;
+
+        foreach ($scripts as $script) {
+            /** @var \DOMElement $script */
+            $text = trim(html_entity_decode($script->textContent));
+
+            if ($text === '' || mb_strlen($text) > 2_000_000) {
+                continue;
+            }
+
+            foreach ($this->decodedScriptData($text) as $decoded) {
+                [$candidate, $score] = $this->bestEmbeddedJobData($decoded);
+                $flattened = $this->flattenedEmbeddedJobData($decoded);
+                $flattenedScore = $this->embeddedJobDataScore($flattened);
+
+                if ($flattenedScore > $score) {
+                    $candidate = $flattened;
+                    $score = $flattenedScore;
+                }
+
+                if ($score > $bestScore) {
+                    $best = $candidate;
+                    $bestScore = $score;
+                }
+            }
+        }
+
+        return $bestScore >= 8 ? $best : [];
+    }
+
+    /** @return array<int, array<int|string, mixed>> */
+    private function decodedScriptData(string $script): array
+    {
+        $decoded = [];
+
+        if (str_starts_with($script, '{') || str_starts_with($script, '[')) {
+            $value = json_decode($script, true);
+
+            if (is_array($value)) {
+                $decoded[] = $value;
+            }
+        }
+
+        if (! preg_match_all('/\b(?:window\.)?(?:__NEXT_DATA__|_initialData|initialData|apolloState|reduxState|SEEK_REDUX_DATA|APP_STATE|INITIAL_STATE|__APOLLO_STATE__)\b\s*=\s*/i', $script, $matches, PREG_OFFSET_CAPTURE)) {
+            return $decoded;
+        }
+
+        foreach ($matches[0] as $match) {
+            $json = $this->jsonAfterOffset($script, $match[1] + strlen($match[0]));
+
+            if (! $json) {
+                continue;
+            }
+
+            $value = json_decode($json, true);
+
+            if (is_array($value)) {
+                $decoded[] = $value;
+            }
+        }
+
+        return $decoded;
+    }
+
+    private function jsonAfterOffset(string $script, int $offset): ?string
+    {
+        $length = strlen($script);
+
+        while ($offset < $length && ctype_space($script[$offset])) {
+            $offset++;
+        }
+
+        if ($offset >= $length || ! in_array($script[$offset], ['{', '['], true)) {
+            return null;
+        }
+
+        $open = $script[$offset];
+        $close = $open === '{' ? '}' : ']';
+        $depth = 0;
+        $inString = false;
+        $escaped = false;
+
+        for ($index = $offset; $index < $length; $index++) {
+            $char = $script[$index];
+
+            if ($inString) {
+                if ($escaped) {
+                    $escaped = false;
+                } elseif ($char === '\\') {
+                    $escaped = true;
+                } elseif ($char === '"') {
+                    $inString = false;
+                }
+
+                continue;
+            }
+
+            if ($char === '"') {
+                $inString = true;
+            } elseif ($char === $open) {
+                $depth++;
+            } elseif ($char === $close) {
+                $depth--;
+
+                if ($depth === 0) {
+                    return substr($script, $offset, $index - $offset + 1);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** @return array{0: array<string, mixed>, 1: int} */
+    private function bestEmbeddedJobData(mixed $value, int $depth = 0): array
+    {
+        if (! is_array($value) || $depth > 10) {
+            return [[], 0];
+        }
+
+        $best = $this->normalizeEmbeddedJobData($value);
+        $bestScore = $this->embeddedJobDataScore($best);
+
+        foreach ($value as $child) {
+            if (! is_array($child)) {
+                continue;
+            }
+
+            [$candidate, $score] = $this->bestEmbeddedJobData($child, $depth + 1);
+
+            if ($score > $bestScore) {
+                $best = $candidate;
+                $bestScore = $score;
+            }
+        }
+
+        return [$best, $bestScore];
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @return array<string, mixed>
+     */
+    private function normalizeEmbeddedJobData(array $value): array
+    {
+        $company = $this->firstCleanText([
+            $value['company'] ?? null,
+            $value['companyName'] ?? null,
+            $value['company_name'] ?? null,
+            $value['advertiserName'] ?? null,
+            $value['employerName'] ?? null,
+            $value['hiringOrganization']['name'] ?? null,
+            $value['company']['name'] ?? null,
+            $value['employer']['name'] ?? null,
+            $value['advertiser']['name'] ?? null,
+        ]);
+        $location = $this->firstCleanText([
+            $value['location'] ?? null,
+            $value['locationName'] ?? null,
+            $value['formattedLocation'] ?? null,
+            $value['jobLocationText'] ?? null,
+            $value['primaryLocation'] ?? null,
+            $value['jobLocation']['address']['addressLocality'] ?? null,
+            $value['jobLocation']['address'] ?? null,
+            $value['locations'][0]['label'] ?? null,
+            $value['locations'][0]['name'] ?? null,
+        ]);
+        $employmentType = $this->firstCleanText([
+            $value['employmentType'] ?? null,
+            $value['jobType'] ?? null,
+            $value['job_type'] ?? null,
+            $value['workType'] ?? null,
+            $value['workTypeLabel'] ?? null,
+            $value['employmentTypes'][0] ?? null,
+        ]);
+        $workSetup = $this->firstCleanText([
+            $value['workSetup'] ?? null,
+            $value['work_setup'] ?? null,
+            $value['workplaceType'] ?? null,
+            $value['workArrangement'] ?? null,
+            $value['remoteType'] ?? null,
+        ]);
+        $salary = $value['baseSalary']['value'] ?? $value['salary'] ?? $value['salaryInfo'] ?? $value['salaryRange'] ?? null;
+
+        return [
+            'title' => $this->firstCleanText([
+                $value['title'] ?? null,
+                $value['jobTitle'] ?? null,
+                $value['job_title'] ?? null,
+                $value['displayTitle'] ?? null,
+                $value['name'] ?? null,
+            ]),
+            'company' => $company,
+            'description' => $this->firstFormattedDescription([
+                $value['description'] ?? null,
+                $value['jobDescription'] ?? null,
+                $value['job_description'] ?? null,
+                $value['descriptionHtml'] ?? null,
+                $value['content'] ?? null,
+            ]),
+            'location' => $location,
+            'employment_type' => $employmentType,
+            'work_setup' => $this->workSetupFromText((string) $workSetup) ?? $workSetup,
+            'salary' => $salary,
+        ];
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @return array<string, mixed>
+     */
+    private function flattenedEmbeddedJobData(array $value): array
+    {
+        $workSetup = $this->firstNestedCleanText($value, [
+            'workSetup',
+            'work_setup',
+            'workplaceType',
+            'workArrangement',
+            'remoteType',
+        ]);
+
+        return [
+            'title' => $this->firstNestedCleanText($value, [
+                'jobTitle',
+                'job_title',
+                'displayTitle',
+                'title',
+            ]),
+            'company' => $this->firstNestedCleanText($value, [
+                'companyName',
+                'company_name',
+                'advertiserName',
+                'employerName',
+                'hiringOrganizationName',
+            ]),
+            'description' => $this->firstNestedFormattedText($value, [
+                'sanitizedJobDescription',
+                'jobDescriptionText',
+                'jobDescription',
+                'job_description',
+                'descriptionHtml',
+                'description',
+            ]),
+            'location' => $this->firstNestedCleanText($value, [
+                'formattedLocation',
+                'locationName',
+                'jobLocationText',
+                'primaryLocation',
+                'location',
+            ]),
+            'employment_type' => $this->firstNestedCleanText($value, [
+                'employmentType',
+                'jobType',
+                'job_type',
+                'workType',
+                'workTypeLabel',
+            ]),
+            'work_setup' => $this->workSetupFromText((string) $workSetup) ?? $workSetup,
+            'salary' => $this->firstNestedValue($value, [
+                'baseSalary',
+                'salaryRange',
+                'salaryInfo',
+                'salary',
+            ]),
+        ];
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @param  array<int, string>  $keys
+     */
+    private function firstNestedCleanText(array $value, array $keys, int $depth = 0): ?string
+    {
+        if ($depth > 10) {
+            return null;
+        }
+
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $value)) {
+                $text = $this->cleanText($value[$key]);
+
+                if ($text) {
+                    return $text;
+                }
+            }
+        }
+
+        foreach ($value as $child) {
+            if (! is_array($child)) {
+                continue;
+            }
+
+            $text = $this->firstNestedCleanText($child, $keys, $depth + 1);
+
+            if ($text) {
+                return $text;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @param  array<int, string>  $keys
+     */
+    private function firstNestedFormattedText(array $value, array $keys, int $depth = 0): ?string
+    {
+        if ($depth > 10) {
+            return null;
+        }
+
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $value)) {
+                $text = $this->formatDescriptionText($value[$key]);
+
+                if ($text) {
+                    return $text;
+                }
+            }
+        }
+
+        foreach ($value as $child) {
+            if (! is_array($child)) {
+                continue;
+            }
+
+            $text = $this->firstNestedFormattedText($child, $keys, $depth + 1);
+
+            if ($text) {
+                return $text;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @param  array<int, string>  $keys
+     */
+    private function firstNestedValue(array $value, array $keys, int $depth = 0): mixed
+    {
+        if ($depth > 10) {
+            return null;
+        }
+
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $value)) {
+                return $value[$key];
+            }
+        }
+
+        foreach ($value as $child) {
+            if (! is_array($child)) {
+                continue;
+            }
+
+            $matched = $this->firstNestedValue($child, $keys, $depth + 1);
+
+            if ($matched !== null) {
+                return $matched;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param array<string, mixed> $value */
+    private function embeddedJobDataScore(array $value): int
+    {
+        $score = 0;
+        $score += ($value['title'] ?? null) ? 4 : 0;
+        $score += ($value['company'] ?? null) ? 4 : 0;
+        $score += ($value['description'] ?? null) ? 5 : 0;
+        $score += ($value['location'] ?? null) ? 2 : 0;
+        $score += ($value['employment_type'] ?? null) ? 1 : 0;
+        $score += ($value['work_setup'] ?? null) ? 1 : 0;
+
+        return $score;
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -563,17 +1063,134 @@ class ApplicationController extends Controller
         return null;
     }
 
-    private function locationFromPage(\DOMXPath $xpath): ?string
+    /**
+     * @return array{
+     *     title: array<int, string>,
+     *     company: array<int, string>,
+     *     location: array<int, string>,
+     *     description: array<int, string>
+     * }
+     */
+    private function jobImportDomAdapter(string $url): array
     {
-        $queries = [
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__bullet ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__flavor--bullet ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-search-card__location ')]",
-            "//*[@data-testid='job-location']",
-            "//*[@data-testid='jobsearch-JobInfoHeader-companyLocation']",
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $generic = [
+            'title' => [
+                '//*[@data-testid="job-title"]',
+                '//*[@data-test="job-title"]',
+                '//*[@data-test-id="job-title"]',
+                '//h1',
+            ],
+            'company' => [
+                '//*[@data-testid="company-name"]',
+                '//*[@data-test="company-name"]',
+                '//*[@data-test-id="company-name"]',
+                '//*[@itemprop="hiringOrganization"]//*[@itemprop="name"]',
+            ],
+            'location' => [
+                '//*[@data-testid="job-location"]',
+                '//*[@data-test="job-location"]',
+                '//*[@data-test-id="job-location"]',
+                '//*[contains(concat(" ", normalize-space(@class), " "), " job-search-card__location ")]',
+            ],
+            'description' => [
+                '//*[@id="jobDescriptionText"]',
+                '//*[@data-testid="jobDescription"]',
+                '//*[@data-testid="job-description"]',
+                '//*[@data-test="job-description"]',
+                '//*[@data-test-id="job-description"]',
+                '//*[@data-automation="jobDescription"]',
+                "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-description ')]",
+                "//*[contains(concat(' ', normalize-space(@class), ' '), ' description__text ')]",
+            ],
         ];
+        $site = match (true) {
+            str_contains($host, 'linkedin.com') => [
+                'title' => [
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__job-title ')]//h1",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__job-title ')]",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__title ')]",
+                ],
+                'company' => [
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__company-name ')]//a",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__company-name ')]",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__org-name-link ')]",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__flavor ')]",
+                ],
+                'location' => [
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__bullet ')]",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__flavor--bullet ')]",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-search-card__location ')]",
+                ],
+                'description' => [
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobs-description__content ')]",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobs-description-content__text ')]",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobs-description ')]",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' show-more-less-html__markup ')]",
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' show-more-less-html ')]",
+                ],
+            ],
+            str_contains($host, 'indeed.') => [
+                'title' => [
+                    '//*[@data-testid="jobsearch-JobInfoHeader-title"]',
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-JobInfoHeader-title ')]",
+                ],
+                'company' => [
+                    '//*[@data-testid="inlineHeader-companyName"]',
+                    '//*[@data-testid="company-name"]',
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-InlineCompanyRating-companyHeader ')]",
+                ],
+                'location' => [
+                    '//*[@data-testid="jobsearch-JobInfoHeader-companyLocation"]',
+                    '//*[@data-testid="job-location"]',
+                ],
+                'description' => [
+                    '//*[@id="jobDescriptionText"]',
+                    '//*[@data-testid="jobsearch-JobComponent-description"]',
+                    "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-jobDescriptionText ')]",
+                ],
+            ],
+            str_contains($host, 'jobstreet.') => [
+                'title' => [
+                    '//*[@data-automation="job-detail-title"]',
+                    '//*[@data-testid="job-title"]',
+                ],
+                'company' => [
+                    '//*[@data-automation="advertiser-name"]',
+                    '//*[@data-automation="company-name"]',
+                    '//*[@data-testid="company-name"]',
+                ],
+                'location' => [
+                    '//*[@data-automation="job-detail-location"]',
+                    '//*[@data-testid="job-location"]',
+                ],
+                'description' => [
+                    '//*[@data-automation="jobAdDetails"]',
+                    '//*[@data-automation="jobDescription"]',
+                    '//*[@data-testid="job-description"]',
+                    '//main',
+                ],
+            ],
+            default => [
+                'title' => [],
+                'company' => [],
+                'location' => [],
+                'description' => [],
+            ],
+        };
 
-        foreach ($queries as $query) {
+        return [
+            'title' => array_values(array_unique([...$site['title'], ...$generic['title']])),
+            'company' => array_values(array_unique([...$site['company'], ...$generic['company']])),
+            'location' => array_values(array_unique([...$site['location'], ...$generic['location']])),
+            'description' => array_values(array_unique([...$site['description'], ...$generic['description']])),
+        ];
+    }
+
+    /** @param array{location: array<int, string>} $adapter */
+    private function locationFromPage(\DOMXPath $xpath, array $adapter): ?string
+    {
+        foreach ($adapter['location'] as $query) {
             $nodes = $xpath->query($query);
 
             if (! $nodes || ! $nodes->length) {
@@ -598,6 +1215,8 @@ class ApplicationController extends Controller
         if (! $text) {
             return null;
         }
+
+        $text = preg_replace('/\s*(?:[\x{2022}\x{00B7}]|\x{00E2}\x{20AC}?\x{00A2}|\x{00C2}\x{00B7})\s*/u', ' | ', $text) ?? $text;
 
         $parts = preg_split('/\s*(?:•|·|\||\R)\s*/u', $text) ?: [];
 
@@ -693,35 +1312,16 @@ class ApplicationController extends Controller
         return $node instanceof \DOMNode ? $node->textContent : null;
     }
 
-    private function jobTitleFromPage(\DOMXPath $xpath): ?string
+    /** @param array{title: array<int, string>} $adapter */
+    private function jobTitleFromPage(\DOMXPath $xpath, array $adapter): ?string
     {
-        return $this->firstPageText($xpath, [
-            "//*[@data-testid='job-title']",
-            "//*[@data-test='job-title']",
-            "//*[@data-test-id='job-title']",
-            "//*[@data-automation='job-detail-title']",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__job-title ')]//h1",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__job-title ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-JobInfoHeader-title ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__title ')]",
-            "//h1",
-        ]);
+        return $this->firstPageText($xpath, $adapter['title']);
     }
 
-    private function companyFromPage(\DOMXPath $xpath): ?string
+    /** @param array{company: array<int, string>} $adapter */
+    private function companyFromPage(\DOMXPath $xpath, array $adapter): ?string
     {
-        return $this->firstPageText($xpath, [
-            "//*[@data-testid='company-name']",
-            "//*[@data-test='company-name']",
-            "//*[@data-test-id='company-name']",
-            "//*[@data-automation='advertiser-name']",
-            "//*[@itemprop='hiringOrganization']//*[@itemprop='name']",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__company-name ')]//a",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__company-name ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-InlineCompanyRating-companyHeader ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__org-name-link ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__flavor ')]",
-        ]);
+        return $this->firstPageText($xpath, $adapter['company']);
     }
 
     /** @param array<int, string> $queries */
@@ -745,24 +1345,10 @@ class ApplicationController extends Controller
         return null;
     }
 
-    private function jobDescriptionFromPage(\DOMXPath $xpath): ?string
+    /** @param array{description: array<int, string>} $adapter */
+    private function jobDescriptionFromPage(\DOMXPath $xpath, array $adapter): ?string
     {
-        $queries = [
-            "//*[@id='jobDescriptionText']",
-            "//*[@data-testid='jobDescription']",
-            "//*[@data-testid='job-description']",
-            "//*[@data-test='job-description']",
-            "//*[@data-test-id='job-description']",
-            "//*[@data-automation='jobDescription']",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobs-description-content__text ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobs-description ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-jobDescriptionText ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-description ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' description__text ')]",
-            "//*[contains(concat(' ', normalize-space(@class), ' '), ' show-more-less-html ')]",
-        ];
-
-        foreach ($queries as $query) {
+        foreach ($adapter['description'] as $query) {
             $nodes = $xpath->query($query);
 
             if (! $nodes || ! $nodes->length) {
@@ -819,7 +1405,7 @@ class ApplicationController extends Controller
         if ($text !== strip_tags($text)) {
             $document = new \DOMDocument;
             libxml_use_internal_errors(true);
-            $document->loadHTML('<body>'.$text.'</body>');
+            $this->loadHtmlDocument($document, '<body>'.$text.'</body>');
             libxml_clear_errors();
 
             $body = $document->getElementsByTagName('body')->item(0);
@@ -837,7 +1423,7 @@ class ApplicationController extends Controller
 
     private function nodeTextWithBreaks(\DOMNode $node): string
     {
-        if ($node instanceof \DOMText || $node instanceof \DOMCdataSection) {
+        if ($node->nodeType === \XML_TEXT_NODE || $node->nodeType === \XML_CDATA_SECTION_NODE) {
             return $node->textContent;
         }
 
@@ -888,6 +1474,11 @@ class ApplicationController extends Controller
         $text = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $value))));
 
         return $text === '' ? null : mb_substr($text, 0, 5000);
+    }
+
+    private function loadHtmlDocument(\DOMDocument $document, string $html): void
+    {
+        $document->loadHTML('<?xml encoding="UTF-8">'.$html);
     }
 
     private function cleanSalary(mixed $value): ?string

@@ -7,12 +7,14 @@ on:
       - main
       - master
       - resume-analyzer
+      - staging
   pull_request:
     branches:
       - develop
       - main
       - master
       - resume-analyzer
+      - staging
   workflow_dispatch:
   schedule:
     - cron: '0 16 * * *'
