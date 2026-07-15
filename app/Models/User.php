@@ -17,6 +17,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 use Throwable;
 
 /**
@@ -37,11 +38,11 @@ use Throwable;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     protected $primaryKey = 'user_id';
 
-    protected $appends = ['avatar'];
+    protected $appends = ['avatar', 'id'];
 
     /**
      * Get the attributes that should be cast.
@@ -63,6 +64,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Document::class, 'user_id', 'user_id');
     }
 
+    public function getIdAttribute(): int|string|null
+    {
+        return $this->getKey();
+    }
+
     public function getAvatarAttribute(): ?string
     {
         if ($preset = AvatarPresets::url($this->avatar_preset)) {
@@ -80,7 +86,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new VerifyEmail);
+        try {
+            $this->notify(new VerifyEmail);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void

@@ -81,4 +81,10 @@ class Application extends Model
     {
         return $this->hasMany(Reminder::class, 'job_application_id', 'application_id');
     }
+
+    /** @return HasMany<ResumeAnalysis, $this> */
+    public function resumeAnalyses(): HasMany
+    {
+        return $this->hasMany(ResumeAnalysis::class, 'job_application_id', 'application_id');
+    }
 }

@@ -27,6 +27,7 @@ trait ProfileValidationRules
             'education_program' => ['nullable', 'string', 'max:255'],
             'avatar_preset' => ['nullable', 'string', 'in:'.implode(',', AvatarPresets::keys())],
             'photo' => ['nullable', 'image', 'max:2048'],
+            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
         ];
     }
 

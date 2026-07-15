@@ -8,19 +8,26 @@ services:
       APP_ENV: local
       APP_DEBUG: true
       APP_URL: http://localhost:8000
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
       DB_DATABASE: jobtrackr
       DB_USERNAME: jobtrackr
       DB_PASSWORD: secret
+      # MySQL:
+      # DB_CONNECTION: mysql
+      # DB_HOST: mysql
+      # DB_PORT: 3306
+      # DB_DATABASE: jobtrackr
+      # DB_USERNAME: jobtrackr
+      # DB_PASSWORD: secret
       VITE_DEV_SERVER_URL: http://localhost:5173
     volumes:
       - .:/var/www/html
       - vendor:/var/www/html/vendor
       - node_modules:/var/www/html/node_modules
     depends_on:
-      - mysql
+      - postgres
 
   nginx:
     image: nginx:1.27-alpine
@@ -47,33 +54,57 @@ services:
     depends_on:
       - app
 
-  mysql:
-    image: mysql:8.4
+  postgres:
+    image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: jobtrackr
-      MYSQL_USER: jobtrackr
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_DB: jobtrackr
+      POSTGRES_USER: jobtrackr
+      POSTGRES_PASSWORD: secret
     ports:
-      - "3306:3306"
+      - "5434:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
 
-  phpmyadmin:
-    image: phpmyadmin:5.2-apache
+  pgadmin:
+    image: dpage/pgadmin4:8
     restart: unless-stopped
     ports:
       - "8080:80"
     environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      PMA_USER: jobtrackr
-      PMA_PASSWORD: secret
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: secret
     depends_on:
-      - mysql
+      - postgres
+
+  # mysql:
+  #   image: mysql:8.4
+  #   restart: unless-stopped
+  #   environment:
+  #     MYSQL_DATABASE: jobtrackr
+  #     MYSQL_USER: jobtrackr
+  #     MYSQL_PASSWORD: secret
+  #     MYSQL_ROOT_PASSWORD: root
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+
+  # phpmyadmin:
+  #   image: phpmyadmin:5.2-apache
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8081:80"
+  #   environment:
+  #     PMA_HOST: mysql
+  #     PMA_PORT: 3306
+  #     PMA_USER: jobtrackr
+  #     PMA_PASSWORD: secret
+  #   depends_on:
+  #     - mysql
 
 volumes:
-  mysql_data:
+  postgres_data:
+  # mysql_data:
   vendor:
   node_modules:

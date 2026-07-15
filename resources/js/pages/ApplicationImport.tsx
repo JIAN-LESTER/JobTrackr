@@ -1,6 +1,7 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Check, ExternalLink } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Check, ExternalLink, Search } from 'lucide-react';
 import type { FormEvent } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +41,16 @@ const websiteLabel = (url: string | undefined) => {
         return new URL(url).hostname.replace(/^www\./, '') || 'Website';
     } catch {
         return 'Website';
+    }
+};
+
+const importUrlFromText = (value: string) => {
+    const url = value.trim().match(/https?:\/\/[^\s]+/i)?.[0] || value.trim();
+
+    try {
+        return new URL(url).toString();
+    } catch {
+        return null;
     }
 };
 
@@ -114,6 +125,7 @@ type ApplicationImportForm = {
 };
 
 export default function ApplicationImport({ importData }: Props) {
+    const [extracting, setExtracting] = useState(false);
     const extensionInstallUrl =
         import.meta.env.VITE_BROWSER_EXTENSION_URL?.trim();
     const importedWebsite = websiteLabel(importData.url);
@@ -158,6 +170,25 @@ export default function ApplicationImport({ importData }: Props) {
         });
     };
 
+    const extractFromUrl = (value: string) => {
+        const url = importUrlFromText(value);
+
+        if (!url) {
+            return;
+        }
+
+        setExtracting(true);
+        router.get(
+            '/applications/import',
+            { url },
+            {
+                preserveScroll: true,
+                replace: true,
+                onFinish: () => setExtracting(false),
+            },
+        );
+    };
+
     return (
         <>
             <Head title="Job Import" />
@@ -191,23 +222,98 @@ export default function ApplicationImport({ importData }: Props) {
                     >
                         <div className="space-y-2">
                             <Label htmlFor="job_post_url">Job post URL</Label>
-                            <Input
-                                id="job_post_url"
-                                type="url"
-                                value={form.data.job_post_url}
-                                className="bg-white/80 dark:bg-[#0f1713]/40"
-                                onChange={(event) =>
-                                    form.setData(
-                                        'job_post_url',
-                                        event.target.value,
-                                    )
-                                }
-                            />
+                            <div className="flex gap-2">
+                                <Input
+                                    id="job_post_url"
+                                    type="url"
+                                    value={form.data.job_post_url}
+                                    className="bg-white/80 dark:bg-[#0f1713]/40"
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'job_post_url',
+                                            event.target.value,
+                                        )
+                                    }
+                                    onPaste={(event) => {
+                                        const url = importUrlFromText(
+                                            event.clipboardData.getData('text'),
+                                        );
+
+                                        if (url) {
+                                            event.preventDefault();
+                                            form.setData('job_post_url', url);
+                                            extractFromUrl(url);
+                                        }
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={
+                                        extracting || !form.data.job_post_url
+                                    }
+                                    className="shrink-0 border-[#cbd8cf] bg-white/70 dark:border-[#33463a] dark:bg-[#213128]/70"
+                                    onClick={() =>
+                                        extractFromUrl(form.data.job_post_url)
+                                    }
+                                >
+                                    {extracting ? <Spinner /> : <Search />}
+                                    Extract
+                                </Button>
+                            </div>
+                            {importData.extracted ? (
+                                <p className="text-sm text-muted-foreground">
+                                    Extracted job details from the URL.
+                                </p>
+                            ) : null}
                             {form.errors.job_post_url ? (
                                 <p className="text-sm text-destructive">
                                     {form.errors.job_post_url}
                                 </p>
                             ) : null}
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="company">Company name</Label>
+                                <Input
+                                    id="company"
+                                    value={form.data.company}
+                                    className="bg-white/80 dark:bg-[#0f1713]/40"
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'company',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                {form.errors.company ? (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.company}
+                                    </p>
+                                ) : null}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="job_title">
+                                    Job position role
+                                </Label>
+                                <Input
+                                    id="job_title"
+                                    value={form.data.job_title}
+                                    className="bg-white/80 dark:bg-[#0f1713]/40"
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'job_title',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                {form.errors.job_title ? (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.job_title}
+                                    </p>
+                                ) : null}
+                            </div>
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-3">
@@ -253,6 +359,24 @@ export default function ApplicationImport({ importData }: Props) {
                                     }
                                 />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="job_description">
+                                Job description
+                            </Label>
+                            <textarea
+                                id="job_description"
+                                value={form.data.job_description}
+                                rows={10}
+                                className="flex w-full rounded-md border border-input bg-white/80 px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-[#0f1713]/40"
+                                onChange={(event) =>
+                                    form.setData(
+                                        'job_description',
+                                        event.target.value,
+                                    )
+                                }
+                            />
                         </div>
 
                         <div className="flex justify-end">

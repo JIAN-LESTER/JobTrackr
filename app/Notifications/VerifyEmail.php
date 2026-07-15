@@ -4,9 +4,27 @@ namespace App\Notifications;
 
 use Illuminate\Auth\Notifications\VerifyEmail as BaseVerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\URL;
 
 class VerifyEmail extends BaseVerifyEmail
 {
+    protected function verificationUrl($notifiable): string
+    {
+        $path = URL::temporarySignedRoute(
+            'verification.verify',
+            Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
+            [
+                'id' => $notifiable->getKey(),
+                'hash' => sha1($notifiable->getEmailForVerification()),
+            ],
+            false,
+        );
+
+        return rtrim((string) config('app.url'), '/').$path;
+    }
+
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)

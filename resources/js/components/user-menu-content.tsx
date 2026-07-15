@@ -1,5 +1,6 @@
 import { Link, router } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
+import type { MouseEvent } from 'react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -19,7 +20,13 @@ type Props = {
 export function UserMenuContent({ user }: Props) {
     const cleanup = useMobileNavigation();
 
-    const handleLogout = () => {
+    const handleLogout = (event: MouseEvent<Element>) => {
+        if (!window.confirm('Log out of your account?')) {
+            event.preventDefault();
+
+            return;
+        }
+
         cleanup();
         router.flushAll();
     };

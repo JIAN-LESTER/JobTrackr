@@ -30,6 +30,10 @@ class AuthenticationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect('/applications');
+        $response->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Logged in.',
+        ]);
     }
 
     public function test_users_with_two_factor_enabled_are_redirected_to_two_factor_challenge()
@@ -57,11 +61,27 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->post(route('login.store'), [
+        $response = $this->post(route('login.store'), [
             'email' => $user->email,
             'password' => 'wrong-password',
         ]);
 
+        $response->assertSessionHasErrors([
+            'password' => 'The provided credentials are incorrect.',
+        ]);
+        $this->assertGuest();
+    }
+
+    public function test_users_are_told_when_the_account_does_not_exist()
+    {
+        $response = $this->post(route('login.store'), [
+            'email' => 'missing@example.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors([
+            'email' => 'An account with this email does not exist.',
+        ]);
         $this->assertGuest();
     }
 
@@ -71,7 +91,11 @@ class AuthenticationTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('logout'));
 
-        $response->assertRedirect(route('home'));
+        $response->assertRedirect(route('login'));
+        $response->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Logged out.',
+        ]);
 
         $this->assertGuest();
     }

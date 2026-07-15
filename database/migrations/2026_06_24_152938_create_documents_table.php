@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('documents', function (Blueprint $table) {
             $table->id('document_id');
             $table->foreignId('job_application_id')->references('application_id')->on('applications')->cascadeOnDelete();
+            $table->foreignId('user_id')->references('user_id')->on('users')->cascadeOnDelete();
 
             $table->string('document_type');
 

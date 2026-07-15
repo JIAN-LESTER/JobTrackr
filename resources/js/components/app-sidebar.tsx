@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Bell, BriefcaseBusiness, History } from 'lucide-react';
+import { BriefcaseBusiness, History, Sparkles } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -16,20 +16,19 @@ import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Application',
+        title: 'Applications',
         href: '/applications',
         icon: BriefcaseBusiness,
     },
     {
-        title: 'Reminders',
-        href: '/reminders',
-        icon: Bell,
+        title: 'Resume Analyzer',
+        href: '/analyze-resume',
+        icon: Sparkles,
     },
-    {
-        title: 'Timeline',
-        href: '/status-histories',
-        icon: History,
-    },
+];
+
+const activityNavItems: NavItem[] = [
+    { title: 'Timeline & reminders', href: '/activity', icon: History },
 ];
 
 export function AppSidebar() {
@@ -49,6 +48,7 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+                <NavMain items={activityNavItems} label="Activity" />
             </SidebarContent>
 
             <SidebarFooter>

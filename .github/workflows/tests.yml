@@ -6,13 +6,13 @@ on:
       - develop
       - main
       - master
-      - workos
+      - resume-analyzer
   pull_request:
     branches:
       - develop
       - main
       - master
-      - workos
+      - resume-analyzer
   workflow_dispatch:
   schedule:
     - cron: '0 16 * * *'

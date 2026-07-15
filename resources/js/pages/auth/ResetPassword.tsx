@@ -22,6 +22,55 @@ type ResetPasswordForm = {
     password_confirmation: string;
 };
 
+function SideContent() {
+    return (
+        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl ring-1 shadow-black/20 ring-white/10 sm:p-8 lg:min-h-[500px]">
+            <div className="space-y-3">
+                <p className="text-sm font-medium text-[#f3c76a]">
+                    Password reset
+                </p>
+                <h2 className="text-3xl font-semibold">
+                    Secure your account and return to your workspace.
+                </h2>
+                <p className="text-white/70">
+                    Create a new password, then continue managing applications,
+                    reminders, interviews, and decisions.
+                </p>
+            </div>
+
+            <div className="grid gap-4 text-sm">
+                <div className="flex gap-3">
+                    <LockKeyhole className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Fresh credentials</p>
+                        <p className="text-white/65">
+                            Replace your old password before signing in again.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <ShieldCheck className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Account protection</p>
+                        <p className="text-white/65">
+                            Use a password that keeps your workspace secure.
+                        </p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <KeyRound className="mt-0.5 size-5 text-[#f3c76a]" />
+                    <div>
+                        <p className="font-medium">Back in control</p>
+                        <p className="text-white/65">
+                            Your job search data stays ready when you return.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function ResetPassword({ token, email, passwordRules }: Props) {
     const form = useForm<ResetPasswordForm>({
         token,
@@ -110,6 +159,7 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                             autoFocus
                             placeholder="Password"
                             passwordrules={passwordRules}
+                            aria-invalid={!!form.errors.password}
                         />
                         <InputError message={form.errors.password} />
                     </div>
@@ -133,6 +183,7 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                             autoComplete="new-password"
                             placeholder="Confirm password"
                             passwordrules={passwordRules}
+                            aria-invalid={!!form.errors.password_confirmation}
                         />
                         <InputError
                             message={form.errors.password_confirmation}
@@ -159,50 +210,5 @@ ResetPassword.layout = {
     title: 'Reset password',
     description: 'Choose a new password for your JobTrackr account.',
     sidePosition: 'right',
-    side: (
-        <div className="flex h-full flex-col gap-8 rounded-md bg-[#17201b] p-6 text-white shadow-2xl ring-1 shadow-black/20 ring-white/10 sm:p-8 lg:min-h-[500px]">
-            <div className="space-y-3">
-                <p className="text-sm font-medium text-[#f3c76a]">
-                    Password reset
-                </p>
-                <h2 className="text-3xl font-semibold">
-                    Secure your account and return to your workspace.
-                </h2>
-                <p className="text-white/70">
-                    Create a new password, then continue managing applications,
-                    reminders, interviews, and decisions.
-                </p>
-            </div>
-
-            <div className="grid gap-4 text-sm">
-                <div className="flex gap-3">
-                    <LockKeyhole className="mt-0.5 size-5 text-[#f3c76a]" />
-                    <div>
-                        <p className="font-medium">Fresh credentials</p>
-                        <p className="text-white/65">
-                            Replace your old password before signing in again.
-                        </p>
-                    </div>
-                </div>
-                <div className="flex gap-3">
-                    <ShieldCheck className="mt-0.5 size-5 text-[#f3c76a]" />
-                    <div>
-                        <p className="font-medium">Account protection</p>
-                        <p className="text-white/65">
-                            Use a password that keeps your workspace secure.
-                        </p>
-                    </div>
-                </div>
-                <div className="flex gap-3">
-                    <KeyRound className="mt-0.5 size-5 text-[#f3c76a]" />
-                    <div>
-                        <p className="font-medium">Back in control</p>
-                        <p className="text-white/65">
-                            Your job search data stays ready when you return.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    ),
+    side: <SideContent />,
 };

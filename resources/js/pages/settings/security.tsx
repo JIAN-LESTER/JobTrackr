@@ -6,13 +6,20 @@ import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
-import { edit } from '@/routes/security';
 
 type Props = {
-    passwordRules: string;
+    canManageTwoFactor: boolean;
+    passwordRules?: string;
+    requiresConfirmation?: boolean;
+    twoFactorEnabled?: boolean;
 };
 
-export default function Security(props: Props) {
+export default function Security({
+    canManageTwoFactor,
+    passwordRules = '',
+    requiresConfirmation = false,
+    twoFactorEnabled = false,
+}: Props) {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
 
@@ -20,112 +27,132 @@ export default function Security(props: Props) {
         <>
             <Head title="Security settings" />
 
-            <h1 className="sr-only">Security settings</h1>
-
-            <div className="space-y-6">
+            <div className="space-y-8">
                 <Heading
-                    variant="small"
-                    title="Update password"
-                    description="Ensure your account is using a long, random password to stay secure"
+                    title="Security"
+                    description="Manage your password and account protection"
                 />
 
-                <Form
-                    {...SecurityController.update.form()}
-                    options={{
-                        preserveScroll: true,
-                    }}
-                    resetOnError={[
-                        'password',
-                        'password_confirmation',
-                        'current_password',
-                    ]}
-                    resetOnSuccess
-                    onError={(errors) => {
-                        if (errors.password) {
-                            passwordInput.current?.focus();
-                        }
+                <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                    <Heading
+                        variant="small"
+                        title="Update password"
+                        description="Use a long password with a mix of letters, numbers, and symbols"
+                    />
 
-                        if (errors.current_password) {
-                            currentPasswordInput.current?.focus();
-                        }
-                    }}
-                    className="space-y-6"
-                >
-                    {({ errors, processing }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="current_password">
-                                    Current password
-                                </Label>
+                    <Form
+                        {...SecurityController.update.form()}
+                        options={{
+                            preserveScroll: true,
+                        }}
+                        resetOnError={[
+                            'password',
+                            'password_confirmation',
+                            'current_password',
+                        ]}
+                        resetOnSuccess
+                        onError={(errors) => {
+                            if (errors.password) {
+                                passwordInput.current?.focus();
+                            }
 
-                                <PasswordInput
-                                    id="current_password"
-                                    ref={currentPasswordInput}
-                                    name="current_password"
-                                    className="mt-1 block w-full"
-                                    autoComplete="current-password"
-                                    placeholder="Current password"
-                                />
+                            if (errors.current_password) {
+                                currentPasswordInput.current?.focus();
+                            }
+                        }}
+                        className="mt-5 space-y-4"
+                    >
+                        {({ errors, processing }) => (
+                            <>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="current_password">
+                                        Current password
+                                    </Label>
 
-                                <InputError message={errors.current_password} />
-                            </div>
+                                    <PasswordInput
+                                        id="current_password"
+                                        ref={currentPasswordInput}
+                                        name="current_password"
+                                        className="block w-full"
+                                        autoComplete="current-password"
+                                        placeholder="Current password"
+                                    />
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">New password</Label>
+                                    <InputError
+                                        message={errors.current_password}
+                                    />
+                                </div>
 
-                                <PasswordInput
-                                    id="password"
-                                    ref={passwordInput}
-                                    name="password"
-                                    className="mt-1 block w-full"
-                                    autoComplete="new-password"
-                                    placeholder="New password"
-                                    passwordrules={props.passwordRules}
-                                />
+                                <div className="grid gap-2">
+                                    <Label htmlFor="password">
+                                        New password
+                                    </Label>
 
-                                <InputError message={errors.password} />
-                            </div>
+                                    <PasswordInput
+                                        id="password"
+                                        ref={passwordInput}
+                                        name="password"
+                                        className="block w-full"
+                                        autoComplete="new-password"
+                                        placeholder="New password"
+                                        passwordrules={passwordRules}
+                                    />
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
-                                </Label>
+                                    <InputError message={errors.password} />
+                                </div>
 
-                                <PasswordInput
-                                    id="password_confirmation"
-                                    name="password_confirmation"
-                                    className="mt-1 block w-full"
-                                    autoComplete="new-password"
-                                    placeholder="Confirm password"
-                                    passwordrules={props.passwordRules}
-                                />
+                                <div className="grid gap-2">
+                                    <Label htmlFor="password_confirmation">
+                                        Confirm password
+                                    </Label>
 
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
-                            </div>
+                                    <PasswordInput
+                                        id="password_confirmation"
+                                        name="password_confirmation"
+                                        className="block w-full"
+                                        autoComplete="new-password"
+                                        placeholder="Confirm password"
+                                        passwordrules={passwordRules}
+                                    />
 
-                            <div className="flex items-center gap-4">
+                                    <InputError
+                                        message={errors.password_confirmation}
+                                    />
+                                </div>
+
                                 <Button
                                     disabled={processing}
                                     data-test="update-password-button"
                                 >
-                                    Save
+                                    Save password
                                 </Button>
-                            </div>
-                        </>
-                    )}
-                </Form>
+                            </>
+                        )}
+                    </Form>
+                </section>
+
+                {canManageTwoFactor && (
+                    <section className="rounded-lg border bg-card p-5 shadow-xs sm:p-6">
+                        <Heading
+                            variant="small"
+                            title="Two-factor authentication"
+                            description="Add a verification code step when signing in"
+                        />
+
+                        <div className="mt-5 flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                            <span className="font-medium">
+                                {twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                            </span>
+
+                            {requiresConfirmation && !twoFactorEnabled && (
+                                <span className="text-muted-foreground">
+                                    Confirmation required
+                                </span>
+                            )}
+                        </div>
+                    </section>
+                )}
             </div>
         </>
     );
 }
-
-Security.layout = {
-    breadcrumbs: [
-        {
-            title: 'Security settings',
-            href: edit(),
-        },
-    ],
-};

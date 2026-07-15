@@ -18,14 +18,14 @@ export default function AuthSimpleLayout({
                 <div className="relative grid w-full max-w-5xl gap-5 lg:min-h-[520px] lg:grid-cols-2 lg:items-stretch">
                     <div
                         className={cn(
-                            'h-full w-full',
+                            'hidden h-full w-full lg:block',
                             sidePosition === 'right' && 'lg:order-2',
                         )}
                     >
                         {side}
                     </div>
 
-                    <div className="h-full w-full rounded-md border bg-card/95 p-6 shadow-2xl shadow-black/15 backdrop-blur sm:p-8 dark:shadow-black/40">
+                    <div className="mx-auto h-full w-full max-w-md rounded-md border bg-card/95 p-6 shadow-2xl shadow-black/15 backdrop-blur sm:p-8 lg:max-w-none dark:shadow-black/40">
                         <div className="flex h-full flex-col justify-center gap-6">
                             <div className="flex flex-col items-center gap-4">
                                 <div className="flex flex-col items-center gap-2 font-medium">

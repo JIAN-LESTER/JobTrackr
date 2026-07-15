@@ -8,6 +8,7 @@ type AvatarPresetPickerProps = {
     currentAvatar?: string | null;
     fallback: string;
     name?: string;
+    className?: string;
 };
 
 export default function AvatarPresetPicker({
@@ -16,12 +17,13 @@ export default function AvatarPresetPicker({
     currentAvatar,
     fallback,
     name,
+    className,
 }: AvatarPresetPickerProps) {
     const selectedPreset = avatarPresets.find((preset) => preset.key === value);
     const preview = selectedPreset?.src || currentAvatar || undefined;
 
     return (
-        <div className="grid gap-3">
+        <div className={cn('grid gap-4', className)}>
             {name ? <input type="hidden" name={name} value={value} /> : null}
 
             <div className="flex items-center gap-4">
