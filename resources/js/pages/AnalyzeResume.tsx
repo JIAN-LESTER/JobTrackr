@@ -65,7 +65,7 @@ type Form = {
 type FormErrors = Partial<Record<keyof Form | 'analysis', string>>;
 
 type TimerState = {
-    currentTime: number;
+    currentTime: number | null;
     cooldownEndsAt: number;
     cooldownSecondsRemaining: number;
 };
@@ -248,24 +248,23 @@ export default function AnalyzeResume({
     const [closedAnalysisIds, setClosedAnalysisIds] = useState<number[]>([]);
     const [isApplicationDetailsOpen, setIsApplicationDetailsOpen] =
         useState(false);
-    const [timerState, setTimerState] = useState<TimerState>(() => {
-        const currentTime = Date.now();
-
-        return {
-            currentTime,
-            cooldownEndsAt: currentTime + cooldownSecondsRemaining * 1000,
-            cooldownSecondsRemaining,
-        };
+    const [timerState, setTimerState] = useState<TimerState>({
+        currentTime: null,
+        cooldownEndsAt: cooldownSecondsRemaining * 1000,
+        cooldownSecondsRemaining,
     });
 
-    const cooldownRemaining = secondsBetween(
-        timerState.cooldownEndsAt,
-        timerState.currentTime,
-    );
-    const resetRemaining = secondsBetween(
-        new Date(nextResetAt).getTime(),
-        timerState.currentTime,
-    );
+    const cooldownRemaining =
+        timerState.currentTime === null
+            ? cooldownSecondsRemaining
+            : secondsBetween(timerState.cooldownEndsAt, timerState.currentTime);
+    const resetRemaining =
+        timerState.currentTime === null
+            ? 0
+            : secondsBetween(
+                  new Date(nextResetAt).getTime(),
+                  timerState.currentTime,
+              );
     const isQuotaReached = remaining === 0;
     const isCooldownActive = cooldownRemaining > 0;
     const selectedResumeDocument = resumeDocuments.find(
@@ -283,6 +282,7 @@ export default function AnalyzeResume({
             setTimerState((state) => {
                 const currentTime = Date.now();
                 const cooldownEndsAt =
+                    state.currentTime !== null &&
                     state.cooldownSecondsRemaining === cooldownSecondsRemaining
                         ? state.cooldownEndsAt
                         : currentTime + cooldownSecondsRemaining * 1000;
