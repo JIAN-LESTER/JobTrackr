@@ -2,6 +2,7 @@ import { Form, Head, usePage } from '@inertiajs/react';
 import { FileText, Image } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import type { Auth } from '@/types';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import AvatarPresetPicker from '@/components/avatar-preset-picker';
@@ -17,7 +18,6 @@ import { Label } from '@/components/ui/label';
 import { useInitials } from '@/hooks/use-initials';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
-import type { Auth } from '@/types';
 
 type PageProps = {
     auth?: Auth;
