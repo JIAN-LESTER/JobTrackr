@@ -187,6 +187,7 @@ export default function ApplicationImport({ importData }: Props) {
             toast.success('Job details imported from URL.', {
                 id: `job-import-success:${importData.url}`,
             });
+
             return;
         }
 

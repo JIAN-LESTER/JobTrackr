@@ -394,7 +394,7 @@ class ApplicationController extends Controller
         $html = $response->body();
         $document = new \DOMDocument;
         libxml_use_internal_errors(true);
-        $document->loadHTML($html);
+        $this->loadHtmlDocument($document, $html);
         libxml_clear_errors();
 
         $xpath = new \DOMXPath($document);
@@ -775,7 +775,10 @@ class ApplicationController extends Controller
         return [$best, $bestScore];
     }
 
-    /** @param array<int|string, mixed> $value */
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @return array<string, mixed>
+     */
     private function normalizeEmbeddedJobData(array $value): array
     {
         $company = $this->firstCleanText([
@@ -840,7 +843,10 @@ class ApplicationController extends Controller
         ];
     }
 
-    /** @param array<int|string, mixed> $value */
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @return array<string, mixed>
+     */
     private function flattenedEmbeddedJobData(array $value): array
     {
         $workSetup = $this->firstNestedCleanText($value, [
@@ -897,7 +903,10 @@ class ApplicationController extends Controller
         ];
     }
 
-    /** @param array<int|string, mixed> $value */
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @param  array<int, string>  $keys
+     */
     private function firstNestedCleanText(array $value, array $keys, int $depth = 0): ?string
     {
         if ($depth > 10) {
@@ -929,7 +938,10 @@ class ApplicationController extends Controller
         return null;
     }
 
-    /** @param array<int|string, mixed> $value */
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @param  array<int, string>  $keys
+     */
     private function firstNestedFormattedText(array $value, array $keys, int $depth = 0): ?string
     {
         if ($depth > 10) {
@@ -961,7 +973,10 @@ class ApplicationController extends Controller
         return null;
     }
 
-    /** @param array<int|string, mixed> $value */
+    /**
+     * @param  array<int|string, mixed>  $value
+     * @param  array<int, string>  $keys
+     */
     private function firstNestedValue(array $value, array $keys, int $depth = 0): mixed
     {
         if ($depth > 10) {
@@ -1061,28 +1076,30 @@ class ApplicationController extends Controller
         $host = strtolower((string) parse_url($url, PHP_URL_HOST));
         $generic = [
             'title' => [
-                "//*[@data-testid='job-title']",
-                "//*[@data-test='job-title']",
-                "//*[@data-test-id='job-title']",
-                "//h1",
+                '//*[@data-testid="job-title"]',
+                '//*[@data-test="job-title"]',
+                '//*[@data-test-id="job-title"]',
+                '//h1',
             ],
             'company' => [
-                "//*[@data-testid='company-name']",
-                "//*[@data-test='company-name']",
-                "//*[@data-test-id='company-name']",
-                "//*[@itemprop='hiringOrganization']//*[@itemprop='name']",
+                '//*[@data-testid="company-name"]',
+                '//*[@data-test="company-name"]',
+                '//*[@data-test-id="company-name"]',
+                '//*[@itemprop="hiringOrganization"]//*[@itemprop="name"]',
             ],
             'location' => [
-                "//*[@data-testid='job-location']",
-                "//*[@data-test='job-location']",
-                "//*[@data-test-id='job-location']",
+                '//*[@data-testid="job-location"]',
+                '//*[@data-test="job-location"]',
+                '//*[@data-test-id="job-location"]',
+                '//*[contains(concat(" ", normalize-space(@class), " "), " job-search-card__location ")]',
             ],
             'description' => [
-                "//*[@data-testid='jobDescription']",
-                "//*[@data-testid='job-description']",
-                "//*[@data-test='job-description']",
-                "//*[@data-test-id='job-description']",
-                "//*[@data-automation='jobDescription']",
+                '//*[@id="jobDescriptionText"]',
+                '//*[@data-testid="jobDescription"]',
+                '//*[@data-testid="job-description"]',
+                '//*[@data-test="job-description"]',
+                '//*[@data-test-id="job-description"]',
+                '//*[@data-automation="jobDescription"]',
                 "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-description ')]",
                 "//*[contains(concat(' ', normalize-space(@class), ' '), ' description__text ')]",
             ],
@@ -1115,43 +1132,43 @@ class ApplicationController extends Controller
             ],
             str_contains($host, 'indeed.') => [
                 'title' => [
-                    "//*[@data-testid='jobsearch-JobInfoHeader-title']",
+                    '//*[@data-testid="jobsearch-JobInfoHeader-title"]',
                     "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-JobInfoHeader-title ')]",
                 ],
                 'company' => [
-                    "//*[@data-testid='inlineHeader-companyName']",
-                    "//*[@data-testid='company-name']",
+                    '//*[@data-testid="inlineHeader-companyName"]',
+                    '//*[@data-testid="company-name"]',
                     "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-InlineCompanyRating-companyHeader ')]",
                 ],
                 'location' => [
-                    "//*[@data-testid='jobsearch-JobInfoHeader-companyLocation']",
-                    "//*[@data-testid='job-location']",
+                    '//*[@data-testid="jobsearch-JobInfoHeader-companyLocation"]',
+                    '//*[@data-testid="job-location"]',
                 ],
                 'description' => [
-                    "//*[@id='jobDescriptionText']",
-                    "//*[@data-testid='jobsearch-JobComponent-description']",
+                    '//*[@id="jobDescriptionText"]',
+                    '//*[@data-testid="jobsearch-JobComponent-description"]',
                     "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-jobDescriptionText ')]",
                 ],
             ],
             str_contains($host, 'jobstreet.') => [
                 'title' => [
-                    "//*[@data-automation='job-detail-title']",
-                    "//*[@data-testid='job-title']",
+                    '//*[@data-automation="job-detail-title"]',
+                    '//*[@data-testid="job-title"]',
                 ],
                 'company' => [
-                    "//*[@data-automation='advertiser-name']",
-                    "//*[@data-automation='company-name']",
-                    "//*[@data-testid='company-name']",
+                    '//*[@data-automation="advertiser-name"]',
+                    '//*[@data-automation="company-name"]',
+                    '//*[@data-testid="company-name"]',
                 ],
                 'location' => [
-                    "//*[@data-automation='job-detail-location']",
-                    "//*[@data-testid='job-location']",
+                    '//*[@data-automation="job-detail-location"]',
+                    '//*[@data-testid="job-location"]',
                 ],
                 'description' => [
-                    "//*[@data-automation='jobAdDetails']",
-                    "//*[@data-automation='jobDescription']",
-                    "//*[@data-testid='job-description']",
-                    "//main",
+                    '//*[@data-automation="jobAdDetails"]',
+                    '//*[@data-automation="jobDescription"]',
+                    '//*[@data-testid="job-description"]',
+                    '//main',
                 ],
             ],
             default => [
@@ -1198,6 +1215,8 @@ class ApplicationController extends Controller
         if (! $text) {
             return null;
         }
+
+        $text = preg_replace('/\s*(?:[\x{2022}\x{00B7}]|\x{00E2}\x{20AC}?\x{00A2}|\x{00C2}\x{00B7})\s*/u', ' | ', $text) ?? $text;
 
         $parts = preg_split('/\s*(?:•|·|\||\R)\s*/u', $text) ?: [];
 
@@ -1386,7 +1405,7 @@ class ApplicationController extends Controller
         if ($text !== strip_tags($text)) {
             $document = new \DOMDocument;
             libxml_use_internal_errors(true);
-            $document->loadHTML('<body>'.$text.'</body>');
+            $this->loadHtmlDocument($document, '<body>'.$text.'</body>');
             libxml_clear_errors();
 
             $body = $document->getElementsByTagName('body')->item(0);
@@ -1404,7 +1423,7 @@ class ApplicationController extends Controller
 
     private function nodeTextWithBreaks(\DOMNode $node): string
     {
-        if ($node instanceof \DOMText || $node instanceof \DOMCdataSection) {
+        if ($node->nodeType === \XML_TEXT_NODE || $node->nodeType === \XML_CDATA_SECTION_NODE) {
             return $node->textContent;
         }
 
@@ -1455,6 +1474,11 @@ class ApplicationController extends Controller
         $text = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $value))));
 
         return $text === '' ? null : mb_substr($text, 0, 5000);
+    }
+
+    private function loadHtmlDocument(\DOMDocument $document, string $html): void
+    {
+        $document->loadHTML('<?xml encoding="UTF-8">'.$html);
     }
 
     private function cleanSalary(mixed $value): ?string
