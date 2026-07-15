@@ -1,7 +1,8 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Check, ExternalLink, Search } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,9 +56,26 @@ const importUrlFromText = (value: string) => {
 };
 
 const isSiteLabel = (label: string, website: string) =>
-    ['linkedin', 'linkedin.com', website.toLowerCase()].includes(
-        label.toLowerCase(),
+    siteLabels(website).includes(label.toLowerCase());
+
+const siteLabels = (website: string) => {
+    const host = website.toLowerCase().replace(/^www\./, '');
+    const parts = host.split('.').filter(Boolean);
+    const root = parts.length >= 2 ? parts[parts.length - 2] : host;
+
+    return Array.from(
+        new Set([
+            host,
+            root,
+            'linkedin',
+            'linkedin.com',
+            'indeed',
+            'indeed.com',
+            'jobstreet',
+            'jobstreet.com',
+        ]),
     );
+};
 
 const cleanApplicationImport = (
     title: string,
@@ -160,6 +178,23 @@ export default function ApplicationImport({ importData }: Props) {
         job_description: importData.job_description || '',
     });
 
+    useEffect(() => {
+        if (!importData.url) {
+            return;
+        }
+
+        if (importData.extracted) {
+            toast.success('Job details imported from URL.', {
+                id: `job-import-success:${importData.url}`,
+            });
+            return;
+        }
+
+        toast.error('Could not read job details from this URL.', {
+            id: `job-import-failed:${importData.url}`,
+        });
+    }, [importData.extracted, importData.url]);
+
     const submitApplication = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
@@ -261,11 +296,6 @@ export default function ApplicationImport({ importData }: Props) {
                                     Extract
                                 </Button>
                             </div>
-                            {importData.extracted ? (
-                                <p className="text-sm text-muted-foreground">
-                                    Extracted job details from the URL.
-                                </p>
-                            ) : null}
                             {form.errors.job_post_url ? (
                                 <p className="text-sm text-destructive">
                                     {form.errors.job_post_url}
