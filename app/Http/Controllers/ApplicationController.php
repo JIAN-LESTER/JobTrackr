@@ -133,7 +133,7 @@ class ApplicationController extends Controller
             'work_setup' => $this->cleanText($request->input('work_setup')),
             'salary_min' => $this->cleanSalary($request->input('salary_min')),
             'salary_max' => $this->cleanSalary($request->input('salary_max')),
-            'job_description' => $this->cleanText($request->input('job_description')),
+            'job_description' => $this->formatDescriptionText($request->input('job_description')),
         ];
     }
 
@@ -397,9 +397,9 @@ class ApplicationController extends Controller
 
         $xpath = new \DOMXPath($document);
         $jobPosting = $this->jobPostingFromJsonLd($xpath);
-        $title = $jobPosting['title'] ?? $this->metaContent($xpath, 'property', 'og:title') ?? $this->pageTitle($xpath);
-        $company = $jobPosting['hiringOrganization']['name'] ?? $this->metaContent($xpath, 'property', 'og:site_name');
-        $description = $this->firstCleanText([
+        $title = $jobPosting['title'] ?? $this->jobTitleFromPage($xpath) ?? $this->metaContent($xpath, 'property', 'og:title') ?? $this->pageTitle($xpath);
+        $company = $jobPosting['hiringOrganization']['name'] ?? $this->companyFromPage($xpath) ?? $this->metaContent($xpath, 'property', 'og:site_name');
+        $description = $this->firstFormattedDescription([
             $jobPosting['description'] ?? null,
             $this->jobDescriptionFromPage($xpath),
             $this->metaContent($xpath, 'name', 'description'),
@@ -413,11 +413,10 @@ class ApplicationController extends Controller
             $description,
             $this->cleanText($this->pageText($xpath)),
         ]));
-        $jobType = $this->cleanText(is_array($employmentType) ? implode(', ', $employmentType) : $employmentType)
-            ?? $this->firstTextMatch($text, ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship', 'Temporary']);
+        $jobType = $this->jobTypeFromEmploymentType($employmentType) ?? $this->jobTypeFromText($text);
         $workSetup = ($jobPosting['jobLocationType'] ?? null) === 'TELECOMMUTE'
             ? 'Remote'
-            : $this->firstTextMatch($text, ['Remote', 'Hybrid', 'On-site', 'Onsite']);
+            : $this->workSetupFromText($text);
         $companyName = $this->cleanText($company) ?: $data['company'];
         $application = $this->cleanApplicationImport($this->cleanText($title) ?: $data['job_title'], $companyName, $url);
 
@@ -425,9 +424,9 @@ class ApplicationController extends Controller
             'extracted' => true,
             'company' => $application['company'],
             'job_title' => $application['title'],
-            'location' => $this->locationFromJobPosting($jobPosting) ?? $this->locationFromText($text),
+            'location' => $this->locationFromJobPosting($jobPosting) ?? $this->locationFromPage($xpath) ?? $this->locationFromText($text),
             'job_type' => $jobType,
-            'work_setup' => $workSetup === 'Onsite' ? 'On-site' : $workSetup,
+            'work_setup' => $workSetup,
             'salary_min' => $this->cleanSalary(is_array($salary) ? ($salary['minValue'] ?? $salaryValue) : $salaryValue),
             'salary_max' => $this->cleanSalary(is_array($salary) ? ($salary['maxValue'] ?? $salaryValue) : $salaryValue),
             'job_description' => $description,
@@ -564,12 +563,91 @@ class ApplicationController extends Controller
         return null;
     }
 
-    /** @param array<int, string> $values */
-    private function firstTextMatch(string $text, array $values): ?string
+    private function locationFromPage(\DOMXPath $xpath): ?string
     {
-        foreach ($values as $value) {
-            if (preg_match('/\b'.preg_quote($value, '/').'\b/i', $text)) {
-                return $value;
+        $queries = [
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__bullet ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__flavor--bullet ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-search-card__location ')]",
+            "//*[@data-testid='job-location']",
+            "//*[@data-testid='jobsearch-JobInfoHeader-companyLocation']",
+        ];
+
+        foreach ($queries as $query) {
+            $nodes = $xpath->query($query);
+
+            if (! $nodes || ! $nodes->length) {
+                continue;
+            }
+
+            $node = $nodes->item(0);
+            $location = $node instanceof \DOMNode ? $this->cleanLocationText($node->textContent) : null;
+
+            if ($location) {
+                return $location;
+            }
+        }
+
+        return null;
+    }
+
+    private function cleanLocationText(mixed $value): ?string
+    {
+        $text = $this->cleanText($value);
+
+        if (! $text) {
+            return null;
+        }
+
+        $parts = preg_split('/\s*(?:•|·|\||\R)\s*/u', $text) ?: [];
+
+        foreach ($parts as $part) {
+            $part = $this->cleanText($part);
+
+            if ($part && ! $this->workSetupFromText($part) && ! $this->jobTypeFromText($part)) {
+                return $part;
+            }
+        }
+
+        return $text;
+    }
+
+    private function jobTypeFromEmploymentType(mixed $employmentType): ?string
+    {
+        $value = $this->cleanText(is_array($employmentType) ? implode(', ', $employmentType) : $employmentType);
+
+        return $value ? $this->jobTypeFromText(str_replace('_', ' ', $value)) : null;
+    }
+
+    private function jobTypeFromText(string $text): ?string
+    {
+        return $this->firstKeywordLabel($text, [
+            'Full-time' => ['full time', 'full-time', 'fulltime'],
+            'Part-time' => ['part time', 'part-time', 'parttime'],
+            'Contract' => ['contract', 'contractor'],
+            'Freelance' => ['freelance'],
+            'Internship' => ['internship', 'intern'],
+            'Temporary' => ['temporary', 'temp'],
+        ]);
+    }
+
+    private function workSetupFromText(string $text): ?string
+    {
+        return $this->firstKeywordLabel($text, [
+            'Remote' => ['remote', 'work from home', 'wfh', 'telecommute'],
+            'Hybrid' => ['hybrid'],
+            'On-site' => ['on-site', 'onsite', 'on site'],
+        ]);
+    }
+
+    /** @param array<string, array<int, string>> $matches */
+    private function firstKeywordLabel(string $text, array $matches): ?string
+    {
+        foreach ($matches as $label => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (preg_match('/(?<![a-z0-9])'.preg_quote($keyword, '/').'(?![a-z0-9])/iu', $text)) {
+                    return $label;
+                }
             }
         }
 
@@ -615,6 +693,58 @@ class ApplicationController extends Controller
         return $node instanceof \DOMNode ? $node->textContent : null;
     }
 
+    private function jobTitleFromPage(\DOMXPath $xpath): ?string
+    {
+        return $this->firstPageText($xpath, [
+            "//*[@data-testid='job-title']",
+            "//*[@data-test='job-title']",
+            "//*[@data-test-id='job-title']",
+            "//*[@data-automation='job-detail-title']",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__job-title ')]//h1",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__job-title ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-JobInfoHeader-title ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__title ')]",
+            "//h1",
+        ]);
+    }
+
+    private function companyFromPage(\DOMXPath $xpath): ?string
+    {
+        return $this->firstPageText($xpath, [
+            "//*[@data-testid='company-name']",
+            "//*[@data-test='company-name']",
+            "//*[@data-test-id='company-name']",
+            "//*[@data-automation='advertiser-name']",
+            "//*[@itemprop='hiringOrganization']//*[@itemprop='name']",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__company-name ')]//a",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' job-details-jobs-unified-top-card__company-name ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' jobsearch-InlineCompanyRating-companyHeader ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__org-name-link ')]",
+            "//*[contains(concat(' ', normalize-space(@class), ' '), ' topcard__flavor ')]",
+        ]);
+    }
+
+    /** @param array<int, string> $queries */
+    private function firstPageText(\DOMXPath $xpath, array $queries): ?string
+    {
+        foreach ($queries as $query) {
+            $nodes = $xpath->query($query);
+
+            if (! $nodes || ! $nodes->length) {
+                continue;
+            }
+
+            $node = $nodes->item(0);
+            $text = $node instanceof \DOMNode ? $this->cleanText($node->textContent) : null;
+
+            if ($text) {
+                return $text;
+            }
+        }
+
+        return null;
+    }
+
     private function jobDescriptionFromPage(\DOMXPath $xpath): ?string
     {
         $queries = [
@@ -640,7 +770,7 @@ class ApplicationController extends Controller
             }
 
             $node = $nodes->item(0);
-            $text = $node instanceof \DOMNode ? $this->cleanText($node->textContent) : null;
+            $text = $node instanceof \DOMNode ? $this->formattedTextFromNode($node) : null;
 
             if ($text) {
                 return $text;
@@ -662,6 +792,91 @@ class ApplicationController extends Controller
         }
 
         return null;
+    }
+
+    /** @param array<int, mixed> $values */
+    private function firstFormattedDescription(array $values): ?string
+    {
+        foreach ($values as $value) {
+            $text = $this->formatDescriptionText($value);
+
+            if ($text) {
+                return $text;
+            }
+        }
+
+        return null;
+    }
+
+    private function formatDescriptionText(mixed $value): ?string
+    {
+        if (! is_scalar($value)) {
+            return null;
+        }
+
+        $text = html_entity_decode((string) $value);
+
+        if ($text !== strip_tags($text)) {
+            $document = new \DOMDocument;
+            libxml_use_internal_errors(true);
+            $document->loadHTML('<body>'.$text.'</body>');
+            libxml_clear_errors();
+
+            $body = $document->getElementsByTagName('body')->item(0);
+
+            return $body ? $this->formattedTextFromNode($body) : null;
+        }
+
+        return $this->normalizeFormattedText($text);
+    }
+
+    private function formattedTextFromNode(\DOMNode $node): ?string
+    {
+        return $this->normalizeFormattedText($this->nodeTextWithBreaks($node));
+    }
+
+    private function nodeTextWithBreaks(\DOMNode $node): string
+    {
+        if ($node instanceof \DOMText || $node instanceof \DOMCdataSection) {
+            return $node->textContent;
+        }
+
+        $name = strtolower($node->nodeName);
+
+        if ($name === 'br') {
+            return "\n";
+        }
+
+        $text = '';
+
+        foreach ($node->childNodes as $child) {
+            $text .= $this->nodeTextWithBreaks($child);
+        }
+
+        if ($name === 'li') {
+            return "\n- ".trim($text)."\n";
+        }
+
+        if (in_array($name, ['p', 'div', 'section', 'article', 'header', 'footer', 'ul', 'ol', 'table', 'tr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'], true)) {
+            return "\n".trim($text)."\n";
+        }
+
+        return $text;
+    }
+
+    private function normalizeFormattedText(string $text): ?string
+    {
+        $text = str_replace(["\r\n", "\r"], "\n", html_entity_decode($text));
+        $lines = preg_split('/\n+/', $text) ?: [];
+        $lines = array_map(
+            fn ($line) => trim(preg_replace('/[ \t\x{00A0}]+/u', ' ', strip_tags($line)) ?? ''),
+            $lines,
+        );
+        $lines = array_values(array_filter($lines, fn ($line) => $line !== ''));
+        $lines = array_values(array_filter($lines, fn ($line) => ! preg_match('/^show\s+(?:more|less)$/iu', $line)));
+        $text = implode("\n\n", $lines);
+
+        return $text === '' ? null : mb_substr($text, 0, 5000);
     }
 
     private function cleanText(mixed $value): ?string

@@ -113,10 +113,29 @@ class ApplicationWorkflowTest extends TestCase
                     <head>
                         <meta property="og:title" content="Software Engineer">
                         <meta property="og:site_name" content="Acme Careers">
+                        <script type="application/ld+json">
+                            {
+                                "@context": "https://schema.org",
+                                "@type": "JobPosting",
+                                "title": "Software Engineer",
+                                "employmentType": "FULL_TIME",
+                                "hiringOrganization": {
+                                    "@type": "Organization",
+                                    "name": "Acme Careers"
+                                },
+                                "jobLocationType": "TELECOMMUTE"
+                            }
+                        </script>
                     </head>
                     <body>
+                        <span class="job-search-card__location">Manila, Philippines • Remote</span>
                         <div id="jobDescriptionText">
-                            Build Laravel and React features for customer-facing workflows.
+                            <p>Build Laravel and React features for customer-facing workflows.</p>
+                            <h2>Responsibilities</h2>
+                            <ul>
+                                <li>Ship polished import flows.</li>
+                                <li>Partner with product on job parsing.</li>
+                            </ul>
                         </div>
                     </body>
                 </html>
@@ -129,7 +148,12 @@ class ApplicationWorkflowTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('ApplicationImport')
                 ->where('importData.extracted', true)
-                ->where('importData.job_description', 'Build Laravel and React features for customer-facing workflows.'),
+                ->where('importData.company', 'Acme Careers')
+                ->where('importData.job_title', 'Software Engineer')
+                ->where('importData.location', 'Manila, Philippines')
+                ->where('importData.job_type', 'Full-time')
+                ->where('importData.work_setup', 'Remote')
+                ->where('importData.job_description', "Build Laravel and React features for customer-facing workflows.\n\nResponsibilities\n\n- Ship polished import flows.\n\n- Partner with product on job parsing."),
             );
     }
 

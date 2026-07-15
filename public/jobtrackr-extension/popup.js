@@ -22,9 +22,43 @@ function extractJobData() {
     if (!html) return null;
     const div = document.createElement('div');
     div.innerHTML = html;
-    const text = clean(div.textContent);
+    return formattedText(div);
+  };
+
+  const normalizeFormattedText = (value) => {
+    const lines = value
+      .replace(/\r\n?/g, '\n')
+      .split(/\n+/)
+      .map((line) => line.replace(/[ \t\u00a0]+/g, ' ').trim())
+      .filter((line) => line && !/^show\s+(?:more|less)$/i.test(line));
+    const text = lines.join('\n\n');
     return text ? text.slice(0, 5000) : null;
   };
+
+  const textWithBreaks = (node) => {
+    if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.CDATA_SECTION_NODE) {
+      return node.textContent || '';
+    }
+
+    const name = node.nodeName.toLowerCase();
+
+    if (name === 'br') return '\n';
+
+    let text = '';
+    node.childNodes.forEach((child) => {
+      text += textWithBreaks(child);
+    });
+
+    if (name === 'li') return `\n- ${text.trim()}\n`;
+
+    if (['p', 'div', 'section', 'article', 'header', 'footer', 'ul', 'ol', 'table', 'tr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(name)) {
+      return `\n${text.trim()}\n`;
+    }
+
+    return text;
+  };
+
+  const formattedText = (el) => el ? normalizeFormattedText(textWithBreaks(el)) : null;
 
   const metaContent = (attr, value) => {
     const el = document.querySelector(`meta[${attr}="${value}"]`);
@@ -35,6 +69,15 @@ function extractJobData() {
     for (const selector of selectors) {
       const el = document.querySelector(selector);
       const text = clean(el?.innerText || el?.textContent);
+      if (text) return text;
+    }
+
+    return null;
+  };
+
+  const firstFormattedText = (selectors) => {
+    for (const selector of selectors) {
+      const text = formattedText(document.querySelector(selector));
       if (text) return text;
     }
 
@@ -87,7 +130,7 @@ function extractJobData() {
   const jobType = clean(job.employmentType)
     || matchText(topCardText || bodyText, ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship', 'Temporary']);
   const description = stripHtml(job.description)
-    || firstText([
+    || firstFormattedText([
       '#jobDescriptionText',
       '[data-testid="jobDescription"]',
       '[data-testid="job-description"]',
@@ -107,16 +150,27 @@ function extractJobData() {
   return {
     company: clean(job.hiringOrganization?.name)
       || firstText([
+        '[data-testid="company-name"]',
+        '[data-test="company-name"]',
+        '[data-test-id="company-name"]',
+        '[data-automation="advertiser-name"]',
+        '[itemprop="hiringOrganization"] [itemprop="name"]',
         '.job-details-jobs-unified-top-card__company-name a',
         '.job-details-jobs-unified-top-card__company-name',
+        '.jobsearch-InlineCompanyRating-companyHeader',
         '.topcard__org-name-link',
         '.topcard__flavor',
       ])
       || clean(metaContent('property', 'og:site_name')),
     job_title: clean(job.title)
       || firstText([
+        '[data-testid="job-title"]',
+        '[data-test="job-title"]',
+        '[data-test-id="job-title"]',
+        '[data-automation="job-detail-title"]',
         '.job-details-jobs-unified-top-card__job-title h1',
         '.job-details-jobs-unified-top-card__job-title',
+        '.jobsearch-JobInfoHeader-title',
         '.topcard__title',
         'h1',
       ])

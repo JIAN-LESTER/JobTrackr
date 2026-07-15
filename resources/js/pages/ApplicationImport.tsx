@@ -273,6 +273,49 @@ export default function ApplicationImport({ importData }: Props) {
                             ) : null}
                         </div>
 
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="company">Company name</Label>
+                                <Input
+                                    id="company"
+                                    value={form.data.company}
+                                    className="bg-white/80 dark:bg-[#0f1713]/40"
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'company',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                {form.errors.company ? (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.company}
+                                    </p>
+                                ) : null}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="job_title">
+                                    Job position role
+                                </Label>
+                                <Input
+                                    id="job_title"
+                                    value={form.data.job_title}
+                                    className="bg-white/80 dark:bg-[#0f1713]/40"
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'job_title',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                {form.errors.job_title ? (
+                                    <p className="text-sm text-destructive">
+                                        {form.errors.job_title}
+                                    </p>
+                                ) : null}
+                            </div>
+                        </div>
+
                         <div className="grid gap-4 sm:grid-cols-3">
                             <div className="space-y-2">
                                 <Label htmlFor="location">Location</Label>
