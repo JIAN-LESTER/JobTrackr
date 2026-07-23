@@ -2,8 +2,8 @@ import { Link } from '@inertiajs/react';
 import { BriefcaseBusiness, History, Sparkles, User } from 'lucide-react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
-import { edit } from '@/routes/profile';
 import type { NavItem } from '@/types';
+import { edit } from '@/routes/profile';
 
 const navItems: NavItem[] = [
     {
