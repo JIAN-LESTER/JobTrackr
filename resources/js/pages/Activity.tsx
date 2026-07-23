@@ -143,35 +143,32 @@ export default function Activity({ statusHistories, reminders }: Props) {
                                     {statusHistories.total}
                                 </p>
                                 <div className="flex flex-wrap gap-1">
-                                    {statusHistories.links.map(
-                                        (link, index) =>
-                                            link.url ? (
-                                                <Button
-                                                    key={`${link.label}-${index}`}
-                                                    asChild
-                                                    variant={
-                                                        link.active
-                                                            ? 'secondary'
-                                                            : 'outline'
-                                                    }
-                                                    size="sm"
-                                                >
-                                                    <Link href={link.url}>
-                                                        {cleanPageLabel(
-                                                            link.label,
-                                                        )}
-                                                    </Link>
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    key={`${link.label}-${index}`}
-                                                    variant="outline"
-                                                    size="sm"
-                                                    disabled
-                                                >
+                                    {statusHistories.links.map((link, index) =>
+                                        link.url ? (
+                                            <Button
+                                                key={`${link.label}-${index}`}
+                                                asChild
+                                                variant={
+                                                    link.active
+                                                        ? 'secondary'
+                                                        : 'outline'
+                                                }
+                                                size="sm"
+                                            >
+                                                <Link href={link.url}>
                                                     {cleanPageLabel(link.label)}
-                                                </Button>
-                                            ),
+                                                </Link>
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                key={`${link.label}-${index}`}
+                                                variant="outline"
+                                                size="sm"
+                                                disabled
+                                            >
+                                                {cleanPageLabel(link.label)}
+                                            </Button>
+                                        ),
                                     )}
                                 </div>
                             </div>
