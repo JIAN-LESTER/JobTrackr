@@ -28,7 +28,7 @@ return new class extends Migration
             $table->decimal('salary_min', 10, 2)->nullable();
             $table->decimal('salary_max', 10, 2)->nullable();
 
-            $table->enum('status', ['saved', 'applied', 'assessment',  'screening', 'final_interview', 'interviewing', 'position_filled_in', 'ghosted', 'closed', 'offer_declined', 'awaiting_client_offer', 'contract_signing', 'awaiting_interview_with_hr', 'offereed_another_position', 'initial_interview', 'offer', 'rejected', 'withdrawn', 'hired'])->default('applied');
+            $table->enum('status', ['saved', 'applied', 'final_interview', 'interview', 'ghosted', 'closed', 'offer_declined', 'offered_another_position', 'offer', 'rejected', 'hired'])->default('applied');
 
             $table->date('applied_date')->nullable();
 

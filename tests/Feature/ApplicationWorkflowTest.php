@@ -52,15 +52,15 @@ class ApplicationWorkflowTest extends TestCase
         $this->patchJson(route('applications.update', $application), [
             'company' => 'Acme Labs',
             'job_title' => 'Senior Software Engineer',
-            'status' => 'interviewing',
+            'status' => 'interview',
         ])->assertOk()
             ->assertJsonPath('application.job_title', 'Senior Software Engineer')
-            ->assertJsonPath('application.status', 'interviewing');
+            ->assertJsonPath('application.status', 'interview');
 
         $this->assertDatabaseHas('application_status_histories', [
             'job_application_id' => $application->application_id,
             'old_status' => 'applied',
-            'new_status' => 'interviewing',
+            'new_status' => 'interview',
         ]);
 
         $this->getJson(route('applications.show', $application))

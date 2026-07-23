@@ -75,10 +75,10 @@ class RelatedRecordsWorkflowTest extends TestCase
         $this->postJson(route('status-histories.store'), [
             'job_application_id' => $application->application_id,
             'old_status' => 'applied',
-            'new_status' => 'interviewing',
+            'new_status' => 'interview',
             'remarks' => 'Moved forward',
         ])->assertCreated()
-            ->assertJsonPath('status_history.new_status', 'interviewing');
+            ->assertJsonPath('status_history.new_status', 'interview');
         $history = ApplicationStatusHistory::latest('id')->firstOrFail();
         $this->patchJson(route('status-histories.update', $history), ['remarks' => 'Updated remark'])->assertOk();
         $this->deleteJson(route('status-histories.destroy', $history))->assertNoContent();
