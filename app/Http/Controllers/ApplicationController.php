@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -21,7 +22,7 @@ class ApplicationController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
-        $perPage = max(1, min((int) $request->input('per_page', 10), 100));
+        $perPage = max(1, min((int) $request->input('per_page', 12), 100));
         $userId = $request->user()->getKey();
 
         $statusCounts = Application::query()
@@ -58,11 +59,9 @@ class ApplicationController extends Controller
             'stats' => [
                 'total' => (int) $statusCounts->sum(),
                 'applied' => (int) ($statusCounts['applied'] ?? 0),
-                'interviewing' => (int) collect([
-                    'initial_interview',
-                    'interviewing',
+                'interviews' => (int) collect([
+                    'interview',
                     'final_interview',
-                    'awaiting_interview_with_hr',
                 ])->sum(fn ($status) => $statusCounts[$status] ?? 0),
                 'rejected' => (int) ($statusCounts['rejected'] ?? 0),
             ],
@@ -154,7 +153,7 @@ class ApplicationController extends Controller
             'location' => ['nullable', 'string', 'max:255'],
             'salary_min' => ['nullable', 'numeric', 'min:0'],
             'salary_max' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['required', 'string', 'max:255'],
+            'status' => ['required', 'string', Rule::in($this->statuses())],
             'applied_date' => ['nullable', 'date'],
             'job_post_url' => ['nullable', 'url', 'max:255'],
             'job_description' => ['nullable', 'string'],
@@ -262,7 +261,7 @@ class ApplicationController extends Controller
             'location' => ['nullable', 'string', 'max:255'],
             'salary_min' => ['nullable', 'numeric', 'min:0'],
             'salary_max' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['sometimes', 'string', 'max:255'],
+            'status' => ['sometimes', 'string', Rule::in($this->statuses())],
             'applied_date' => ['nullable', 'date'],
             'job_post_url' => ['nullable', 'url', 'max:255'],
             'job_description' => ['nullable', 'string'],
@@ -341,22 +340,14 @@ class ApplicationController extends Controller
         return [
             'saved',
             'applied',
-            'assessment',
-            'screening',
             'final_interview',
-            'interviewing',
-            'position_filled_in',
+            'interview',
             'ghosted',
             'closed',
             'offer_declined',
-            'awaiting_client_offer',
-            'contract_signing',
-            'awaiting_interview_with_hr',
-            'offereed_another_position',
-            'initial_interview',
+            'offered_another_position',
             'offer',
             'rejected',
-            'withdrawn',
             'hired',
         ];
     }

@@ -19,8 +19,8 @@ class ActivityController extends Controller
                 ->with('jobApplication.company')
                 ->whereHas('jobApplication', fn ($query) => $query->where('user_id', $userId))
                 ->latest()
-                ->limit(30)
-                ->get(),
+                ->paginate(12)
+                ->withQueryString(),
             'reminders' => Reminder::query()
                 ->with('jobApplication.company')
                 ->whereHas('jobApplication', fn ($query) => $query->where('user_id', $userId))
