@@ -16,6 +16,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Throwable;
@@ -89,7 +90,15 @@ class User extends Authenticatable implements MustVerifyEmail
         try {
             $this->notify(new VerifyEmail);
         } catch (Throwable $exception) {
+            Log::error('Email verification notification failed.', [
+                'user_id' => $this->getKey(),
+                'exception' => $exception::class,
+            ]);
             report($exception);
+
+            throw ValidationException::withMessages([
+                'email' => 'We could not send the verification email. Check the address and try again.',
+            ]);
         }
     }
 
