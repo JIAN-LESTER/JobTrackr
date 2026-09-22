@@ -8,6 +8,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -20,6 +22,7 @@ class ReminderController extends Controller
 
         $reminders = Reminder::query()
             ->with('jobApplication.company')
+            ->whereHas('jobApplication', fn ($query) => $query->where('user_id', $request->user()->getKey()))
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('title', 'like', "%{$search}%")
@@ -49,12 +52,16 @@ class ReminderController extends Controller
 
     public function show(Reminder $reminder): JsonResponse
     {
+        $this->authorizeReminder($reminder);
+
         return response()->json($reminder->load('jobApplication.company'));
     }
 
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $reminder = Reminder::create($this->validatedData($request));
+
+        Log::info('Reminder created.', ['user_id' => $request->user()->getKey(), 'reminder_id' => $reminder->getKey()]);
 
         if ($request->header('X-Inertia')) {
             Inertia::flash('toast', ['type' => 'success', 'message' => 'Reminder created.']);
@@ -70,6 +77,7 @@ class ReminderController extends Controller
 
     public function update(Request $request, Reminder $reminder): JsonResponse|RedirectResponse
     {
+        $this->authorizeReminder($reminder);
         $data = $this->validatedData($request, true);
 
         if (
@@ -80,6 +88,8 @@ class ReminderController extends Controller
         }
 
         $reminder->update($data);
+
+        Log::info('Reminder updated.', ['user_id' => $request->user()->getKey(), 'reminder_id' => $reminder->getKey()]);
 
         if ($request->header('X-Inertia')) {
             Inertia::flash('toast', ['type' => 'success', 'message' => 'Reminder updated.']);
@@ -95,8 +105,12 @@ class ReminderController extends Controller
 
     public function destroy(Reminder $reminder): JsonResponse|RedirectResponse|Response
     {
+        $this->authorizeReminder($reminder);
+
         if (! $reminder->is_completed) {
             $reminder->update(['is_completed' => true]);
+
+            Log::info('Reminder marked complete.', ['user_id' => request()->user()->getKey(), 'reminder_id' => $reminder->getKey()]);
 
             if (request()->header('X-Inertia')) {
                 Inertia::flash('toast', ['type' => 'success', 'message' => 'Reminder marked done.']);
@@ -111,6 +125,8 @@ class ReminderController extends Controller
         }
 
         $reminder->delete();
+
+        Log::info('Reminder deleted.', ['user_id' => request()->user()->getKey(), 'reminder_id' => $reminder->getKey()]);
 
         if (request()->header('X-Inertia')) {
             Inertia::flash('toast', ['type' => 'success', 'message' => 'Reminder deleted.']);
@@ -127,11 +143,29 @@ class ReminderController extends Controller
         $required = $partial ? 'sometimes' : 'required';
 
         return $request->validate([
-            'job_application_id' => [$required, 'integer', 'exists:applications,application_id'],
+            'job_application_id' => [
+                $required,
+                'integer',
+                Rule::exists('applications', 'application_id')->where('user_id', $request->user()->getKey()),
+            ],
             'title' => [$required, 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'remind_at' => [$required, 'date'],
             'is_completed' => ['sometimes', 'boolean'],
         ]);
+    }
+
+    private function authorizeReminder(Reminder $reminder): void
+    {
+        $owned = $reminder->jobApplication()->where('user_id', request()->user()->getKey())->exists();
+
+        if (! $owned) {
+            Log::warning('Unauthorized reminder access blocked.', [
+                'user_id' => request()->user()->getKey(),
+                'reminder_id' => $reminder->getKey(),
+            ]);
+        }
+
+        abort_unless($owned, 404);
     }
 }

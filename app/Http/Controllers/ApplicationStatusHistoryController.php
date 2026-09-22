@@ -8,6 +8,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -58,6 +60,8 @@ class ApplicationStatusHistoryController extends Controller
     {
         $statusHistory = ApplicationStatusHistory::create($this->validatedData($request));
 
+        Log::info('Application status history created.', ['user_id' => $request->user()->getKey(), 'status_history_id' => $statusHistory->getKey()]);
+
         return response()->json([
             'message' => 'Status history created.',
             'status_history' => $statusHistory->load('jobApplication.company'),
@@ -70,6 +74,8 @@ class ApplicationStatusHistoryController extends Controller
 
         $statusHistory->update($this->validatedData($request, true));
 
+        Log::info('Application status history updated.', ['user_id' => $request->user()->getKey(), 'status_history_id' => $statusHistory->getKey()]);
+
         return response()->json([
             'message' => 'Status history updated.',
             'status_history' => $statusHistory->fresh('jobApplication.company'),
@@ -81,6 +87,8 @@ class ApplicationStatusHistoryController extends Controller
         $this->authorizeStatusHistory($statusHistory);
 
         $statusHistory->delete();
+
+        Log::info('Application status history deleted.', ['user_id' => request()->user()->getKey(), 'status_history_id' => $statusHistory->getKey()]);
 
         if (request()->header('X-Inertia')) {
             Inertia::flash('toast', ['type' => 'success', 'message' => 'Timeline update deleted.']);
@@ -111,7 +119,16 @@ class ApplicationStatusHistoryController extends Controller
         /** @var Application $application */
         $application = $statusHistory->jobApplication;
 
-        abort_unless($application->user_id === request()->user()->user_id, 403);
+        $owned = (string) $application->user_id === (string) request()->user()->getKey();
+
+        if (! $owned) {
+            Log::warning('Unauthorized status history access blocked.', [
+                'user_id' => request()->user()->getKey(),
+                'status_history_id' => $statusHistory->getKey(),
+            ]);
+        }
+
+        abort_unless($owned, 404);
     }
 
     /** @return array<string, mixed> */
@@ -120,7 +137,11 @@ class ApplicationStatusHistoryController extends Controller
         $required = $partial ? 'sometimes' : 'required';
 
         return $request->validate([
-            'job_application_id' => [$required, 'integer', 'exists:applications,application_id'],
+            'job_application_id' => [
+                $required,
+                'integer',
+                Rule::exists('applications', 'application_id')->where('user_id', $request->user()->getKey()),
+            ],
             'old_status' => ['nullable', 'string', 'max:255'],
             'new_status' => [$required, 'string', 'max:255'],
             'remarks' => ['nullable', 'string'],

@@ -6,6 +6,8 @@ use App\Models\Interview;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -18,6 +20,7 @@ class InterviewController extends Controller
 
         $interviews = Interview::query()
             ->with('jobApplication.company')
+            ->whereHas('jobApplication', fn ($query) => $query->where('user_id', $request->user()->getKey()))
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('interview_type', 'like', "%{$search}%")
@@ -53,12 +56,16 @@ class InterviewController extends Controller
 
     public function show(Interview $interview): JsonResponse
     {
+        $this->authorizeInterview($interview);
+
         return response()->json($interview->load('jobApplication.company'));
     }
 
     public function store(Request $request): JsonResponse
     {
         $interview = Interview::create($this->validatedData($request));
+
+        Log::info('Interview created.', ['user_id' => $request->user()->getKey(), 'interview_id' => $interview->getKey()]);
 
         return response()->json([
             'message' => 'Interview created.',
@@ -68,7 +75,10 @@ class InterviewController extends Controller
 
     public function update(Request $request, Interview $interview): JsonResponse
     {
+        $this->authorizeInterview($interview);
         $interview->update($this->validatedData($request, true));
+
+        Log::info('Interview updated.', ['user_id' => $request->user()->getKey(), 'interview_id' => $interview->getKey()]);
 
         return response()->json([
             'message' => 'Interview updated.',
@@ -78,7 +88,10 @@ class InterviewController extends Controller
 
     public function destroy(Interview $interview): Response
     {
+        $this->authorizeInterview($interview);
         $interview->delete();
+
+        Log::info('Interview deleted.', ['user_id' => request()->user()->getKey(), 'interview_id' => $interview->getKey()]);
 
         return response()->noContent();
     }
@@ -89,7 +102,11 @@ class InterviewController extends Controller
         $required = $partial ? 'sometimes' : 'required';
 
         return $request->validate([
-            'job_application_id' => [$required, 'integer', 'exists:applications,application_id'],
+            'job_application_id' => [
+                $required,
+                'integer',
+                Rule::exists('applications', 'application_id')->where('user_id', $request->user()->getKey()),
+            ],
             'interview_type' => ['nullable', 'string', 'max:255'],
             'scheduled_at' => ['nullable', 'date'],
             'location' => ['nullable', 'string', 'max:255'],
@@ -98,5 +115,19 @@ class InterviewController extends Controller
             'feedback' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
         ]);
+    }
+
+    private function authorizeInterview(Interview $interview): void
+    {
+        $owned = $interview->jobApplication()->where('user_id', request()->user()->getKey())->exists();
+
+        if (! $owned) {
+            Log::warning('Unauthorized interview access blocked.', [
+                'user_id' => request()->user()->getKey(),
+                'interview_id' => $interview->getKey(),
+            ]);
+        }
+
+        abort_unless($owned, 404);
     }
 }
