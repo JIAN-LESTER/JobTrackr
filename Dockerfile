@@ -37,8 +37,8 @@ RUN composer install --no-interaction --prefer-dist --no-scripts --no-dev \
 
 COPY . .
 
-RUN npm run build \
-    && composer dump-autoload --optimize \
+RUN composer dump-autoload --optimize \
+    && npm run build \
     && chown -R www-data:www-data storage bootstrap/cache
 
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+CMD php artisan migrate --force && php artisan storage:link --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}

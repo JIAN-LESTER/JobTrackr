@@ -6,6 +6,7 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationStatusHistoryController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\NoteController;
@@ -36,6 +37,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingIsComplete::class])->grou
     Route::redirect('reminders', 'activity')->name('reminders.index');
     Route::redirect('status-histories', 'activity')->name('status-histories.index');
     Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
+    Route::get('documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
     Route::resource('contacts', ApplicationContactController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('status-histories', ApplicationStatusHistoryController::class)
         ->parameters(['status-histories' => 'statusHistory'])

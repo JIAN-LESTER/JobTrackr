@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Models\Document;
+use App\Services\DocumentStorage;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -13,12 +14,15 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProfileController extends Controller
 {
+    public function __construct(private readonly DocumentStorage $documentStorage) {}
+
     /**
      * Show the user's profile settings page.
      */
@@ -87,9 +91,15 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        $user->documents()->each(function (Document $document): void {
+            $this->documentStorage->delete($document);
+        });
+
         Auth::logout();
 
         $user->forceDelete();
+
+        Log::info('User account and stored documents deleted.', ['user_id' => $user->getKey()]);
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -103,15 +113,32 @@ class ProfileController extends Controller
             return;
         }
 
-        $path = $file->store("users/{$userId}/documents", 'public');
+        $previousDocuments = Document::query()
+            ->where('user_id', $userId)
+            ->where('document_type', $type)
+            ->get();
+        $path = $this->documentStorage->store($file, $userId, $type);
 
-        Document::create([
+        $document = Document::create([
             'user_id' => $userId,
             'document_type' => $type,
             'file_name' => $file->getClientOriginalName(),
             'file_path' => $path,
             'mime_type' => $file->getMimeType(),
             'file_size' => $file->getSize(),
+        ]);
+
+        foreach ($previousDocuments as $previousDocument) {
+            $this->documentStorage->delete($previousDocument);
+            $previousDocument->delete();
+        }
+
+        Log::info('Profile document replaced.', [
+            'user_id' => $userId,
+            'document_id' => $document->getKey(),
+            'document_type' => $type,
+            'replaced_count' => $previousDocuments->count(),
+            'disk' => $this->documentStorage->diskFor($type),
         ]);
     }
 }
