@@ -6,19 +6,21 @@ use App\Models\Application;
 use App\Models\ApplicationStatusHistory;
 use App\Models\Company;
 use App\Models\Log;
+use App\Services\SafeHttpFetcher;
 use GuzzleHttp\Cookie\CookieJar;
 use Illuminate\Http\Client\Response as HttpClientResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
 class ApplicationController extends Controller
 {
+    public function __construct(private readonly SafeHttpFetcher $httpFetcher) {}
+
     public function index(Request $request): InertiaResponse
     {
         $search = $request->input('search');
@@ -434,29 +436,17 @@ class ApplicationController extends Controller
     {
         $cookies = new CookieJar;
         $headers = $this->jobImportRequestHeaders($url);
-        $client = Http::timeout(8)
-            ->withHeaders($headers)
-            ->withOptions([
-                'cookies' => $cookies,
-                'allow_redirects' => [
-                    'max' => 5,
-                    'strict' => false,
-                    'referer' => true,
-                    'protocols' => ['http', 'https'],
-                ],
-            ]);
-
         $origin = parse_url($url, PHP_URL_SCHEME).'://'.parse_url($url, PHP_URL_HOST).'/';
 
         if (filter_var($origin, FILTER_VALIDATE_URL)) {
             try {
-                $client->get($origin);
+                $this->httpFetcher->get($origin, $headers, $cookies);
             } catch (\Throwable) {
                 // Some sites block the landing page but still allow the job URL.
             }
         }
 
-        return $client->get($url);
+        return $this->httpFetcher->get($url, $headers, $cookies);
     }
 
     /** @return array<string, string> */

@@ -29,7 +29,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified', EnsureOnboardingIsComplete::class])->group(function () {
     Route::redirect('dashboard', '/applications')->name('dashboard');
     Route::get('applications/import', [ApplicationController::class, 'import'])->name('applications.import');
-    Route::post('/applications/import', [ApplicationController::class, 'import']);
     Route::resource('applications', ApplicationController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::get('analyze-resume', [ResumeAnalysisController::class, 'index'])->name('resume-analyses.index');
     Route::post('analyze-resume', [ResumeAnalysisController::class, 'store'])->name('resume-analyses.store');

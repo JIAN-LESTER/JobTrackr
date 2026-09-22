@@ -6,12 +6,13 @@ use App\Models\Application;
 use App\Models\Document;
 use App\Models\ResumeAnalysis;
 use App\Services\ResumeAnalyzer;
+use App\Services\DocumentStorage;
+use App\Services\SafeHttpFetcher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -21,6 +22,8 @@ use ZipArchive;
 
 class ResumeAnalysisController extends Controller
 {
+    public function __construct(private readonly SafeHttpFetcher $httpFetcher) {}
+
     public function index(Request $request): InertiaResponse
     {
         $userId = $request->user()->getKey();
@@ -289,9 +292,11 @@ class ResumeAnalysisController extends Controller
         }
 
         try {
-            $response = Http::timeout(6)
-                ->withHeaders(['User-Agent' => 'JobTrackr/1.0'])
-                ->get($url);
+            $response = $this->httpFetcher->get(
+                $url,
+                ['User-Agent' => 'JobTrackr/1.0'],
+                timeout: 6,
+            );
         } catch (\Throwable $exception) {
             Log::info('Resume analysis company lookup failed.', [
                 'url' => $url,
