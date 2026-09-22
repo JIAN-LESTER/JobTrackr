@@ -12,7 +12,6 @@ use App\Http\Controllers\NoteController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ResumeAnalysisController;
-use App\Http\Controllers\UserController;
 use App\Http\Middleware\EnsureOnboardingIsComplete;
 use Illuminate\Support\Facades\Route;
 
@@ -46,7 +45,6 @@ Route::middleware(['auth', 'verified', EnsureOnboardingIsComplete::class])->grou
     Route::resource('logs', LogController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('notes', NoteController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('reminders', ReminderController::class)->only(['show', 'store', 'update', 'destroy']);
-    Route::resource('users', UserController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
 });
 
 require __DIR__.'/settings.php';
