@@ -22,7 +22,11 @@ class VerifyEmail extends BaseVerifyEmail
             false,
         );
 
-        return rtrim((string) config('app.url'), '/').$path;
+        $baseUrl = app()->runningInConsole()
+            ? (string) config('app.url')
+            : request()->root();
+
+        return rtrim($baseUrl, '/').$path;
     }
 
     public function toMail($notifiable): MailMessage

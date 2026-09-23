@@ -4,6 +4,7 @@ services:
       context: .
     restart: unless-stopped
     working_dir: /var/www/html
+    command: sh -c "php artisan migrate --force && php artisan storage:link --force && php-fpm"
     environment:
       APP_ENV: local
       APP_DEBUG: true
