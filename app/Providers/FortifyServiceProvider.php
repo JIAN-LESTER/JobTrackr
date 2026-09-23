@@ -8,7 +8,6 @@ use App\Http\Controllers\Auth\RegisteredUserController as AppRegisteredUserContr
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -134,21 +133,9 @@ class FortifyServiceProvider extends ServiceProvider
             ],
         ]));
 
-        Fortify::verifyEmailView(function (Request $request) {
-            $email = $request->user()?->email;
-
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            $request->session()->flash(
-                'emailVerificationMessage',
-                $email
-                    ? "We've sent a verification link to {$email}. Please verify your email before logging in."
-                    : 'Please verify your email before logging in.'
-            );
-
-            return redirect()->route('login');
-        });
+        Fortify::verifyEmailView(fn (Request $request) => Inertia::render('auth/VerifyEmail', [
+            'status' => $request->session()->get('status'),
+        ]));
     }
 
     /**

@@ -6,13 +6,13 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\ApplicationStatusHistoryController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ResumeAnalysisController;
-use App\Http\Controllers\UserController;
 use App\Http\Middleware\EnsureOnboardingIsComplete;
 use Illuminate\Support\Facades\Route;
 
@@ -30,7 +30,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified', EnsureOnboardingIsComplete::class])->group(function () {
     Route::redirect('dashboard', '/applications')->name('dashboard');
     Route::get('applications/import', [ApplicationController::class, 'import'])->name('applications.import');
-    Route::post('/applications/import', [ApplicationController::class, 'import']);
     Route::resource('applications', ApplicationController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::get('analyze-resume', [ResumeAnalysisController::class, 'index'])->name('resume-analyses.index');
     Route::post('analyze-resume', [ResumeAnalysisController::class, 'store'])->name('resume-analyses.store');
@@ -38,6 +37,7 @@ Route::middleware(['auth', 'verified', EnsureOnboardingIsComplete::class])->grou
     Route::redirect('reminders', 'activity')->name('reminders.index');
     Route::redirect('status-histories', 'activity')->name('status-histories.index');
     Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
+    Route::get('documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
     Route::resource('contacts', ApplicationContactController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('status-histories', ApplicationStatusHistoryController::class)
         ->parameters(['status-histories' => 'statusHistory'])
@@ -46,7 +46,6 @@ Route::middleware(['auth', 'verified', EnsureOnboardingIsComplete::class])->grou
     Route::resource('logs', LogController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('notes', NoteController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::resource('reminders', ReminderController::class)->only(['show', 'store', 'update', 'destroy']);
-    Route::resource('users', UserController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
 });
 
 require __DIR__.'/settings.php';

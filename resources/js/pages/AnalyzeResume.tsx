@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { ChevronDown, FileText, Sparkles, Upload } from 'lucide-react';
 import type { DragEvent, FormEvent } from 'react';
 import { useEffect, useState } from 'react';
@@ -10,6 +10,13 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -94,6 +101,20 @@ const formatTime = (value: string) =>
         hour: 'numeric',
         minute: '2-digit',
     }).format(new Date(value));
+
+const formatStatus = (value: string) =>
+    value
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+
+const formatSalary = (minimum: string | null, maximum: string | null) => {
+    if (minimum && maximum) {
+        return `${minimum} - ${maximum}`;
+    }
+
+    return minimum || maximum || 'Not specified';
+};
 
 const formatFileSize = (bytes: number | null) => {
     if (!bytes) {
@@ -248,6 +269,8 @@ export default function AnalyzeResume({
     const [closedAnalysisIds, setClosedAnalysisIds] = useState<number[]>([]);
     const [isApplicationDetailsOpen, setIsApplicationDetailsOpen] =
         useState(false);
+    const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
+    const [isResumePreviewOpen, setIsResumePreviewOpen] = useState(false);
     const [timerState, setTimerState] = useState<TimerState>({
         currentTime: null,
         cooldownEndsAt: cooldownSecondsRemaining * 1000,
@@ -301,6 +324,7 @@ export default function AnalyzeResume({
     const selectApplication = (value: string) => {
         setSubmitError(null);
         setIsApplicationDetailsOpen(false);
+        setIsApplicationModalOpen(false);
         const application = applications.find(
             (item) => String(item.application_id) === value,
         );
@@ -394,6 +418,34 @@ export default function AnalyzeResume({
 
             return ids.filter((openId) => openId !== id);
         });
+    };
+
+    const openApplicationDetails = () => {
+        if (!selectedApplication) {
+            console.error('Application details could not be opened.');
+
+            return;
+        }
+
+        console.info('Application details opened.', {
+            applicationId: selectedApplication.application_id,
+        });
+        setIsApplicationModalOpen(true);
+    };
+
+    const openResumePreview = () => {
+        if (!selectedResumeDocument?.file_url) {
+            console.error('Resume preview could not be opened.', {
+                documentId: selectedResumeDocument?.document_id,
+            });
+
+            return;
+        }
+
+        console.info('Resume preview opened.', {
+            documentId: selectedResumeDocument.document_id,
+        });
+        setIsResumePreviewOpen(true);
     };
 
     return (
@@ -583,13 +635,11 @@ export default function AnalyzeResume({
                                                         type="button"
                                                         size="sm"
                                                         variant="outline"
-                                                        asChild
+                                                        onClick={
+                                                            openApplicationDetails
+                                                        }
                                                     >
-                                                        <Link
-                                                            href={`/applications/${selectedApplication.application_id}`}
-                                                        >
-                                                            View details
-                                                        </Link>
+                                                        View details
                                                     </Button>
                                                 </div>
                                             </div>
@@ -732,12 +782,13 @@ export default function AnalyzeResume({
                                         </Label>
                                         <Select
                                             value={form.data.resume_document_id}
-                                            onValueChange={(value) =>
+                                            onValueChange={(value) => {
+                                                setIsResumePreviewOpen(false);
                                                 form.setData(
                                                     'resume_document_id',
                                                     value,
-                                                )
-                                            }
+                                                );
+                                            }}
                                         >
                                             <SelectTrigger
                                                 id="resume-document"
@@ -791,23 +842,11 @@ export default function AnalyzeResume({
                                                         disabled={
                                                             !selectedResumeDocument.file_url
                                                         }
-                                                        asChild={
-                                                            !!selectedResumeDocument.file_url
+                                                        onClick={
+                                                            openResumePreview
                                                         }
                                                     >
-                                                        {selectedResumeDocument.file_url ? (
-                                                            <a
-                                                                href={
-                                                                    selectedResumeDocument.file_url
-                                                                }
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                            >
-                                                                Preview
-                                                            </a>
-                                                        ) : (
-                                                            'Preview'
-                                                        )}
+                                                        Preview
                                                     </Button>
                                                     <Button
                                                         type="button"
@@ -935,7 +974,150 @@ export default function AnalyzeResume({
                     </section>
                 </div>
             </div>
+
+            <Dialog
+                open={isApplicationModalOpen}
+                onOpenChange={setIsApplicationModalOpen}
+            >
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {selectedApplication?.job_title ||
+                                'Application details'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {selectedApplication?.company?.name ||
+                                'Unknown company'}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedApplication ? (
+                        <div className="space-y-5 text-sm">
+                            <dl className="grid gap-4 rounded-md border border-[#cbd8cf] bg-[#f8faf7] p-4 sm:grid-cols-2 dark:border-[#33463a] dark:bg-[#16231c]">
+                                <ApplicationDetail
+                                    label="Status"
+                                    value={formatStatus(
+                                        selectedApplication.status,
+                                    )}
+                                />
+                                <ApplicationDetail
+                                    label="Applied date"
+                                    value={
+                                        selectedApplication.applied_date
+                                            ? formatDate(
+                                                  selectedApplication.applied_date,
+                                              )
+                                            : 'Not set'
+                                    }
+                                />
+                                <ApplicationDetail
+                                    label="Location"
+                                    value={
+                                        selectedApplication.location ||
+                                        'Not specified'
+                                    }
+                                />
+                                <ApplicationDetail
+                                    label="Work setup"
+                                    value={
+                                        selectedApplication.work_setup ||
+                                        'Not specified'
+                                    }
+                                />
+                                <ApplicationDetail
+                                    label="Job type"
+                                    value={
+                                        selectedApplication.job_type ||
+                                        'Not specified'
+                                    }
+                                />
+                                <ApplicationDetail
+                                    label="Salary"
+                                    value={formatSalary(
+                                        selectedApplication.salary_min,
+                                        selectedApplication.salary_max,
+                                    )}
+                                />
+                            </dl>
+
+                            {selectedApplication.job_post_url ? (
+                                <div>
+                                    <p className="font-medium">Job post</p>
+                                    <a
+                                        href={selectedApplication.job_post_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="mt-1 block break-all text-primary underline underline-offset-4"
+                                    >
+                                        {selectedApplication.job_post_url}
+                                    </a>
+                                </div>
+                            ) : null}
+
+                            <div>
+                                <p className="font-medium">Job description</p>
+                                <div className="mt-2 max-h-80 overflow-y-auto rounded-md border border-[#cbd8cf] bg-[#f8faf7] p-4 whitespace-pre-wrap text-muted-foreground dark:border-[#33463a] dark:bg-[#16231c]">
+                                    {selectedApplicationDescription ||
+                                        'No job description has been saved for this application.'}
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={isResumePreviewOpen}
+                onOpenChange={setIsResumePreviewOpen}
+            >
+                <DialogContent className="h-[90vh] max-h-[90vh] grid-rows-[auto_minmax(0,1fr)] p-4 sm:max-w-4xl sm:p-6">
+                    <DialogHeader className="pr-8">
+                        <DialogTitle>Resume preview</DialogTitle>
+                        <DialogDescription className="truncate">
+                            {selectedResumeDocument?.file_name}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedResumeDocument?.file_url ? (
+                        <iframe
+                            src={selectedResumeDocument.file_url}
+                            title={`Preview of ${selectedResumeDocument.file_name}`}
+                            className="h-full min-h-0 w-full rounded-md border border-[#cbd8cf] bg-white dark:border-[#33463a]"
+                            onLoad={() =>
+                                console.info('Resume preview loaded.', {
+                                    documentId:
+                                        selectedResumeDocument.document_id,
+                                })
+                            }
+                            onError={() =>
+                                console.error(
+                                    'Resume preview failed to load.',
+                                    {
+                                        documentId:
+                                            selectedResumeDocument.document_id,
+                                    },
+                                )
+                            }
+                        />
+                    ) : (
+                        <div className="flex items-center justify-center rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                            A preview is not available for this resume.
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </>
+    );
+}
+
+function ApplicationDetail({ label, value }: { label: string; value: string }) {
+    return (
+        <div>
+            <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {label}
+            </dt>
+            <dd className="mt-1 font-medium">{value}</dd>
+        </div>
     );
 }
 

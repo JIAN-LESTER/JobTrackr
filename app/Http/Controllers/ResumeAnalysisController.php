@@ -5,15 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Application;
 use App\Models\Document;
 use App\Models\ResumeAnalysis;
+use App\Services\DocumentStorage;
 use App\Services\ResumeAnalyzer;
+use App\Services\SafeHttpFetcher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -21,6 +21,8 @@ use ZipArchive;
 
 class ResumeAnalysisController extends Controller
 {
+    public function __construct(private readonly SafeHttpFetcher $httpFetcher) {}
+
     public function index(Request $request): InertiaResponse
     {
         $userId = $request->user()->getKey();
@@ -37,7 +39,7 @@ class ResumeAnalysisController extends Controller
                     'document_id' => $document->document_id,
                     'file_name' => $document->file_name,
                     'file_size' => $document->file_size,
-                    'file_url' => $document->file_path ? Storage::disk('public')->url($document->file_path) : null,
+                    'file_url' => $document->file_path ? route('documents.download', $document, false) : null,
                     'mime_type' => $document->mime_type,
                     'created_at' => $document->created_at?->toIso8601String(),
                 ]),
@@ -51,7 +53,7 @@ class ResumeAnalysisController extends Controller
         ]);
     }
 
-    public function store(Request $request, ResumeAnalyzer $analyzer): JsonResponse|RedirectResponse
+    public function store(Request $request, ResumeAnalyzer $analyzer, DocumentStorage $documentStorage): JsonResponse|RedirectResponse
     {
         Log::info('Resume analysis request received.', [
             'user_id' => $request->user()->getKey(),
@@ -264,7 +266,7 @@ class ResumeAnalysisController extends Controller
             'match_score' => $analysis['match_score'],
         ]);
 
-        $document = $resumeSource === 'upload' && $resumeFile ? $this->storeResume($request, $application, $resumeFile) : $document;
+        $document = $resumeSource === 'upload' && $resumeFile ? $this->storeResume($request, $application, $resumeFile, $documentStorage) : $document;
         $resumeAnalysis = ResumeAnalysis::create([
             'user_id' => $request->user()->getKey(), 'job_application_id' => $application->getKey(),
             'resume_document_id' => $document?->getKey(), 'job_description' => $jobDescription,
@@ -289,9 +291,11 @@ class ResumeAnalysisController extends Controller
         }
 
         try {
-            $response = Http::timeout(6)
-                ->withHeaders(['User-Agent' => 'JobTrackr/1.0'])
-                ->get($url);
+            $response = $this->httpFetcher->get(
+                $url,
+                ['User-Agent' => 'JobTrackr/1.0'],
+                timeout: 6,
+            );
         } catch (\Throwable $exception) {
             Log::info('Resume analysis company lookup failed.', [
                 'url' => $url,
@@ -433,9 +437,9 @@ class ResumeAnalysisController extends Controller
         ];
     }
 
-    private function storeResume(Request $request, Application $application, UploadedFile $file): Document
+    private function storeResume(Request $request, Application $application, UploadedFile $file, DocumentStorage $storage): Document
     {
-        $path = $file->store("users/{$request->user()->getKey()}/documents", 'public');
+        $path = $storage->store($file, $request->user()->getKey(), 'resume');
         $document = Document::create(['user_id' => $request->user()->getKey(), 'job_application_id' => $application->getKey(), 'document_type' => 'resume', 'file_name' => $file->getClientOriginalName(), 'file_path' => $path, 'mime_type' => $file->getMimeType(), 'file_size' => $file->getSize()]);
 
         Log::info('Resume analysis uploaded resume stored.', [
@@ -459,7 +463,9 @@ class ResumeAnalysisController extends Controller
 
     private function extractTextFromDocument(Document $document): string
     {
-        if (! $document->file_path || ! Storage::disk('public')->exists($document->file_path)) {
+        $storage = app(DocumentStorage::class);
+
+        if (! $document->file_path || ! $storage->exists($document)) {
             Log::warning('Resume analysis saved resume file is missing from storage.', [
                 'resume_document_id' => $document->getKey(),
                 'file_name' => $document->file_name,
@@ -471,7 +477,7 @@ class ResumeAnalysisController extends Controller
 
         $extension = strtolower(pathinfo($document->file_name, PATHINFO_EXTENSION));
 
-        return $this->extractTextFromPath(Storage::disk('public')->path($document->file_path), $extension);
+        return $this->extractTextFromPath($storage->path($document), $extension);
     }
 
     private function extractTextFromPath(string $path, string $extension): string

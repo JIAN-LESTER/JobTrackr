@@ -5,6 +5,11 @@ return [
         'api_key' => env('RESUME_ANALYZER_API_KEY'),
         'endpoint' => env('RESUME_ANALYZER_ENDPOINT', 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'),
         'model' => env('RESUME_ANALYZER_MODEL', 'gemini-2.5-flash'),
+        'fallback' => [
+            'api_key' => env('COHERE_API_KEY'),
+            'endpoint' => env('RESUME_ANALYZER_COHERE_ENDPOINT', 'https://api.cohere.ai/compatibility/v1/chat/completions'),
+            'model' => env('RESUME_ANALYZER_COHERE_MODEL', 'command-a-03-2025'),
+        ],
         'timeout' => (int) env('RESUME_ANALYZER_TIMEOUT', 60),
         'connect_timeout' => (int) env('RESUME_ANALYZER_CONNECT_TIMEOUT', 10),
         'daily_limit' => (int) env('RESUME_ANALYZER_DAILY_LIMIT', 5),

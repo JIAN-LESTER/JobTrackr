@@ -1,5 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import { ListTodo, MailCheck, ShieldCheck } from 'lucide-react';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { logout } from '@/routes';
@@ -72,15 +73,18 @@ export default function VerifyEmail({ status }: Props) {
                 )}
 
                 <Form {...send.form()}>
-                    {({ processing }) => (
-                        <Button
-                            type="submit"
-                            className="w-full"
-                            disabled={processing}
-                        >
-                            {processing && <Spinner />}
-                            Resend verification email
-                        </Button>
+                    {({ processing, errors }) => (
+                        <div className="space-y-2">
+                            <Button
+                                type="submit"
+                                className="w-full"
+                                disabled={processing}
+                            >
+                                {processing && <Spinner />}
+                                Resend verification email
+                            </Button>
+                            <InputError message={errors.email} />
+                        </div>
                     )}
                 </Form>
 

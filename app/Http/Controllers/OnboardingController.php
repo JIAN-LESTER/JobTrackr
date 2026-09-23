@@ -3,16 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
+use App\Services\DocumentStorage;
 use App\Support\AvatarPresets;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class OnboardingController extends Controller
 {
+    public function __construct(private readonly DocumentStorage $documentStorage) {}
+
     public function edit(Request $request): Response|RedirectResponse
     {
         if ($request->user()->onboarding_completed_at) {
@@ -72,6 +76,8 @@ class OnboardingController extends Controller
         $this->storeDocument($user->getKey(), $request->file('photo'), 'photo');
         $this->storeDocument($user->getKey(), $request->file('resume'), 'resume');
 
+        Log::info('User onboarding completed.', ['user_id' => $user->getKey()]);
+
         return redirect('/applications');
     }
 
@@ -81,15 +87,22 @@ class OnboardingController extends Controller
             return;
         }
 
-        $path = $file->store("users/{$userId}/documents", 'public');
+        $path = $this->documentStorage->store($file, $userId, $type);
 
-        Document::create([
+        $document = Document::create([
             'user_id' => $userId,
             'document_type' => $type,
             'file_name' => $file->getClientOriginalName(),
             'file_path' => $path,
             'mime_type' => $file->getMimeType(),
             'file_size' => $file->getSize(),
+        ]);
+
+        Log::info('Onboarding document stored.', [
+            'user_id' => $userId,
+            'document_id' => $document->getKey(),
+            'document_type' => $type,
+            'disk' => $this->documentStorage->diskFor($type),
         ]);
     }
 }
