@@ -10,8 +10,6 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Dialog,
     DialogContent,
@@ -19,6 +17,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -269,8 +269,7 @@ export default function AnalyzeResume({
     const [closedAnalysisIds, setClosedAnalysisIds] = useState<number[]>([]);
     const [isApplicationDetailsOpen, setIsApplicationDetailsOpen] =
         useState(false);
-    const [isApplicationModalOpen, setIsApplicationModalOpen] =
-        useState(false);
+    const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
     const [isResumePreviewOpen, setIsResumePreviewOpen] = useState(false);
     const [timerState, setTimerState] = useState<TimerState>({
         currentTime: null,
@@ -424,6 +423,7 @@ export default function AnalyzeResume({
     const openApplicationDetails = () => {
         if (!selectedApplication) {
             console.error('Application details could not be opened.');
+
             return;
         }
 
@@ -438,6 +438,7 @@ export default function AnalyzeResume({
             console.error('Resume preview could not be opened.', {
                 documentId: selectedResumeDocument?.document_id,
             });
+
             return;
         }
 
@@ -1089,10 +1090,13 @@ export default function AnalyzeResume({
                                 })
                             }
                             onError={() =>
-                                console.error('Resume preview failed to load.', {
-                                    documentId:
-                                        selectedResumeDocument.document_id,
-                                })
+                                console.error(
+                                    'Resume preview failed to load.',
+                                    {
+                                        documentId:
+                                            selectedResumeDocument.document_id,
+                                    },
+                                )
                             }
                         />
                     ) : (

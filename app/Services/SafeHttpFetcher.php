@@ -77,7 +77,7 @@ class SafeHttpFetcher
 
             $location = $response->header('Location');
 
-            if (! is_string($location) || $location === '') {
+            if ($location === '') {
                 return $response;
             }
 

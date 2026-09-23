@@ -26,8 +26,7 @@ class DocumentStorage
 
     public function exists(Document $document): bool
     {
-        return is_string($document->file_path)
-            && $document->file_path !== ''
+        return $document->file_path !== ''
             && Storage::disk($this->diskFor($document->document_type))->exists($document->file_path);
     }
 

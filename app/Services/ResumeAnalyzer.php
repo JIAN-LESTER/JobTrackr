@@ -165,8 +165,7 @@ PROMPT;
             ],
         ];
 
-        return array_values(array_filter($providers, fn (array $provider): bool =>
-            is_string($provider['api_key']) && $provider['api_key'] !== ''
+        return array_values(array_filter($providers, fn (array $provider): bool => is_string($provider['api_key']) && $provider['api_key'] !== ''
             && is_string($provider['endpoint']) && $provider['endpoint'] !== ''
             && is_string($provider['model']) && $provider['model'] !== ''
         ));
