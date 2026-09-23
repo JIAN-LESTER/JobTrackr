@@ -39,7 +39,7 @@ class ResumeAnalysisController extends Controller
                     'document_id' => $document->document_id,
                     'file_name' => $document->file_name,
                     'file_size' => $document->file_size,
-                    'file_url' => $document->file_path ? route('documents.download', $document) : null,
+                    'file_url' => $document->file_path ? route('documents.download', $document, false) : null,
                     'mime_type' => $document->mime_type,
                     'created_at' => $document->created_at?->toIso8601String(),
                 ]),
