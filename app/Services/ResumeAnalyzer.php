@@ -13,13 +13,13 @@ class ResumeAnalyzer
     /** @return array<string, mixed> */
     public function analyze(string $resume, string $jobDescription): array
     {
-        $apiKey = config('ai.resume_analyzer.api_key');
+        $providers = $this->configuredProviders();
 
-        if (! is_string($apiKey) || $apiKey === '') {
+        if ($providers === []) {
             Log::warning('Resume analyzer is not configured.');
 
             throw ValidationException::withMessages([
-                'analysis' => 'Resume analysis is not configured. Add RESUME_ANALYZER_API_KEY to enable it.',
+                'analysis' => 'Resume analysis is not configured. Add a Gemini or Cohere API key to enable it.',
             ]);
         }
 
@@ -49,93 +49,75 @@ JOB DESCRIPTION:
 %s
 PROMPT;
 
-        try {
-            $this->extendExecutionTime($timeout + 15);
+        $this->extendExecutionTime(($timeout + 15) * count($providers));
+        $analysis = null;
 
-            Log::info('Resume analyzer provider request starting.', [
-                'endpoint' => config('ai.resume_analyzer.endpoint'),
-                'model' => config('ai.resume_analyzer.model'),
-                'timeout' => $timeout,
-                'connect_timeout' => $connectTimeout,
-                'resume_text_length' => mb_strlen($resume),
-                'job_description_length' => mb_strlen($jobDescription),
-            ]);
+        foreach ($providers as $index => $provider) {
+            try {
+                $analysis = $this->requestAnalysis(
+                    $provider,
+                    sprintf($prompt, $resume, $jobDescription),
+                    $timeout,
+                    $connectTimeout,
+                    mb_strlen($resume),
+                    mb_strlen($jobDescription),
+                );
 
-            $response = Http::timeout($timeout)
-                ->connectTimeout($connectTimeout)
-                ->withToken($apiKey)
-                ->acceptJson()
-                ->post(config('ai.resume_analyzer.endpoint'), [
-                    'model' => config('ai.resume_analyzer.model'),
-                    'response_format' => ['type' => 'json_object'],
-                    'messages' => [
-                        ['role' => 'system', 'content' => 'You are a precise resume and job-description analysis assistant.'],
-                        ['role' => 'user', 'content' => sprintf($prompt, $resume, $jobDescription)],
-                    ],
-                    'temperature' => 0.2,
-                ])
-                ->throw();
+                break;
+            } catch (RequestException $exception) {
+                $response = $exception->response;
 
-            Log::info('Resume analyzer provider request completed.', [
-                'status' => $response->status(),
-                'model' => config('ai.resume_analyzer.model'),
-                'content_length' => mb_strlen((string) data_get($response->json(), 'choices.0.message.content', '')),
-                'prompt_tokens' => data_get($response->json(), 'usage.prompt_tokens'),
-                'completion_tokens' => data_get($response->json(), 'usage.completion_tokens'),
-                'total_tokens' => data_get($response->json(), 'usage.total_tokens'),
-            ]);
-        } catch (RequestException $exception) {
-            $response = $exception->response;
+                Log::warning('Resume analyzer provider rejected the request.', [
+                    'provider' => $provider['name'],
+                    'status' => $response->status(),
+                    'model' => $provider['model'],
+                    'endpoint' => $provider['endpoint'],
+                    'provider_message' => $this->providerMessage($response),
+                ]);
+            } catch (ConnectionException $exception) {
+                Log::warning('Resume analyzer provider connection failed.', [
+                    'provider' => $provider['name'],
+                    'exception' => $exception::class,
+                    'message' => $exception->getMessage(),
+                    'model' => $provider['model'],
+                    'endpoint' => $provider['endpoint'],
+                    'timeout' => $timeout,
+                    'connect_timeout' => $connectTimeout,
+                ]);
+                report($exception);
+            } catch (\UnexpectedValueException $exception) {
+                Log::warning('Resume analyzer provider returned invalid JSON content.', [
+                    'provider' => $provider['name'],
+                    'model' => $provider['model'],
+                    'message' => $exception->getMessage(),
+                ]);
+            } catch (\Throwable $exception) {
+                Log::error('Resume analyzer provider request failed unexpectedly.', [
+                    'provider' => $provider['name'],
+                    'exception' => $exception::class,
+                    'message' => $exception->getMessage(),
+                    'model' => $provider['model'],
+                    'endpoint' => $provider['endpoint'],
+                ]);
+                report($exception);
+            }
 
-            Log::warning('Resume analyzer provider rejected the request.', [
-                'status' => $response->status(),
-                'model' => config('ai.resume_analyzer.model'),
-                'endpoint' => config('ai.resume_analyzer.endpoint'),
-                'provider_message' => $this->providerMessage($response),
-            ]);
-
-            throw ValidationException::withMessages([
-                'analysis' => 'The analyzer provider rejected the request. Check the model name and API key, then try again.',
-            ]);
-        } catch (ConnectionException $exception) {
-            Log::warning('Resume analyzer provider connection failed.', [
-                'exception' => $exception::class,
-                'message' => $exception->getMessage(),
-                'model' => config('ai.resume_analyzer.model'),
-                'endpoint' => config('ai.resume_analyzer.endpoint'),
-                'timeout' => $timeout,
-                'connect_timeout' => $connectTimeout,
-            ]);
-            report($exception);
-
-            throw ValidationException::withMessages([
-                'analysis' => 'The analyzer provider did not respond in time. Please try again.',
-            ]);
-        } catch (\Throwable $exception) {
-            Log::error('Resume analyzer provider request failed unexpectedly.', [
-                'exception' => $exception::class,
-                'message' => $exception->getMessage(),
-                'model' => config('ai.resume_analyzer.model'),
-                'endpoint' => config('ai.resume_analyzer.endpoint'),
-            ]);
-            report($exception);
-
-            throw ValidationException::withMessages([
-                'analysis' => 'The resume analysis could not be completed. Please try again.',
-            ]);
+            $nextProvider = $providers[$index + 1] ?? null;
+            if ($nextProvider !== null) {
+                Log::info('Resume analyzer switching to fallback provider.', [
+                    'failed_provider' => $provider['name'],
+                    'fallback_provider' => $nextProvider['name'],
+                ]);
+            }
         }
 
-        $content = data_get($response->json(), 'choices.0.message.content');
-        $analysis = is_string($content) ? json_decode($content, true) : null;
-
         if (! is_array($analysis)) {
-            Log::warning('Resume analyzer returned invalid JSON content.', [
-                'model' => config('ai.resume_analyzer.model'),
-                'content_length' => is_string($content) ? mb_strlen($content) : null,
+            Log::error('All configured resume analyzer providers failed.', [
+                'providers' => array_column($providers, 'name'),
             ]);
 
             throw ValidationException::withMessages([
-                'analysis' => 'The analyzer returned an invalid response. Please try again.',
+                'analysis' => 'The resume analysis providers are temporarily unavailable. Please try again.',
             ]);
         }
 
@@ -161,6 +143,90 @@ PROMPT;
         ]);
 
         return $normalized;
+    }
+
+    /**
+     * @return array<int, array{name: string, api_key: string, endpoint: string, model: string}>
+     */
+    private function configuredProviders(): array
+    {
+        $providers = [
+            [
+                'name' => 'gemini',
+                'api_key' => config('ai.resume_analyzer.api_key'),
+                'endpoint' => config('ai.resume_analyzer.endpoint'),
+                'model' => config('ai.resume_analyzer.model'),
+            ],
+            [
+                'name' => 'cohere',
+                'api_key' => config('ai.resume_analyzer.fallback.api_key'),
+                'endpoint' => config('ai.resume_analyzer.fallback.endpoint'),
+                'model' => config('ai.resume_analyzer.fallback.model'),
+            ],
+        ];
+
+        return array_values(array_filter($providers, fn (array $provider): bool =>
+            is_string($provider['api_key']) && $provider['api_key'] !== ''
+            && is_string($provider['endpoint']) && $provider['endpoint'] !== ''
+            && is_string($provider['model']) && $provider['model'] !== ''
+        ));
+    }
+
+    /**
+     * @param  array{name: string, api_key: string, endpoint: string, model: string}  $provider
+     * @return array<string, mixed>
+     */
+    private function requestAnalysis(
+        array $provider,
+        string $prompt,
+        int $timeout,
+        int $connectTimeout,
+        int $resumeTextLength,
+        int $jobDescriptionLength,
+    ): array {
+        Log::info('Resume analyzer provider request starting.', [
+            'provider' => $provider['name'],
+            'endpoint' => $provider['endpoint'],
+            'model' => $provider['model'],
+            'timeout' => $timeout,
+            'connect_timeout' => $connectTimeout,
+            'resume_text_length' => $resumeTextLength,
+            'job_description_length' => $jobDescriptionLength,
+        ]);
+
+        $response = Http::timeout($timeout)
+            ->connectTimeout($connectTimeout)
+            ->withToken($provider['api_key'])
+            ->acceptJson()
+            ->post($provider['endpoint'], [
+                'model' => $provider['model'],
+                'response_format' => ['type' => 'json_object'],
+                'messages' => [
+                    ['role' => 'system', 'content' => 'You are a precise resume and job-description analysis assistant.'],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+                'temperature' => 0.2,
+            ])
+            ->throw();
+
+        $content = data_get($response->json(), 'choices.0.message.content');
+        $analysis = is_string($content) ? json_decode($content, true) : null;
+
+        Log::info('Resume analyzer provider request completed.', [
+            'provider' => $provider['name'],
+            'status' => $response->status(),
+            'model' => $provider['model'],
+            'content_length' => is_string($content) ? mb_strlen($content) : null,
+            'prompt_tokens' => data_get($response->json(), 'usage.prompt_tokens'),
+            'completion_tokens' => data_get($response->json(), 'usage.completion_tokens'),
+            'total_tokens' => data_get($response->json(), 'usage.total_tokens'),
+        ]);
+
+        if (! is_array($analysis)) {
+            throw new \UnexpectedValueException('The provider response did not contain a valid JSON object.');
+        }
+
+        return $analysis;
     }
 
     /** @return array<int, string> */
